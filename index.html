@@ -1,0 +1,742 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style></head><body><title>Bottlenecks Demo 01</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Hanken+Grotesk:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a presenter's stage. Dark ink surround, the footage centred, a step rail under it.
+   A prompt card floats over the footage; the zoom and highlight box act on the footage layer only. */
+:root {
+  --ink-0: #0a1226;
+  --ink-1: #0f1a36;
+  --ink-2: #18284f;
+  --line: rgba(150, 172, 255, 0.18);
+  --text: #e9edfb;
+  --text-dim: #9daad0;
+  --accent: #5b7cff;
+  --accent-hi: #9bb0ff;
+  --focus: #ffc53d;
+  --bubble: #e7eafb;
+  --bubble-ink: #171d3d;
+  --font-display: 'Bricolage Grotesque', 'Hanken Grotesk', system-ui, sans-serif;
+  --font-body: 'Hanken Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+  --ease: cubic-bezier(0.22, 0.8, 0.24, 1);
+  --dur: 0.7s;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { background: var(--ink-0); }
+body {
+  color: var(--text);
+  font: 400 15px/1.5 var(--font-body);
+  margin: 0;
+  padding-block: 18px 28px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  min-height: 100%;
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+.shell { max-width: 1320px; margin-inline: auto; display: grid; gap: 16px; }
+
+/* header */
+.top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; }
+.brand h1 { margin: 0; font: 700 21px/1.15 var(--font-display); letter-spacing: -0.01em; }
+.brand p { margin: 2px 0 0; color: var(--text-dim); font-size: 13.5px; }
+.tools { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.switch { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13.5px; color: var(--text-dim); user-select: none; }
+.switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.switch .track { width: 36px; height: 20px; border-radius: 999px; background: var(--ink-2); border: 1px solid var(--line); position: relative; transition: background 0.2s; }
+.switch .track::after { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--text-dim); transition: transform 0.2s, background 0.2s; }
+.switch input:checked + .track { background: var(--accent); border-color: var(--accent); }
+.switch input:checked + .track::after { transform: translateX(16px); background: #fff; }
+.switch input:focus-visible + .track { outline: 2px solid var(--focus); outline-offset: 2px; }
+.ghost { background: transparent; border: 1px solid var(--line); border-radius: 9px; padding: 6px 14px; font-size: 13.5px; color: var(--text); }
+.ghost:hover { background: var(--ink-1); border-color: rgba(150, 172, 255, 0.4); }
+
+/* stage */
+.stage-wrap {
+  position: relative;
+  width: min(100%, max(320px, calc((100svh - 236px) * 1.777)));
+  margin-inline: auto;
+  display: grid;
+  gap: 12px;
+}
+.stage {
+  position: relative;
+  aspect-ratio: 1976 / 1112;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 0 0 1px var(--line), 0 24px 60px rgba(2, 6, 20, 0.55);
+  --z: 1;
+}
+.zoomer { position: absolute; inset: 0; transform-origin: 0 0; transition: transform var(--dur) var(--ease); will-change: transform; }
+.zoomer video { display: block; width: 100%; height: 100%; background: #fff; }
+
+.focus {
+  position: absolute;
+  border: calc(3.5px / var(--z)) solid var(--focus);
+  border-radius: calc(7px / var(--z));
+  box-shadow: 0 0 0 200vmax rgba(7, 12, 28, 0.55), 0 0 calc(22px / var(--z)) rgba(255, 197, 61, 0.5);
+  pointer-events: none;
+  animation: focusIn 0.5s var(--ease) 0.2s both;
+}
+.focus::after {
+  content: '';
+  position: absolute;
+  inset: calc(-7px / var(--z));
+  border: calc(2px / var(--z)) solid var(--focus);
+  border-radius: calc(11px / var(--z));
+  opacity: 0;
+  animation: ring 1.6s ease-out 0.7s 2;
+}
+@keyframes focusIn { from { opacity: 0; transform: scale(1.07); } to { opacity: 1; transform: none; } }
+@keyframes ring { 0% { opacity: 0.8; transform: scale(0.98); } 100% { opacity: 0; transform: scale(1.06); } }
+
+.chip, .speed {
+  position: absolute; top: 14px; z-index: 4;
+  display: inline-flex; align-items: center; gap: 10px;
+  background: rgba(11, 22, 48, 0.93); color: #fff;
+  border-radius: 999px; padding: 6px 16px 6px 6px;
+  font: 600 14px/1 var(--font-body);
+  box-shadow: 0 6px 20px rgba(2, 6, 20, 0.35);
+  max-width: calc(100% - 28px);
+}
+.chip { left: 14px; }
+.chip .n { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--accent); font: 700 13px/1 var(--font-display); flex: none; }
+.chip .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.speed { right: 14px; padding: 8px 16px 8px 12px; gap: 9px; }
+.speed svg { width: 18px; height: 18px; fill: var(--accent-hi); flex: none; }
+.speed b { color: var(--accent-hi); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* prompt card */
+.card {
+  z-index: 6;
+  background: rgba(11, 20, 44, 0.95);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 14px 16px 14px;
+  display: grid; gap: 10px;
+  box-shadow: 0 18px 50px rgba(2, 6, 20, 0.55);
+}
+.stage-wrap[data-mode='overlay'] .card { position: absolute; left: 50%; transform: translateX(-50%); width: min(700px, calc(100% - 32px)); }
+.stage-wrap[data-mode='overlay'] .card.top { top: 14px; animation: cardTop 0.45s var(--ease) 0.15s both; }
+.stage-wrap[data-mode='overlay'] .card.bottom { bottom: 14px; animation: cardBottom 0.45s var(--ease) 0.15s both; }
+.stage-wrap[data-mode='stack'] .card { animation: cardStack 0.4s var(--ease) both; }
+@keyframes cardTop { from { opacity: 0; transform: translate(-50%, -12px); } to { opacity: 1; transform: translate(-50%, 0); } }
+@keyframes cardBottom { from { opacity: 0; transform: translate(-50%, 12px); } to { opacity: 1; transform: translate(-50%, 0); } }
+@keyframes cardStack { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.card-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; }
+.tag { font: 500 11.5px/1 var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--focus); }
+.card-title { font: 600 15px/1.3 var(--font-display); color: var(--text); min-width: 0; }
+.msg {
+  white-space: pre-wrap; overflow-wrap: anywhere;
+  font-size: clamp(14px, 0.9vw + 8px, 16.5px); line-height: 1.5;
+  padding: 10px 14px; max-height: min(38svh, 320px); overflow: auto;
+}
+.msg.prompt { background: var(--bubble); color: var(--bubble-ink); border-radius: 14px 14px 4px 14px; }
+.msg.reply { background: var(--ink-2); color: var(--text); border: 1px solid var(--line); border-radius: 14px 14px 14px 4px; display: grid; gap: 2px; white-space: normal; }
+.msg.reply strong { font: 600 16px/1.3 var(--font-display); }
+.msg.reply span { color: var(--text-dim); }
+.card-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 14px; }
+.primary {
+  display: inline-flex; align-items: center; gap: 9px;
+  background: var(--accent); border: 0; border-radius: 10px;
+  padding: 10px 20px 10px 18px; color: #fff; font-weight: 600; font-size: 15px;
+  box-shadow: 0 6px 18px rgba(91, 124, 255, 0.35);
+  transition: background 0.15s, transform 0.15s;
+}
+.primary:hover { background: #7390ff; }
+.primary:active { transform: translateY(1px); }
+.primary svg { width: 14px; height: 14px; fill: currentColor; }
+.help { color: var(--text-dim); font-size: 13.5px; }
+.help kbd, .hint kbd { font: 500 11.5px/1 var(--font-mono); background: var(--ink-2); border: 1px solid var(--line); border-radius: 5px; padding: 2px 6px; color: var(--text); }
+.hint { margin-left: auto; color: var(--text-dim); font-size: 12.5px; }
+
+/* intro / outro */
+.intro, .outro {
+  position: absolute; inset: 0; z-index: 8; color: #fff;
+  display: grid; align-content: center; justify-items: start; gap: 10px;
+  padding: clamp(20px, 7%, 64px);
+  background:
+    radial-gradient(60% 70% at 85% 15%, rgba(91, 124, 255, 0.42), transparent 70%),
+    radial-gradient(40% 50% at 8% 100%, rgba(60, 90, 220, 0.3), transparent 70%),
+    linear-gradient(135deg, #0b1630, #162c62);
+}
+.eyebrow { font: 500 12px/1 var(--font-mono); letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent-hi); border: 1px solid rgba(155, 176, 255, 0.5); border-radius: 999px; padding: 8px 14px; }
+.intro h2, .outro h2 { margin: 6px 0 0; font: 700 clamp(30px, 6vw, 70px)/1.02 var(--font-display); letter-spacing: -0.02em; text-wrap: balance; }
+.intro .sub, .outro .sub { margin: 0; font-size: clamp(15px, 2.1vw, 23px); color: #c3cff0; }
+.intro .rule { width: 72px; height: 4px; border-radius: 2px; background: var(--accent); margin: 8px 0 4px; }
+.intro .how { margin: 0 0 8px; max-width: 46ch; color: #a8b6e0; font-size: clamp(13.5px, 1.5vw, 16px); }
+.intro .primary, .outro .primary { font-size: 16px; padding: 12px 22px 12px 20px; }
+.intro .primary[disabled] { opacity: 0.6; cursor: progress; }
+.err { color: #ffb4a8; font-size: 14px; margin: 0; }
+
+/* controls */
+.controls { display: flex; align-items: flex-start; gap: 14px; }
+.round {
+  flex: none; width: 40px; height: 40px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--ink-1); border: 1px solid var(--line);
+}
+.round:hover { background: var(--ink-2); }
+.round svg { width: 16px; height: 16px; fill: var(--text); }
+.rail { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; list-style: none; margin: 0; padding: 0; }
+.rail button { all: unset; box-sizing: border-box; display: grid; gap: 7px; width: 100%; cursor: pointer; padding: 2px 0 9px; color: var(--text-dim); }
+.rail button:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; border-radius: 4px; }
+.rail .lab { display: flex; align-items: baseline; gap: 7px; min-width: 0; font-size: 13px; line-height: 1.2; }
+.rail .rn { font: 500 12px/1 var(--font-mono); color: var(--text-dim); flex: none; }
+.rail .rt { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rail .bar { display: block; height: 4px; border-radius: 2px; background: var(--ink-2); overflow: hidden; }
+.rail .bar i { display: block; height: 100%; width: 0; background: var(--accent); border-radius: 2px; }
+.rail li.cur button { color: var(--text); }
+.rail li.cur .rn { color: var(--focus); }
+.rail li.done .rn { color: var(--accent-hi); }
+.rail button:hover .rt { color: var(--text); }
+.clock { flex: none; padding-top: 11px; font: 400 12.5px/1 var(--font-mono); color: var(--text-dim); font-variant-numeric: tabular-nums; }
+
+@media (max-width: 640px), (hover: none) {
+  .hint { display: none; }
+}
+@media (max-width: 640px) {
+  .rail .rt { display: none; }
+  .clock { display: none; }
+  .brand h1 { font-size: 19px; }
+  .chip .t { max-width: 46vw; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur: 0s; }
+  .focus, .focus::after, .card { animation: none !important; }
+  .zoomer { transition: none; }
+}
+</style>
+
+<main class="shell">
+  <header class="top">
+    <div class="brand">
+      <h1>Bottlenecks Demo 01</h1>
+      <p>B1 Async Quote Lab, quote requests in Microsoft Teams</p>
+    </div>
+    <div class="tools">
+      <label class="switch"><input type="checkbox" id="stopReplies" checked><span class="track"></span><span>Pause on replies</span></label>
+      <button class="ghost" id="restart" type="button">Restart</button>
+    </div>
+  </header>
+
+  <section aria-label="Walkthrough player">
+    <div class="stage-wrap" id="wrap" data-mode="overlay">
+      <div class="stage" id="stage">
+        <div class="zoomer" id="zoomer">
+          <video id="v" muted playsinline preload="auto" disablepictureinpicture tabindex="-1"></video>
+          <div class="focus" id="focus" hidden></div>
+        </div>
+        <div class="chip" id="chip" hidden><span class="n" id="chipN">1</span><span class="t" id="chipT"></span></div>
+        <div class="speed" id="speed" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5.5v13L11.5 12zM12.5 5.5v13L21 12z"/></svg>
+          <span id="speedLab"></span><b id="speedX"></b>
+        </div>
+
+        <div class="intro" id="intro">
+          <span class="eyebrow">Live demo, 6 prompts</span>
+          <h2>B1 Async Quote Lab</h2>
+          <p class="sub">Quote requests in Microsoft Teams</p>
+          <div class="rule"></div>
+          <p class="how">The video stops at each prompt you send. It zooms in, outlines the prompt and shows it as text. Press Resume to send it and carry on.</p>
+          <button class="primary" id="start" type="button" disabled>
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 1.5v13L14 8z"/></svg><span id="startLab">Loading video</span>
+          </button>
+          <p class="err" id="err" hidden></p>
+        </div>
+        <div class="outro" id="outro" hidden>
+          <span class="eyebrow">End of demo</span>
+          <h2>All six prompts shown</h2>
+          <p class="sub">Replay from the start, or pick any step below.</p>
+          <button class="primary" id="replay" type="button">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 1.5v13L14 8z"/></svg>Replay walkthrough
+          </button>
+        </div>
+      </div>
+
+      <div class="card bottom" id="card" hidden role="group" aria-live="polite" aria-label="Current step">
+        <div class="card-head"><span class="tag" id="cardTag"></span><span class="card-title" id="cardTitle"></span></div>
+        <div class="msg prompt" id="cardMsg"></div>
+        <div class="card-actions">
+          <button class="primary" id="resume" type="button"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 1.5v13L14 8z"/></svg>Resume</button>
+          <span class="help" id="cardHelp"></span>
+          <span class="hint"><kbd>Space</kbd> or <kbd>Enter</kbd> to resume</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls" style="margin-top:14px">
+      <button class="round" id="play" type="button" aria-label="Play"><svg viewBox="0 0 16 16" id="playIcon" aria-hidden="true"><path d="M3 1.5v13L14 8z"/></svg></button>
+      <ol class="rail" id="rail"></ol>
+      <span class="clock" id="clock">0:00 / 0:00</span>
+    </div>
+  </section>
+</main>
+
+<script>
+(function () {
+  var VIDEO_URL = 'base.mp4';
+  var CUES = {
+ "duration": 92.433,
+ "fps": 30,
+ "width": 1976,
+ "height": 1112,
+ "steps": [
+  {
+   "n": 1,
+   "title": "Check access (read-only)",
+   "prompt": "Can you check whether I have access to create quotes?\nPlease don\u2019t create anything yet.",
+   "promptAt": 3.95,
+   "promptRect": [
+    0.18219,
+    0.85432,
+    0.24393,
+    0.06205
+   ],
+   "replyAt": 9.4833,
+   "replyRect": [
+    0.17409,
+    0.67446,
+    0.5668,
+    0.21313
+   ],
+   "replyTitle": "Access confirmed",
+   "replyNote": "The Ping connection is active and verified. Nothing was created."
+  },
+  {
+   "n": 2,
+   "title": "Create a quote with user approval",
+   "prompt": "Please create a quote for Canada with:\n\n- 4 \u00d7 QO120\n- 1 \u00d7 QO220\n- 1 \u00d7 QO115\n\nUse reference QUOTE-20261029-01.\nI approve creating this quote.\n\nShow me the quote number, total and status.",
+   "promptAt": 17.15,
+   "promptRect": [
+    0.18269,
+    0.66007,
+    0.20344,
+    0.25629
+   ],
+   "replyAt": 28.3167,
+   "replyRect": [
+    0.17409,
+    0.59712,
+    0.35172,
+    0.29047
+   ],
+   "replyTitle": "Quote created",
+   "replyNote": "Quote UQ-F8C085806A75, total CAD 190, status Completed."
+  },
+  {
+   "n": 3,
+   "title": "View the saved quote (read-only)",
+   "prompt": "Show me the saved quote for request B3U-236cdc556be57807636cf8c085806a75.\nI only want to view it\u2014don\u2019t create another quote.",
+   "promptAt": 39.65,
+   "promptRect": [
+    0.18269,
+    0.85432,
+    0.35678,
+    0.06115
+   ],
+   "replyAt": 44.9167,
+   "replyRect": [
+    0.17409,
+    0.4964,
+    0.39221,
+    0.39119
+   ],
+   "replyTitle": "Saved quote returned",
+   "replyNote": "A read-only retrieval of the existing quote. No new quote was created."
+  },
+  {
+   "n": 4,
+   "title": "Check by reference (error returned)",
+   "prompt": "Please check my quote request with reference QUOTE-20261029-01. If it has already completed, return the existing quote.\nDo not create a duplicate.",
+   "promptAt": 57.7167,
+   "promptRect": [
+    0.18269,
+    0.85432,
+    0.5253,
+    0.06115
+   ],
+   "replyAt": 61.55,
+   "replyRect": [
+    0.17409,
+    0.68345,
+    0.5668,
+    0.20414
+   ],
+   "replyTitle": "Error returned",
+   "replyNote": "The lookup by reference failed with ConnectorRequestFailure."
+  },
+  {
+   "n": 5,
+   "title": "Re-check access after the error",
+   "prompt": "Can I still create quotes?\nPlease check my current access without creating anything.",
+   "promptAt": 72.1833,
+   "promptRect": [
+    0.18219,
+    0.85432,
+    0.25759,
+    0.06205
+   ],
+   "replyAt": 76.6167,
+   "replyRect": [
+    0.17409,
+    0.63669,
+    0.5668,
+    0.2509
+   ],
+   "replyTitle": "Access still active",
+   "replyNote": "The connection is active and verified. No quote was created."
+  },
+  {
+   "n": 6,
+   "title": "Guided sign-in check",
+   "prompt": "I\u2019m unable to create a quote.\nPlease check my access and guide me through any required sign-in.\nDon\u2019t submit a quote until access is restored.",
+   "promptAt": 82.0167,
+   "promptRect": [
+    0.18269,
+    0.83004,
+    0.29757,
+    0.08543
+   ],
+   "replyAt": 86.2833,
+   "replyRect": [
+    0.17409,
+    0.57554,
+    0.5668,
+    0.31205
+   ],
+   "replyTitle": "No sign-in needed",
+   "replyNote": "Access is active, so no reconnection is required. No quote was submitted."
+  }
+ ],
+ "speed": [
+  [
+   0.26,
+   1.22,
+   "Fast forward",
+   "3\u00d7"
+  ],
+  [
+   4.31,
+   8.25,
+   "Waiting for response",
+   "4.5\u00d7"
+  ],
+  [
+   17.72,
+   20.86,
+   "Waiting for response",
+   "3.5\u00d7"
+  ],
+  [
+   40.73,
+   43.16,
+   "Waiting for response",
+   "2.5\u00d7"
+  ],
+  [
+   73.15,
+   75.4,
+   "Waiting for response",
+   "2.5\u00d7"
+  ],
+  [
+   82.6,
+   85.46,
+   "Waiting for response",
+   "3\u00d7"
+  ]
+ ]
+};
+  var S = CUES.steps, N = S.length, DUR = CUES.duration;
+  var SHORT = ['Check access', 'Create quote', 'View saved quote', 'Check by reference', 'Re-check access', 'Sign-in check'];
+  var $ = function (id) { return document.getElementById(id); };
+  var v = $('v'), stage = $('stage'), zoomer = $('zoomer'), focusEl = $('focus'), card = $('card'), wrap = $('wrap');
+  var intro = $('intro'), outro = $('outro'), chip = $('chip'), speed = $('speed');
+  var resumeBtn = $('resume'), startBtn = $('start'), playBtn = $('play'), rail = $('rail');
+  var stopReplies = true;
+  var stops = [];
+  S.forEach(function (s, i) {
+    stops.push({ kind: 'prompt', i: i, t: s.promptAt });
+    stops.push({ kind: 'reply', i: i, t: s.replyAt });
+  });
+  stops.sort(function (a, b) { return a.t - b.t; });
+
+  var mode = 'idle';      // idle | playing | paused | stopped | ended
+  var cur = -1;           // index of the stop being shown
+  var nextIdx = 0;        // next stop to reach while playing
+  var gotoToken = 0;
+
+  var PLAY = 'M3 1.5v13L14 8z', PAUSE = 'M3 1.5h3.5v13H3zM9.5 1.5H13v13H9.5z';
+  function setPlayIcon(playing) {
+    $('playIcon').innerHTML = '<path d="' + (playing ? PAUSE : PLAY) + '"/>';
+    playBtn.setAttribute('aria-label', playing ? 'Pause' : 'Play');
+  }
+  function fmt(t) { t = Math.max(0, t); var m = Math.floor(t / 60), s = Math.floor(t % 60); return m + ':' + (s < 10 ? '0' : '') + s; }
+  function clamp(x, a, b) { return Math.min(b, Math.max(a, x)); }
+
+  /* rail */
+  S.forEach(function (s, i) {
+    var li = document.createElement('li');
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.setAttribute('aria-label', 'Go to prompt ' + (i + 1) + ': ' + s.title);
+    b.innerHTML = '<span class="lab"><span class="rn">' + (i + 1) + '</span><span class="rt"></span></span><span class="bar"><i></i></span>';
+    b.querySelector('.rt').textContent = SHORT[i] || s.title;
+    b.addEventListener('click', function () { goStop(promptStopIndex(i)); });
+    li.appendChild(b); rail.appendChild(li);
+  });
+  var railItems = rail.querySelectorAll('li');
+  function promptStopIndex(i) {
+    for (var k = 0; k < stops.length; k++) if (stops[k].kind === 'prompt' && stops[k].i === i) return k;
+    return 0;
+  }
+  function stepAt(t) {
+    var k = 0;
+    for (var i = 0; i < N; i++) if (S[i].promptAt <= t + 0.02) k = i;
+    return k;
+  }
+
+  /* layout: choose overlay or stacked card */
+  function updateMode() {
+    var m = stage.clientWidth >= 900 ? 'overlay' : 'stack';
+    wrap.setAttribute('data-mode', m);
+    return m;
+  }
+
+  /* zoom + highlight */
+  function layoutFocus(rect) {
+    var m = updateMode();
+    var SW = stage.clientWidth, SH = stage.clientHeight;
+    var rx = rect[0] * SW, ry = rect[1] * SH, rw = rect[2] * SW, rh = rect[3] * SH;
+    var ccy = ry + rh / 2, cx = rx + rw / 2;
+    var pos = 'bottom';
+    if (m === 'overlay') pos = ccy / SH > 0.5 ? 'top' : 'bottom';
+    card.className = 'card ' + pos;
+    var band = m === 'overlay' ? card.offsetHeight + 14 : 0;
+    var freeTop = (m === 'overlay' && pos === 'top') ? band + 12 : 12;
+    var freeBot = (m === 'overlay' && pos === 'bottom') ? SH - band - 12 : SH - 12;
+    var freeH = Math.max(60, freeBot - freeTop);
+    var Z = clamp(Math.min(0.8 * SW / rw, freeH / rh), 1.12, 2.15);
+    var tx = SW / 2 - Z * cx, ty = (freeTop + freeBot) / 2 - Z * ccy;
+    tx = clamp(tx, SW - Z * SW, 0);
+    ty = clamp(ty, SH - Z * SH, 0);
+    stage.style.setProperty('--z', Z.toFixed(3));
+    zoomer.style.transform = 'translate(' + tx.toFixed(1) + 'px,' + ty.toFixed(1) + 'px) scale(' + Z.toFixed(3) + ')';
+    focusEl.style.left = (rect[0] * 100) + '%';
+    focusEl.style.top = (rect[1] * 100) + '%';
+    focusEl.style.width = (rect[2] * 100) + '%';
+    focusEl.style.height = (rect[3] * 100) + '%';
+  }
+  function currentRect() {
+    if (cur < 0) return null;
+    var st = stops[cur], s = S[st.i];
+    return st.kind === 'prompt' ? s.promptRect : s.replyRect;
+  }
+
+  function showStop(st) {
+    var s = S[st.i], isPrompt = st.kind === 'prompt';
+    $('cardTag').textContent = isPrompt ? 'Prompt ' + (st.i + 1) + ' of ' + N : 'Reply to prompt ' + (st.i + 1);
+    $('cardTitle').textContent = s.title;
+    var msg = $('cardMsg');
+    msg.className = 'msg ' + (isPrompt ? 'prompt' : 'reply');
+    msg.textContent = '';
+    if (isPrompt) { msg.textContent = s.prompt; }
+    else {
+      var b = document.createElement('strong'); b.textContent = s.replyTitle;
+      var p = document.createElement('span'); p.textContent = s.replyNote;
+      msg.appendChild(b); msg.appendChild(p);
+    }
+    $('cardHelp').textContent = isPrompt ? 'Resume sends this prompt.' :
+      (st.i === N - 1 ? 'Resume plays the rest of the clip.' : 'Resume moves on to the next prompt.');
+    chip.hidden = true; speed.hidden = true;
+    card.hidden = false;
+    layoutFocus(isPrompt ? s.promptRect : s.replyRect);
+    focusEl.hidden = true; void focusEl.offsetWidth; focusEl.hidden = false;   // restart the draw-in animation
+    try { resumeBtn.focus({ preventScroll: true }); } catch (e) { resumeBtn.focus(); }
+    if (wrap.getAttribute('data-mode') === 'stack') {
+      try { card.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {}
+    }
+    updateUI();
+  }
+  function leaveStop() {
+    card.hidden = true; focusEl.hidden = true;
+    zoomer.style.transform = '';
+    stage.style.setProperty('--z', '1');
+  }
+
+  function canSeek() { try { return v.seekable.length > 0 && v.seekable.end(v.seekable.length - 1) > 0; } catch (e) { return false; } }
+
+  /* transport */
+  function arrive(idx) {
+    mode = 'stopped'; cur = idx; nextIdx = idx + 1;
+    v.pause();
+    if (canSeek() && Math.abs(v.currentTime - stops[idx].t) > 0.004) { try { v.currentTime = stops[idx].t; } catch (e) {} }
+    setPlayIcon(false);
+    showStop(stops[idx]);
+  }
+  function play() {
+    mode = 'playing'; setPlayIcon(true);
+    var p = v.play();
+    if (p && p.catch) p.catch(function () { mode = 'paused'; setPlayIcon(false); });
+  }
+  function resume() {
+    if (mode === 'idle') { intro.hidden = true; outro.hidden = true; try { v.currentTime = 0; } catch (e) {} cur = -1; nextIdx = 0; play(); return; }
+    if (mode === 'ended') { restart(true); return; }
+    if (mode === 'stopped') { leaveStop(); play(); return; }
+    if (mode === 'paused') { play(); }
+  }
+  function pause() { if (mode === 'playing') { mode = 'paused'; v.pause(); setPlayIcon(false); } }
+  function restart(autoplay) {
+    gotoToken++;
+    leaveStop(); outro.hidden = true; v.pause();
+    try { v.currentTime = 0; } catch (e) {}
+    cur = -1; nextIdx = 0; mode = 'idle'; setPlayIcon(false);
+    if (autoplay) { intro.hidden = true; play(); } else { intro.hidden = false; }
+    updateUI();
+  }
+  function validStop(idx) {
+    while (idx < stops.length && stops[idx].kind === 'reply' && !stopReplies) idx++;
+    return idx;
+  }
+  function goStop(idx) {
+    if (idx < 0 || idx >= stops.length) return;
+    var token = ++gotoToken;
+    intro.hidden = true; outro.hidden = true;
+    leaveStop(); v.pause();
+    mode = 'stopped'; cur = idx; nextIdx = idx + 1; setPlayIcon(false);
+    var st = stops[idx], shown = false;
+    function show() { if (shown || token !== gotoToken) return; shown = true; showStop(st); }
+    if (Math.abs(v.currentTime - st.t) < 0.002) { show(); return; }
+    v.addEventListener('seeked', show, { once: true });
+    try { v.currentTime = st.t; } catch (e) {}
+    setTimeout(show, 700);
+  }
+  function prevPrompt() {
+    var t = v.currentTime, target = 0;
+    for (var k = 0; k < stops.length; k++) if (stops[k].kind === 'prompt' && stops[k].t < t - 0.4) target = k;
+    goStop(target);
+  }
+
+  /* per-frame UI */
+  function speedAt(t) {
+    var a = CUES.speed;
+    for (var i = 0; i < a.length; i++) if (t >= a[i][0] && t <= a[i][1]) return a[i];
+    return null;
+  }
+  function updateUI() {
+    var t = v.currentTime || 0;
+    var k = stepAt(t);
+    for (var i = 0; i < N; i++) {
+      var start = i === 0 ? 0 : S[i].promptAt;
+      var end = i === N - 1 ? DUR : S[i + 1].promptAt;
+      var f = (mode === 'idle') ? 0 : clamp((t - start) / (end - start), 0, 1);
+      railItems[i].querySelector('i').style.width = (f * 100).toFixed(1) + '%';
+      railItems[i].className = (mode !== 'idle' && f >= 1) ? 'done' : ((mode !== 'idle' && i === k) ? 'cur' : '');
+    }
+    $('clock').textContent = fmt(t) + ' / ' + fmt(DUR);
+    var running = mode === 'playing' || mode === 'paused';
+    chip.hidden = !running;
+    if (running) { $('chipN').textContent = k + 1; $('chipT').textContent = S[k].title; }
+    var sp = mode === 'playing' ? speedAt(t) : null;
+    speed.hidden = !sp;
+    if (sp) { $('speedLab').textContent = sp[2]; $('speedX').textContent = sp[3]; }
+  }
+  function tick() {
+    if (mode === 'playing') {
+      var idx = validStop(nextIdx);
+      if (idx !== nextIdx) nextIdx = idx;
+      if (nextIdx < stops.length && v.currentTime >= stops[nextIdx].t - 0.001) arrive(nextIdx);
+      else updateUI();
+    } else if (mode === 'paused') { updateUI(); }
+    requestAnimationFrame(tick);
+  }
+
+  /* events */
+  startBtn.addEventListener('click', resume);
+  resumeBtn.addEventListener('click', resume);
+  $('replay').addEventListener('click', function () { restart(true); });
+  $('restart').addEventListener('click', function () { restart(false); });
+  playBtn.addEventListener('click', function () { if (mode === 'playing') pause(); else resume(); });
+  $('stopReplies').addEventListener('change', function (e) {
+    stopReplies = e.target.checked;
+    e.target.blur();   // keep Space and Enter bound to the player, not the switch
+    if (mode === 'stopped' && !card.hidden) { try { resumeBtn.focus({ preventScroll: true }); } catch (err) { resumeBtn.focus(); } }
+  });
+  v.addEventListener('ended', function () {
+    mode = 'ended'; leaveStop(); chip.hidden = true; speed.hidden = true; setPlayIcon(false); outro.hidden = false;
+    for (var i = 0; i < N; i++) { railItems[i].className = 'done'; railItems[i].querySelector('i').style.width = '100%'; }
+  });
+  function ready() { startBtn.disabled = false; $('startLab').textContent = 'Start walkthrough'; }
+  v.addEventListener('loadeddata', ready);
+  var triedDirect = false;
+  function useDirect() { triedDirect = true; v.src = VIDEO_URL; v.load(); }
+  v.addEventListener('error', function () {
+    if (!triedDirect && /^blob:/.test(v.currentSrc || v.src)) { useDirect(); return; }
+    var e = $('err'); e.hidden = false;
+    e.textContent = 'This browser could not load the video. Try a current version of Chrome, Edge, Safari or Firefox.';
+    $('startLab').textContent = 'Video unavailable';
+  });
+  /* The host serves files without byte-range support, which makes a plain video src unseekable.
+     Loading the file into memory first gives a source the player can pause, jump and rewind on. */
+  function loadVideo() {
+    $('startLab').textContent = 'Loading video 0%';
+    fetch(VIDEO_URL).then(function (resp) {
+      if (!resp.ok) throw new Error('http ' + resp.status);
+      var total = +resp.headers.get('content-length') || 0;
+      if (!resp.body || !resp.body.getReader) return resp.blob();
+      var reader = resp.body.getReader(), chunks = [], got = 0;
+      function pump() {
+        return reader.read().then(function (r) {
+          if (r.done) return new Blob(chunks, { type: 'video/mp4' });
+          chunks.push(r.value); got += r.value.length;
+          if (total) $('startLab').textContent = 'Loading video ' + Math.min(100, Math.round(got / total * 100)) + '%';
+          return pump();
+        });
+      }
+      return pump();
+    }).then(function (blob) {
+      v.src = URL.createObjectURL(blob); v.load();
+    }).catch(useDirect);
+  }
+  loadVideo();
+  document.addEventListener('keydown', function (e) {
+    if (e.target && e.target.closest && e.target.closest('input,textarea')) return;
+    var onButton = e.target && e.target.closest && e.target.closest('button');
+    if ((e.code === 'Space' || e.key === 'Enter') && !onButton) {
+      e.preventDefault();
+      if (mode === 'playing') pause(); else resume();
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      if (mode === 'stopped' || mode === 'paused' || mode === 'ended') resume();
+      else if (mode === 'playing') goStop(validStop(nextIdx));
+    } else if (e.key === 'ArrowLeft' && mode !== 'idle') {
+      e.preventDefault(); prevPrompt();
+    }
+  });
+  if (window.ResizeObserver) {
+    new ResizeObserver(function () {
+      var r = currentRect();
+      if (mode === 'stopped' && r && !card.hidden) {
+        var tr = zoomer.style.transition; zoomer.style.transition = 'none';
+        layoutFocus(r);
+        void zoomer.offsetWidth; zoomer.style.transition = tr;
+      } else { updateMode(); }
+    }).observe(stage);
+  }
+  updateMode(); setPlayIcon(false); updateUI();
+  requestAnimationFrame(tick);
+})();
+</script>
+</body></html>
