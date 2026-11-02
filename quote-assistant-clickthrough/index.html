@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <link rel="icon" href="data:,">
+  <title>Quote Assistant | Interactive Demonstration</title>
+  <style>
+    :root { color-scheme: dark; --bg:#09111e; --panel:#111e30; --line:#273a53; --text:#edf4ff; --muted:#a8b9ce; --accent:#58d9f9; }
+    * { box-sizing:border-box; }
+    [hidden] { display:none!important; }
+    body { margin:0; background:var(--bg); color:var(--text); font:15px/1.5 "Segoe UI",Arial,sans-serif; }
+    button,input { font:inherit; }
+    button { cursor:pointer; min-height:42px; border:1px solid var(--line); border-radius:9px; background:#192a40; color:var(--text); padding:8px 13px; }
+    button:hover { background:#243b57; border-color:#7994b7; }
+    button:disabled { cursor:default; opacity:.45; }
+    button:focus-visible,a:focus-visible,input:focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
+    a { color:var(--accent); }
+    header { padding:20px clamp(16px,3vw,42px) 16px; display:flex; justify-content:space-between; gap:20px; align-items:center; border-bottom:1px solid var(--line); }
+    .eyebrow { margin:0 0 3px; text-transform:uppercase; letter-spacing:.15em; font-size:11px; color:var(--accent); }
+    h1 { font-size:clamp(19px,2.1vw,28px); margin:0; font-weight:650; }
+    .header-note { color:var(--muted); font-size:12px; max-width:370px; text-align:right; }
+    main { padding:20px clamp(14px,2.2vw,32px); max-width:1840px; margin:auto; }
+    .layout { display:grid; grid-template-columns:minmax(0,1fr) minmax(290px,350px); gap:20px; align-items:start; }
+    .viewer { min-width:0; }
+    .chapter-heading { display:flex; justify-content:space-between; gap:12px; margin:0 0 11px; align-items:center; }
+    #chapter { font-size:13px; color:var(--muted); }
+    #step-count { font-size:12px; background:#17283d; padding:4px 10px; border-radius:99px; white-space:nowrap; }
+    #stage { position:relative; aspect-ratio:16/9; width:100%; overflow:hidden; border:1px solid var(--line); border-radius:12px; background:#0b1324; }
+    #scene { position:absolute; inset:0; transform-origin:0 0; transition:transform .28s ease; }
+    video { position:absolute; inset:0; width:100%; height:100%; display:block; }
+    #focus { position:absolute; border:3px solid var(--accent); border-radius:5px; box-shadow:0 0 0 300vmax rgba(3,10,19,.46),0 0 18px rgba(88,217,249,.4); pointer-events:none; }
+    #overlay-label { position:absolute; left:12px; top:12px; padding:5px 10px; border:1px solid #53677c; border-radius:7px; background:rgba(6,16,30,.88); font-size:12px; z-index:2; }
+    #speed-label { position:absolute; right:12px; top:12px; padding:5px 9px; border-radius:7px; background:rgba(6,16,30,.88); color:var(--muted); font-size:11px; z-index:2; }
+    #loading { position:absolute; inset:0; display:grid; place-content:center; gap:7px; text-align:center; padding:25px; background:#0b1324; z-index:3; }
+    #loading strong { color:var(--accent); font-size:20px; }
+    .controls { display:flex; gap:9px; flex-wrap:wrap; margin:14px 0 10px; align-items:center; }
+    #resume { background:var(--accent); color:#071322; border-color:var(--accent); min-width:145px; font-weight:700; }
+    #resume:hover { background:#8ce5fa; }
+    .secondary { font-size:13px; }
+    .timeline { display:flex; gap:12px; align-items:center; }
+    #timeline { width:100%; min-width:0; accent-color:var(--accent); }
+    #clock { font:12px Consolas,monospace; color:var(--muted); white-space:nowrap; }
+    .options { display:flex; gap:18px; flex-wrap:wrap; font-size:12px; color:var(--muted); margin-top:11px; align-items:center; }
+    .options label { display:flex; gap:7px; align-items:center; }
+    input[type=checkbox] { accent-color:var(--accent); width:16px; height:16px; }
+    #notice,#error { margin:10px 0; border:1px solid #5e6680; padding:10px 12px; border-radius:8px; font-size:13px; }
+    #error { border-color:#f58c86; color:#ffd1cd; }
+    .context { border:1px solid var(--line); background:var(--panel); border-radius:12px; padding:19px; }
+    #step-title { font-size:20px; line-height:1.3; margin:4px 0 15px; }
+    .context h3 { color:var(--accent); font-size:11px; text-transform:uppercase; letter-spacing:.1em; margin:18px 0 6px; }
+    .context p { margin:0; color:#d7e3f2; font-size:14px; }
+    #prompt { font:13px/1.6 Consolas,"Courier New",monospace; white-space:pre-wrap; overflow-wrap:anywhere; margin:0; border:1px solid #34536c; border-left:3px solid var(--accent); border-radius:6px; padding:12px; background:#0b1728; max-height:290px; overflow:auto; }
+    #result { color:#bddfcb; }
+    #caution { color:#e8c88e; }
+    .context .source { color:var(--muted); font-size:11px; margin-top:17px; border-top:1px solid var(--line); padding-top:10px; }
+    .steps-heading { font-size:14px; margin:24px 0 10px; }
+    #rail { display:grid; grid-template-columns:repeat(auto-fill,minmax(205px,1fr)); gap:8px; }
+    .rail-step { text-align:left; display:flex; gap:10px; align-items:flex-start; font-size:12px; padding:11px; min-height:62px; }
+    .rail-step .number { border:1px solid #526e89; width:26px; height:26px; border-radius:99px; display:grid; place-items:center; flex-shrink:0; }
+    .rail-step small { display:block; font-size:10px; color:var(--muted); margin-top:2px; }
+    .rail-step[aria-current=step] { border-color:var(--accent); background:#173145; }
+    .rail-step[aria-current=step] .number { background:var(--accent); color:#071322; border-color:var(--accent); }
+    footer { margin-top:21px; color:var(--muted); font-size:11px; border-top:1px solid var(--line); padding-top:14px; }
+    #recap { margin-top:20px; padding:19px; background:#142a32; border:1px solid #427b80; border-radius:10px; }
+    #recap h2 { font-size:18px; margin:0 0 8px; }
+    #recap ul { padding-left:20px; margin:0; }
+    #recap p { margin:10px 0 0; font-size:13px; color:var(--muted); }
+    @media(min-width:1550px) { #prompt { font-size:15px; } .context p { font-size:15px; } }
+    @media(max-width:950px) { .layout { grid-template-columns:1fr; } .context { padding:16px; } #prompt { max-height:none; } .header-note { max-width:240px; } }
+    @media(max-width:580px) { header { align-items:flex-start; flex-direction:column; gap:7px; padding:15px; } .header-note { text-align:left; max-width:none; } main { padding:14px 10px; } #stage { border-radius:7px; } .controls { gap:6px; } button { padding:8px 10px; } #resume { min-width:125px; } #rail { grid-template-columns:1fr 1fr; gap:6px; } .rail-step { min-width:0; padding:8px; } .rail-step .number { width:22px; height:22px; } #overlay-label,#speed-label { font-size:9px; padding:3px 6px; } }
+    @media(prefers-reduced-motion:reduce) { #scene { transition:none; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div><p class="eyebrow">Public recording | identifying details redacted</p><h1>Quote Assistant: from prompt to proof</h1></div>
+    <div class="header-note">A click-through demonstration. These buttons control the recording, not the live quote application.</div>
+  </header>
+  <main>
+    <div class="layout">
+      <section class="viewer" aria-label="Interactive video walkthrough">
+        <div class="chapter-heading"><span id="chapter">Preparing the walkthrough</span><span id="step-count"></span></div>
+        <div id="stage">
+          <div id="scene"><video id="video" preload="auto" playsinline></video><div id="focus" hidden></div></div>
+          <span id="overlay-label" hidden></span><span id="speed-label" hidden></span>
+          <div id="loading"><strong>Loading your demonstration</strong><span id="load-status">The video stays on this computer. No external services are used.</span></div>
+        </div>
+        <div class="controls">
+          <button id="back" disabled>Back</button>
+          <button id="resume" disabled>Resume</button>
+          <button id="next" disabled>Next step</button>
+          <button id="restart" class="secondary" disabled>Restart</button>
+          <button id="fullscreen" class="secondary">Fullscreen</button>
+        </div>
+        <div class="timeline"><input id="timeline" type="range" min="0" max="1" step="0.001" value="0" aria-label="Video position" disabled><span id="clock">00:00 / 00:00</span></div>
+        <div class="options">
+          <label><input id="focus-toggle" type="checkbox" checked>Zoom and highlight</label>
+          <label><input id="replies-toggle" type="checkbox" checked>Pause on recorded results</label>
+          <label><input id="auto-toggle" type="checkbox" checked>Click-through mode</label>
+          <button id="choose-file" class="secondary">Choose video file</button>
+          <input id="file" type="file" accept="video/mp4" hidden>
+        </div>
+        <div id="notice" hidden></div>
+        <div id="error" role="alert" hidden></div>
+      </section>
+      <aside class="context" aria-label="Purpose, prompt, and expected outcome">
+        <p class="eyebrow" id="phase">Click-through demo</p>
+        <h2 id="step-title">Read the prompt, then continue</h2>
+        <h3 id="prompt-heading">Recorded input</h3><pre id="prompt"></pre>
+        <h3>What we are trying to do</h3><p id="purpose"></p>
+        <h3>Expected output</h3><p id="expected"></p>
+        <div id="result-block" hidden><h3>Recorded result / next action</h3><p id="result"></p></div>
+        <div id="caution-block" hidden><h3>Important boundary</h3><p id="caution"></p></div>
+        <p class="source">Context adapted from the supplied LAB-DEMO-GUIDE.md. Prompts and pause points were checked against the recording. This is not a live application.</p>
+      </aside>
+    </div>
+    <h2 class="steps-heading">Choose a step</h2><nav id="rail" aria-label="Demonstration steps"></nav>
+    <section id="recap" hidden>
+      <h2>Walkthrough complete</h2>
+      <ul><li>Accept background work, then retrieve its saved result.</li><li>Keep personal execution distinct from managed processing.</li><li>Validate and repair inputs before creation, then inspect recorded evidence.</li></ul>
+      <p>Training prices and identities are not commercial-license proof. Skipped tests and native audit verification are not presented as completed.</p>
+    </section>
+    <footer>Use Resume to play the recorded action and Next step to jump to the next input. Space/Enter pauses or resumes; Left/Right moves between steps. Keep this HTML and its MP4 together. Identifying account fields are covered in this public copy. Sign-in entry and browser chrome were removed; errors and confirmations were retained.</footer>
+  </main>
+  <script>
+    "use strict";
+    const CONFIG = {"title": "Quote Assistant: from prompt to proof", "video": "quote-demo-public.mp4", "width": 1920, "height": 1080, "fps": 30, "duration": 543.5333333333333, "steps": [{"title": "Start background work", "chapter": "Background work", "source": 1, "sourceFrame": 135, "sourceRect": [615, 1395, 1390, 91], "prompt": "Prepare a new sample quote using the slower background option. Confirm when it starts, save it so I can find it in a new chat, and notify me when it's ready.", "purpose": "Accept a slow quote request without keeping the initial chat action waiting for completion.", "expected": "A saved reference and immediate acceptance; processing continues separately.", "result": "The recording returns SAMPLE-20261101-01 as Accepted and saved. Acceptance is not completion.", "kind": "prompt", "caution": "", "replyFrame": 1200, "replyRect": [600, 1020, 1400, 455]}, {"title": "Check saved progress", "chapter": "Background work", "source": 1, "sourceFrame": 1920, "sourceRect": [615, 1420, 1390, 75], "prompt": "Show me my latest saved background quote, its status, quote number and total. Don't create another quote.", "purpose": "Read the existing background job without starting another calculation.", "expected": "Current status and stage. No completed amount should be invented while work is still running.", "result": "The saved request is Running at product validation; its quote number and total are not available yet.", "kind": "prompt", "caution": "", "replyFrame": 2400, "replyRect": [600, 1015, 1430, 500]}, {"title": "Find today's completed work", "chapter": "Background work", "source": 1, "sourceFrame": 3270, "sourceRect": [615, 1488, 1390, 54], "prompt": "Show me the background quotes I created today.", "purpose": "Retrieve saved results after the asynchronous work and its notifications finish.", "expected": "Existing completed requests and their totals, without another submission.", "result": "Two separate references are returned, each for USD 291. Different request IDs are not proof that the first prompt created a duplicate.", "kind": "prompt", "caution": "", "replyFrame": 3600, "replyRect": [600, 1020, 1430, 425]}, {"title": "Retrieve saved history", "chapter": "Background work", "source": 2, "sourceFrame": 465, "sourceRect": [1565, 1297, 455, 68], "prompt": "Show me my saved background quotes.", "purpose": "Find persistent work instead of depending on the assistant's conversation memory.", "expected": "A read-only list of saved requests and their individual statuses.", "result": "The existing Teams thread returns 12 recent requests, including historical validation and tracking errors.", "kind": "prompt", "caution": "This lookup is in the existing conversation; it does not demonstrate recovery in a genuinely new conversation.", "replyFrame": 720, "replyRect": [600, 1040, 1400, 460]}, {"title": "Check personal access", "chapter": "Personal application access", "source": 2, "sourceFrame": 765, "sourceRect": [1380, 1230, 640, 72], "prompt": "Check if my account can create quotes. Don't create one yet.", "purpose": "Check the individual's own application connection before authorizing a quote.", "expected": "An access result or a normal connection/consent request; no quote creation.", "result": "The assistant asks for a connection. A stale connection must be repaired rather than replaced by a shared executor.", "kind": "prompt", "caution": "", "replyFrame": 960, "replyRect": [600, 1110, 830, 365]}, {"title": "Repair the personal connection", "chapter": "Personal application access", "source": 2, "sourceFrame": 1920, "sourceRect": [460, 335, 1580, 900], "prompt": "Review the personal User Quotes connection, sign in with your own account, then return to the chat and Retry.", "purpose": "Restore the same individual's application access through the normal connection screens.", "expected": "The personal connection becomes Connected; Retry completes the original access check.", "result": "The recording shows the repaired connection. The later access reply explicitly says no quote was created.", "kind": "action", "caution": "The sign-in entry span was removed for privacy. Opening the connection manager alone does not prove access.", "replyFrame": 3120, "replyRect": [1400, 490, 750, 310]}, {"title": "Create a personal quote", "chapter": "Personal application access", "source": 2, "sourceFrame": 4260, "sourceRect": [615, 1418, 1395, 76], "prompt": "Create a quote for Canada with 4 QO120, 1 QO220 and 1 QO115 using my account. Use reference MYQUOTE-1101-2224. I approve creating it.", "purpose": "Create the explicitly approved, supported Canada basket using the individual's mapped account.", "expected": "One completed personal quote for CAD 190, with the requester and individual executor identified.", "result": "UQ-6ED741C2FFD7 completes for CAD 190 under MYQUOTE-1101-2224.", "kind": "prompt", "caution": "Training application and configured prices, not customer pricing or commercial-license proof.", "replyFrame": 4800, "replyRect": [635, 780, 940, 350]}, {"title": "Retrieve the same personal quote", "chapter": "Personal application access", "source": 2, "sourceFrame": 5340, "sourceRect": [615, 1488, 1395, 57], "prompt": "Show my latest quote, including its items and total.", "purpose": "Verify continuity by retrieving the original personal quote, not recalculating it.", "expected": "The same quote number, QO120 x4, QO220 x1, QO115 x1, and CAD 190.", "result": "The returned number and basket match. The repeated reply text refers to the same quote, not a second quote.", "kind": "prompt", "caution": "Training application and configured prices, not customer pricing or commercial-license proof.", "replyFrame": 5760, "replyRect": [600, 865, 1420, 430]}, {"title": "Start a tracked managed quote", "chapter": "Managed tracking", "source": 2, "sourceFrame": 6525, "sourceRect": [615, 1395, 1395, 92], "prompt": "Create a sample quote with end-to-end tracking using the managed workflow. Use the slow option and reference TRACK-1101-2232. Give me the tracking number right away.", "purpose": "Link managed processing to one business tracking number and return before the slow work is complete.", "expected": "Durable acceptance and a tracking number; no premature completed quote.", "result": "The recording returns the tracking number, but also shows misleading completion-shaped JSON. A later saved result is required.", "kind": "prompt", "caution": "Known initial-response issue retained: premature completion text and the wrong quote number must not be trusted.", "replyFrame": 7200, "replyRect": [600, 975, 1420, 450]}, {"title": "Read the tracked processing stage", "chapter": "Managed tracking", "source": 2, "sourceFrame": 7605, "sourceRect": [615, 1488, 1395, 57], "prompt": "Show my latest tracked quote, including its status, total and processing history.", "purpose": "Inspect the existing tracked job and distinguish business status from evidence delivery.", "expected": "The saved current stage and recorded history; no total if the quote is still Running.", "result": "The reply shows Running at validate_products with synchronized evidence and no completed total.", "kind": "prompt", "caution": "", "replyFrame": 10080, "replyRect": [600, 1000, 1400, 455]}, {"title": "Inspect saved application evidence", "chapter": "Managed tracking", "source": 2, "sourceFrame": 9120, "sourceRect": [1340, 490, 1090, 950], "prompt": "Open the saved quote activity and inspect the tracking number, processing stages and identity mapping.", "purpose": "Cross-check chat claims against persisted application records without submitting another request.", "expected": "Matching business tracking and trace identifiers, saved stages, and distinct requester/executor roles.", "result": "The application shows the same tracking journey and its recorded processing details.", "kind": "action", "caution": "Account identifiers and identity fields are hidden in this public recording. Use the business tracking number and stage history, not hidden identity values.", "replyFrame": null, "replyRect": null}, {"title": "Retrieve the final tracked result", "chapter": "Managed tracking", "source": 2, "sourceFrame": 10260, "sourceRect": [615, 1488, 1395, 57], "prompt": "Show the final result and processing history for my latest tracked quote.", "purpose": "Obtain the final persisted result after managed processing finishes.", "expected": "The same tracking number, eight recorded stages, the saved quote, and synchronized evidence.", "result": "B4Q-6DF5411233C7 completes for USD 291. The saved history spans approximately 162 seconds, not the edited playback duration.", "kind": "prompt", "caution": "Training application and configured prices, not customer pricing or commercial-license proof.", "replyFrame": 10800, "replyRect": [600, 1010, 1400, 490]}, {"title": "Validate an unknown product", "chapter": "Validation and repair", "source": 2, "sourceFrame": 11280, "sourceRect": [615, 1212, 1395, 294], "prompt": "Create a proposal for Harbor Electrical's office upgrade in Canada.\nUse reference PARTS-1101-2243 and the fast option.\nCheck the parts first. I approve creation only after all parts pass.\n\npartNumber,quantity,description\nQO120,4,Breaker\nQO999999,1,Breaker\nQO115,1,Breaker", "purpose": "Block quote creation until every submitted product passes the current database checks.", "expected": "QO999999 is rejected, no quote is created, and a correction card appears automatically.", "result": "Revision 1 is rejected as UnknownProduct. The valid rows and request context remain saved.", "kind": "prompt", "caution": "Training application and configured prices, not customer pricing or commercial-license proof.", "replyFrame": 11760, "replyRect": [650, 620, 785, 350]}, {"title": "Correct the existing product row", "chapter": "Validation and repair", "source": 2, "sourceFrame": 12210, "sourceRect": [650, 1180, 725, 138], "prompt": "QO220", "purpose": "Replace the invalid product through its correction card while keeping the request and valid rows.", "expected": "The same request advances to revision 2, revalidates, and creates once only after all rows pass.", "result": "The corrected request completes as B11Q-A45F9CCF0593 for CAD 190 at revision 2.", "kind": "action", "caution": "Training application and configured prices, not customer pricing or commercial-license proof.", "replyFrame": 12960, "replyRect": [625, 1030, 825, 380]}, {"title": "Read the corrected proposal", "chapter": "Validation and repair", "source": 2, "sourceFrame": 13425, "sourceRect": [615, 1488, 1395, 57], "prompt": "Show my latest proposal, including its quote number, items and total.", "purpose": "Retrieve the existing corrected proposal without creating a replacement.", "expected": "The same proposal quote, revision 2, the corrected basket, and CAD 190.", "result": "The recording shows the saved proposal and its three corrected items. This video supplies the reply that was not captured in the earlier guide review.", "kind": "prompt", "caution": "Training application and configured prices, not customer pricing or commercial-license proof.", "replyFrame": 13920, "replyRect": [600, 920, 1450, 550]}, {"title": "Detect a missing CSV field", "chapter": "Validation and repair", "source": 2, "sourceFrame": 14475, "sourceRect": [615, 1212, 1395, 294], "prompt": "Create a proposal for Harbor Electrical's office upgrade in Canada.\nUse reference CSV-1101-2249 and the fast option.\nCheck this list first. I approve creation only after all rows pass.\n\npartNumber,quantity,description\nQO120,4,Breaker\n,1,Breaker\nQO115,1,Breaker", "purpose": "Reject a structurally incomplete CSV while retaining a repairable request.", "expected": "A missing part-number error, no quote creation, and a full corrected-CSV card.", "result": "InvalidCsvRow identifies the missing field. The user is asked to repair the complete CSV, not restart the request.", "kind": "prompt", "caution": "Training application and configured prices, not customer pricing or commercial-license proof.", "replyFrame": 15600, "replyRect": [650, 650, 775, 375]}, {"title": "Repair the complete CSV", "chapter": "Validation and repair", "source": 2, "sourceFrame": 15735, "sourceRect": [650, 1090, 765, 280], "prompt": "partNumber,quantity,description\nQO120,4,Breaker\nQO220,1,Breaker\nQO115,1,Breaker", "purpose": "Submit the corrected CSV through the existing request's card and retain the original error for history.", "expected": "Revision 2 passes validation before creation and completes for CAD 190.", "result": "B11Q-FDBE3018B29B completes on the same request. The original InvalidCsvRow revision remains archived.", "kind": "action", "caution": "Training application and configured prices, not customer pricing or commercial-license proof.", "replyFrame": 16800, "replyRect": [625, 680, 1450, 710]}, {"title": "Return to saved background history", "chapter": "History and monitoring", "source": 2, "sourceFrame": 17010, "sourceRect": [615, 1488, 1395, 57], "prompt": "Show my saved background quotes, with their status and totals.", "purpose": "Show that personal quotes, managed tracking and proposal work do not replace the separate saved-background history.", "expected": "Existing background records and their individual statuses and totals; no new quote.", "result": "The same 12 recent background requests are listed. TrackingFailed does not by itself prove backend quote failure.", "kind": "prompt", "caution": "This is still the existing conversation, not the unfinished fresh-conversation recovery test.", "replyFrame": 17520, "replyRect": [600, 865, 1420, 620]}, {"title": "Check the personal execution account", "chapter": "History and monitoring", "source": 2, "sourceFrame": 17955, "sourceRect": [615, 1488, 1395, 57], "prompt": "Show whose account was used to create my latest personal quote.", "purpose": "Verify who requested the personal quote and which individual account executed it.", "expected": "The same personal quote and mapped individual application user, with no shared-service fallback.", "result": "The reply identifies the mapped Ping user and application user CPQ-USER-001 for UQ-6ED741C2FFD7.", "kind": "prompt", "caution": "Personal account details are hidden. The mapped individual application account is a simulated lab grant, not proof of commercial licensing.", "replyFrame": 18480, "replyRect": [600, 1090, 1415, 315]}, {"title": "Run the monitoring query", "chapter": "History and monitoring", "source": 3, "sourceFrame": 1800, "sourceRect": [515, 470, 1890, 350], "prompt": "let demos = datatable(BusinessReference:string, RequestId:string)\n[\n    \"MYQUOTE-1101-2224\", \"B3U-6eeb2b1cc929d2d878ed6ed741c2ffd7\",\n    \"TRACK-1101-2232\",  \"f1f64f99-e383-4159-9531-6df5411233c7\",\n    \"PARTS-1101-2243\",  \"B11-1f050a89efd9181a9ad9a45f9ccf0593\",\n    \"CSV-1101-2249\",    \"B11-e5b8c2669d95acdddc84fdbe3018b29b\"\n];\ncustomEvents\n| where timestamp >= datetime(2026-11-01T00:00:00Z)\n    and timestamp \u003c datetime(2026-11-03T00:00:00Z)\n| extend\n    RequestId = tostring(customDimensions.businessRequestId),\n    EventId = tostring(customDimensions.eventId)\n| where RequestId in (demos | project RequestId)\n| summarize arg_max(timestamp, *) by RequestId, EventId\n| lookup kind=inner demos on RequestId\n| project\n    TimeIST = format_datetime(timestamp + 330m, \"yyyy-MM-dd HH:mm:ss\"),\n    BusinessReference,\n    Stage = tostring(customDimensions.stage),\n    Revision = tostring(customDimensions.revision),\n    RecordedState = coalesce(\n        tostring(customDimensions.status),\n        tostring(customDimensions.outcome)),\n    HandoverMatched = tostring(customDimensions.handoverMatched),\n    TraceId = tostring(customDimensions.traceId),\n    TraceMatches = operation_Id == tostring(customDimensions.traceId)\n| order by BusinessReference asc, TimeIST asc", "purpose": "Retrieve recorded custom events for those exact saved requests, without creating any new quote.", "expected": "Query-visible rows, deduplicated event IDs, business references, stages, revisions and matching trace IDs.", "result": "The recording shows the combined query and its results. An ingestion flag alone is not query-visibility proof.", "kind": "action", "caution": "The query reports processing metadata; quote totals must still be checked against the saved application records.", "replyFrame": 2160, "replyRect": [510, 950, 1895, 455]}, {"title": "Inspect token handover in the logs", "chapter": "History and monitoring", "source": 3, "sourceFrame": 2400, "sourceRect": [1550, 950, 770, 380], "prompt": "Inspect the personal quote rows, especially token_handover_matched and TraceMatches.", "purpose": "Compare the individual-user journey across its gateway, quote API, validation and completion events.", "expected": "The personal stages use the saved trace; HandoverMatched is true on the token-continuity event.", "result": "The recording exposes the matching handover and trace fields. Native audit and broader event/privacy review remain separate.", "kind": "action", "caution": "Training application and configured prices, not customer pricing or commercial-license proof.", "replyFrame": null, "replyRect": null}, {"title": "Inspect validation before creation", "chapter": "History and monitoring", "source": 3, "sourceFrame": 2880, "sourceRect": [745, 930, 1645, 375], "prompt": "Compare revision 1 rejection with revision 2 validation, creation request and completion in the query results.", "purpose": "Demonstrate ordering: input repair and successful validation precede quote creation.", "expected": "No creation-request event at the rejected revision; creation follows validation_passed at revision 2.", "result": "The CSV journey shows rejection, repair, validation and completion in one trace. Detailed audit checks are not represented as completed.", "kind": "action", "caution": "Training application and configured prices, not customer pricing or commercial-license proof.", "replyFrame": null, "replyRect": null}], "cues": [{"step": 0, "kind": "input", "frame": 110, "time": 3.683333333333333, "source": 1, "sourceFrame": 135, "rect": {"x": 412.688, "y": 903.734, "width": 1113.856, "height": 72.947}}, {"step": 0, "kind": "result", "frame": 637, "time": 21.25, "source": 1, "sourceFrame": 1200, "rect": {"x": 400.668, "y": 603.129, "width": 1121.87, "height": 364.734}}, {"step": 1, "kind": "input", "frame": 1044, "time": 34.81666666666667, "source": 1, "sourceFrame": 1920, "rect": {"x": 412.688, "y": 923.774, "width": 1113.856, "height": 60.121}}, {"step": 1, "kind": "result", "frame": 1423, "time": 47.45, "source": 1, "sourceFrame": 2400, "rect": {"x": 400.668, "y": 599.121, "width": 1145.91, "height": 400.806}}, {"step": 2, "kind": "input", "frame": 1901, "time": 63.38333333333333, "source": 1, "sourceFrame": 3270, "rect": {"x": 412.688, "y": 978.284, "width": 1113.856, "height": 43.287}}, {"step": 2, "kind": "result", "frame": 2180, "time": 72.68333333333334, "source": 1, "sourceFrame": 3600, "rect": {"x": 400.668, "y": 603.129, "width": 1145.91, "height": 340.685}}, {"step": 3, "kind": "input", "frame": 2634, "time": 87.81666666666666, "source": 2, "sourceFrame": 465, "rect": {"x": 1173.957, "y": 825.176, "width": 364.608, "height": 54.51}}, {"step": 3, "kind": "result", "frame": 2864, "time": 95.48333333333333, "source": 2, "sourceFrame": 720, "rect": {"x": 400.668, "y": 619.161, "width": 1121.87, "height": 368.742}}, {"step": 4, "kind": "input", "frame": 2909, "time": 96.98333333333333, "source": 2, "sourceFrame": 765, "rect": {"x": 1025.71, "y": 771.468, "width": 512.855, "height": 57.716}}, {"step": 4, "kind": "result", "frame": 3098, "time": 103.28333333333333, "source": 2, "sourceFrame": 960, "rect": {"x": 400.668, "y": 675.274, "width": 665.109, "height": 292.589}}, {"step": 5, "kind": "input", "frame": 3665, "time": 122.18333333333334, "source": 2, "sourceFrame": 1920, "rect": {"x": 288.481, "y": 54.024, "width": 1266.11, "height": 721.452}}, {"step": 5, "kind": "result", "frame": 3903, "time": 130.11666666666667, "source": 2, "sourceFrame": 3120, "rect": {"x": 1041.736, "y": 178.274, "width": 601.002, "height": 248.5}}, {"step": 6, "kind": "input", "frame": 4640, "time": 154.68333333333334, "source": 2, "sourceFrame": 4260, "rect": {"x": 412.688, "y": 922.171, "width": 1117.863, "height": 60.923}}, {"step": 6, "kind": "result", "frame": 5060, "time": 168.68333333333334, "source": 2, "sourceFrame": 4800, "rect": {"x": 428.715, "y": 410.742, "width": 753.255, "height": 280.565}}, {"step": 7, "kind": "input", "frame": 5406, "time": 180.21666666666667, "source": 2, "sourceFrame": 5340, "rect": {"x": 412.688, "y": 978.284, "width": 1117.863, "height": 45.692}}, {"step": 7, "kind": "result", "frame": 5745, "time": 191.51666666666668, "source": 2, "sourceFrame": 5760, "rect": {"x": 400.668, "y": 478.879, "width": 1137.896, "height": 344.694}}, {"step": 8, "kind": "input", "frame": 6182, "time": 206.08333333333334, "source": 2, "sourceFrame": 6525, "rect": {"x": 412.688, "y": 903.734, "width": 1117.863, "height": 73.748}}, {"step": 8, "kind": "result", "frame": 6610, "time": 220.35, "source": 2, "sourceFrame": 7200, "rect": {"x": 400.668, "y": 567.056, "width": 1137.896, "height": 360.726}}, {"step": 9, "kind": "input", "frame": 6887, "time": 229.58333333333334, "source": 2, "sourceFrame": 7605, "rect": {"x": 412.688, "y": 978.284, "width": 1117.863, "height": 45.692}}, {"step": 10, "kind": "input", "frame": 7717, "time": 257.25, "source": 2, "sourceFrame": 9120, "rect": {"x": 993.6560934891486, "y": 178.2741935483871, "width": 873.4557595993322, "height": 761.5322580645161}}, {"step": 9, "kind": "result", "frame": 8416, "time": 280.55, "source": 2, "sourceFrame": 10080, "rect": {"x": 400.668, "y": 587.097, "width": 1121.87, "height": 364.734}}, {"step": 11, "kind": "input", "frame": 8596, "time": 286.55, "source": 2, "sourceFrame": 10260, "rect": {"x": 412.688, "y": 978.284, "width": 1117.863, "height": 45.692}}, {"step": 11, "kind": "result", "frame": 8943, "time": 298.1166666666667, "source": 2, "sourceFrame": 10800, "rect": {"x": 400.668, "y": 595.113, "width": 1121.87, "height": 392.79}}, {"step": 12, "kind": "input", "frame": 9270, "time": 309.01666666666665, "source": 2, "sourceFrame": 11280, "rect": {"x": 412.688, "y": 757.039, "width": 1117.863, "height": 235.674}}, {"step": 12, "kind": "result", "frame": 9649, "time": 321.65, "source": 2, "sourceFrame": 11760, "rect": {"x": 440.735, "y": 282.484, "width": 629.048, "height": 280.565}}, {"step": 13, "kind": "input", "frame": 9811, "time": 327.05, "source": 2, "sourceFrame": 12210, "rect": {"x": 440.735, "y": 731.387, "width": 580.968, "height": 110.623}}, {"step": 13, "kind": "result", "frame": 10304, "time": 343.48333333333335, "source": 2, "sourceFrame": 12960, "rect": {"x": 420.701, "y": 611.145, "width": 661.102, "height": 304.613}}, {"step": 14, "kind": "input", "frame": 10574, "time": 352.48333333333335, "source": 2, "sourceFrame": 13425, "rect": {"x": 412.688, "y": 978.284, "width": 1117.863, "height": 45.692}}, {"step": 14, "kind": "result", "frame": 10964, "time": 365.48333333333335, "source": 2, "sourceFrame": 13920, "rect": {"x": 400.668, "y": 522.968, "width": 1161.937, "height": 440.887}}, {"step": 15, "kind": "input", "frame": 11340, "time": 378.01666666666665, "source": 2, "sourceFrame": 14475, "rect": {"x": 412.688, "y": 757.039, "width": 1117.863, "height": 235.674}}, {"step": 15, "kind": "result", "frame": 11988, "time": 399.6166666666667, "source": 2, "sourceFrame": 15600, "rect": {"x": 440.735, "y": 306.532, "width": 621.035, "height": 300.605}}, {"step": 16, "kind": "input", "frame": 12123, "time": 404.1166666666667, "source": 2, "sourceFrame": 15735, "rect": {"x": 440.735, "y": 659.242, "width": 613.022, "height": 224.452}}, {"step": 16, "kind": "result", "frame": 12811, "time": 427.05, "source": 2, "sourceFrame": 16800, "rect": {"x": 420.701, "y": 330.581, "width": 1161.937, "height": 569.145}}, {"step": 17, "kind": "input", "frame": 13010, "time": 433.68333333333334, "source": 2, "sourceFrame": 17010, "rect": {"x": 412.688, "y": 978.284, "width": 1117.863, "height": 45.692}}, {"step": 17, "kind": "result", "frame": 13347, "time": 444.9166666666667, "source": 2, "sourceFrame": 17520, "rect": {"x": 400.668, "y": 478.879, "width": 1137.896, "height": 497.0}}, {"step": 18, "kind": "input", "frame": 13643, "time": 454.78333333333336, "source": 2, "sourceFrame": 17955, "rect": {"x": 412.688, "y": 978.284, "width": 1117.863, "height": 45.692}}, {"step": 18, "kind": "result", "frame": 13985, "time": 466.18333333333334, "source": 2, "sourceFrame": 18480, "rect": {"x": 400.668, "y": 659.242, "width": 1133.89, "height": 252.508}}, {"step": 19, "kind": "input", "frame": 15099, "time": 503.31666666666666, "source": 3, "sourceFrame": 1800, "rect": {"x": 332.554, "y": 162.242, "width": 1514.524, "height": 280.565}}, {"step": 19, "kind": "result", "frame": 15398, "time": 513.2833333333333, "source": 3, "sourceFrame": 2160, "rect": {"x": 328.548, "y": 547.016, "width": 1518.531, "height": 364.734}}, {"step": 20, "kind": "input", "frame": 15618, "time": 520.6166666666667, "source": 3, "sourceFrame": 2400, "rect": {"x": 1161.937, "y": 547.016, "width": 617.028, "height": 304.613}}, {"step": 21, "kind": "input", "frame": 15997, "time": 533.25, "source": 3, "sourceFrame": 2880, "rect": {"x": 516.861, "y": 530.984, "width": 1318.197, "height": 300.605}}], "speeds": [{"start": 0.0, "end": 1.0, "speed": 1.33}, {"start": 1.0, "end": 2.0, "speed": 1.01}, {"start": 2.0, "end": 3.0, "speed": 1.0}, {"start": 3.0, "end": 4.0, "speed": 1.0}, {"start": 4.0, "end": 5.0, "speed": 1.0}, {"start": 5.0, "end": 6.0, "speed": 1.0}, {"start": 6.0, "end": 7.0, "speed": 1.37}, {"start": 7.0, "end": 8.0, "speed": 2.95}, {"start": 8.0, "end": 9.0, "speed": 3.0}, {"start": 9.0, "end": 10.0, "speed": 3.0}, {"start": 10.0, "end": 11.0, "speed": 3.0}, {"start": 11.0, "end": 12.0, "speed": 3.0}, {"start": 12.0, "end": 13.0, "speed": 3.0}, {"start": 13.0, "end": 14.0, "speed": 3.0}, {"start": 14.0, "end": 15.0, "speed": 2.87}, {"start": 15.0, "end": 16.0, "speed": 1.58}, {"start": 16.0, "end": 17.0, "speed": 1.5}, {"start": 17.0, "end": 18.0, "speed": 1.49}, {"start": 18.0, "end": 19.0, "speed": 1.15}, {"start": 19.0, "end": 20.0, "speed": 1.0}, {"start": 20.0, "end": 21.0, "speed": 1.0}, {"start": 21.0, "end": 22.0, "speed": 1.0}, {"start": 22.0, "end": 23.0, "speed": 1.0}, {"start": 23.0, "end": 24.0, "speed": 1.08}, {"start": 24.0, "end": 25.0, "speed": 2.66}, {"start": 25.0, "end": 26.0, "speed": 3.0}, {"start": 26.0, "end": 27.0, "speed": 3.0}, {"start": 27.0, "end": 28.0, "speed": 3.0}, {"start": 28.0, "end": 29.0, "speed": 2.28}, {"start": 29.0, "end": 30.0, "speed": 1.5}, {"start": 30.0, "end": 31.0, "speed": 1.5}, {"start": 31.0, "end": 32.0, "speed": 1.39}, {"start": 32.0, "end": 33.0, "speed": 1.03}, {"start": 33.0, "end": 34.0, "speed": 1.0}, {"start": 34.0, "end": 35.0, "speed": 1.0}, {"start": 35.0, "end": 36.0, "speed": 1.0}, {"start": 36.0, "end": 37.0, "speed": 1.0}, {"start": 37.0, "end": 38.0, "speed": 1.14}, {"start": 38.0, "end": 39.0, "speed": 1.49}, {"start": 39.0, "end": 40.0, "speed": 1.5}, {"start": 40.0, "end": 41.0, "speed": 1.5}, {"start": 41.0, "end": 42.0, "speed": 1.5}, {"start": 42.0, "end": 43.0, "speed": 1.5}, {"start": 43.0, "end": 44.0, "speed": 1.5}, {"start": 44.0, "end": 45.0, "speed": 1.24}, {"start": 45.0, "end": 46.0, "speed": 1.0}, {"start": 46.0, "end": 47.0, "speed": 1.0}, {"start": 47.0, "end": 48.0, "speed": 1.0}, {"start": 48.0, "end": 49.0, "speed": 1.0}, {"start": 49.0, "end": 50.0, "speed": 1.01}, {"start": 50.0, "end": 51.0, "speed": 1.3}, {"start": 51.0, "end": 52.0, "speed": 1.5}, {"start": 52.0, "end": 53.0, "speed": 1.5}, {"start": 53.0, "end": 54.0, "speed": 1.94}, {"start": 54.0, "end": 55.0, "speed": 3.0}, {"start": 55.0, "end": 56.0, "speed": 3.0}, {"start": 56.0, "end": 57.0, "speed": 3.0}, {"start": 57.0, "end": 58.0, "speed": 3.0}, {"start": 58.0, "end": 59.0, "speed": 2.96}, {"start": 59.0, "end": 60.0, "speed": 1.67}, {"start": 60.0, "end": 61.0, "speed": 1.2}, {"start": 61.0, "end": 62.0, "speed": 1.0}, {"start": 62.0, "end": 63.0, "speed": 1.0}, {"start": 63.0, "end": 64.0, "speed": 1.0}, {"start": 64.0, "end": 65.0, "speed": 1.0}, {"start": 65.0, "end": 66.0, "speed": 1.01}, {"start": 66.0, "end": 67.0, "speed": 1.33}, {"start": 67.0, "end": 68.0, "speed": 1.5}, {"start": 68.0, "end": 69.0, "speed": 1.5}, {"start": 69.0, "end": 70.0, "speed": 1.34}, {"start": 70.0, "end": 71.0, "speed": 1.01}, {"start": 71.0, "end": 72.0, "speed": 1.0}, {"start": 72.0, "end": 73.0, "speed": 1.0}, {"start": 73.0, "end": 74.0, "speed": 1.0}, {"start": 74.0, "end": 75.0, "speed": 1.0}, {"start": 75.0, "end": 76.0, "speed": 1.19}, {"start": 76.0, "end": 77.0, "speed": 1.5}, {"start": 77.0, "end": 78.0, "speed": 1.5}, {"start": 78.0, "end": 79.0, "speed": 1.5}, {"start": 79.0, "end": 80.0, "speed": 1.5}, {"start": 80.0, "end": 81.0, "speed": 1.5}, {"start": 81.0, "end": 82.0, "speed": 1.5}, {"start": 82.0, "end": 83.0, "speed": 1.5}, {"start": 83.0, "end": 84.0, "speed": 1.5}, {"start": 84.0, "end": 85.0, "speed": 1.4}, {"start": 85.0, "end": 86.0, "speed": 1.03}, {"start": 86.0, "end": 87.0, "speed": 1.0}, {"start": 87.0, "end": 88.0, "speed": 1.0}, {"start": 88.0, "end": 89.0, "speed": 1.0}, {"start": 89.0, "end": 90.0, "speed": 1.0}, {"start": 90.0, "end": 91.0, "speed": 1.13}, {"start": 91.0, "end": 92.0, "speed": 1.48}, {"start": 92.0, "end": 93.0, "speed": 1.25}, {"start": 93.0, "end": 94.0, "speed": 1.0}, {"start": 94.0, "end": 95.0, "speed": 1.0}, {"start": 95.0, "end": 96.0, "speed": 1.0}, {"start": 96.0, "end": 97.0, "speed": 1.0}, {"start": 97.0, "end": 98.0, "speed": 1.0}, {"start": 98.0, "end": 99.0, "speed": 1.0}, {"start": 99.0, "end": 100.0, "speed": 1.07}, {"start": 100.0, "end": 101.0, "speed": 1.12}, {"start": 101.0, "end": 102.0, "speed": 1.0}, {"start": 102.0, "end": 103.0, "speed": 1.0}, {"start": 103.0, "end": 104.0, "speed": 1.0}, {"start": 104.0, "end": 105.0, "speed": 1.0}, {"start": 105.0, "end": 106.0, "speed": 1.02}, {"start": 106.0, "end": 107.0, "speed": 1.37}, {"start": 107.0, "end": 108.0, "speed": 1.5}, {"start": 108.0, "end": 109.0, "speed": 1.5}, {"start": 109.0, "end": 110.0, "speed": 1.5}, {"start": 110.0, "end": 111.0, "speed": 1.5}, {"start": 111.0, "end": 112.0, "speed": 1.5}, {"start": 112.0, "end": 113.0, "speed": 1.5}, {"start": 113.0, "end": 114.0, "speed": 1.5}, {"start": 114.0, "end": 115.0, "speed": 1.71}, {"start": 115.0, "end": 116.0, "speed": 2.98}, {"start": 116.0, "end": 117.0, "speed": 3.0}, {"start": 117.0, "end": 118.0, "speed": 3.0}, {"start": 118.0, "end": 119.0, "speed": 3.0}, {"start": 119.0, "end": 120.0, "speed": 1.53}, {"start": 120.0, "end": 121.0, "speed": 1.0}, {"start": 121.0, "end": 122.0, "speed": 1.0}, {"start": 122.0, "end": 123.0, "speed": 1.0}, {"start": 123.0, "end": 124.0, "speed": 1.0}, {"start": 124.0, "end": 125.0, "speed": 1.04}, {"start": 125.0, "end": 126.0, "speed": 1.41}, {"start": 126.0, "end": 127.0, "speed": 1.5}, {"start": 127.0, "end": 128.0, "speed": 1.12}, {"start": 128.0, "end": 129.0, "speed": 1.0}, {"start": 129.0, "end": 130.0, "speed": 1.0}, {"start": 130.0, "end": 131.0, "speed": 1.0}, {"start": 131.0, "end": 132.0, "speed": 1.0}, {"start": 132.0, "end": 133.0, "speed": 1.05}, {"start": 133.0, "end": 134.0, "speed": 1.43}, {"start": 134.0, "end": 135.0, "speed": 1.5}, {"start": 135.0, "end": 136.0, "speed": 1.5}, {"start": 136.0, "end": 137.0, "speed": 2.46}, {"start": 137.0, "end": 138.0, "speed": 3.0}, {"start": 138.0, "end": 139.0, "speed": 2.95}, {"start": 139.0, "end": 140.0, "speed": 1.66}, {"start": 140.0, "end": 141.0, "speed": 1.5}, {"start": 141.0, "end": 142.0, "speed": 1.5}, {"start": 142.0, "end": 143.0, "speed": 1.5}, {"start": 143.0, "end": 144.0, "speed": 1.5}, {"start": 144.0, "end": 145.0, "speed": 1.5}, {"start": 145.0, "end": 146.0, "speed": 1.5}, {"start": 146.0, "end": 147.0, "speed": 1.5}, {"start": 147.0, "end": 148.0, "speed": 1.5}, {"start": 148.0, "end": 149.0, "speed": 1.5}, {"start": 149.0, "end": 150.0, "speed": 1.5}, {"start": 150.0, "end": 151.0, "speed": 1.5}, {"start": 151.0, "end": 152.0, "speed": 1.34}, {"start": 152.0, "end": 153.0, "speed": 1.02}, {"start": 153.0, "end": 154.0, "speed": 1.0}, {"start": 154.0, "end": 155.0, "speed": 1.0}, {"start": 155.0, "end": 156.0, "speed": 1.0}, {"start": 156.0, "end": 157.0, "speed": 1.0}, {"start": 157.0, "end": 158.0, "speed": 1.18}, {"start": 158.0, "end": 159.0, "speed": 1.5}, {"start": 159.0, "end": 160.0, "speed": 1.5}, {"start": 160.0, "end": 161.0, "speed": 1.5}, {"start": 161.0, "end": 162.0, "speed": 1.5}, {"start": 162.0, "end": 163.0, "speed": 1.5}, {"start": 163.0, "end": 164.0, "speed": 1.5}, {"start": 164.0, "end": 165.0, "speed": 1.5}, {"start": 165.0, "end": 166.0, "speed": 1.33}, {"start": 166.0, "end": 167.0, "speed": 1.01}, {"start": 167.0, "end": 168.0, "speed": 1.0}, {"start": 168.0, "end": 169.0, "speed": 1.0}, {"start": 169.0, "end": 170.0, "speed": 1.0}, {"start": 170.0, "end": 171.0, "speed": 1.0}, {"start": 171.0, "end": 172.0, "speed": 1.2}, {"start": 172.0, "end": 173.0, "speed": 1.5}, {"start": 173.0, "end": 174.0, "speed": 1.5}, {"start": 174.0, "end": 175.0, "speed": 1.66}, {"start": 175.0, "end": 176.0, "speed": 2.95}, {"start": 176.0, "end": 177.0, "speed": 3.0}, {"start": 177.0, "end": 178.0, "speed": 1.64}, {"start": 178.0, "end": 179.0, "speed": 1.0}, {"start": 179.0, "end": 180.0, "speed": 1.0}, {"start": 180.0, "end": 181.0, "speed": 1.0}, {"start": 181.0, "end": 182.0, "speed": 1.0}, {"start": 182.0, "end": 183.0, "speed": 1.03}, {"start": 183.0, "end": 184.0, "speed": 1.39}, {"start": 184.0, "end": 185.0, "speed": 1.5}, {"start": 185.0, "end": 186.0, "speed": 1.5}, {"start": 186.0, "end": 187.0, "speed": 1.5}, {"start": 187.0, "end": 188.0, "speed": 1.5}, {"start": 188.0, "end": 189.0, "speed": 1.27}, {"start": 189.0, "end": 190.0, "speed": 1.01}, {"start": 190.0, "end": 191.0, "speed": 1.0}, {"start": 191.0, "end": 192.0, "speed": 1.0}, {"start": 192.0, "end": 193.0, "speed": 1.0}, {"start": 193.0, "end": 194.0, "speed": 1.01}, {"start": 194.0, "end": 195.0, "speed": 2.18}, {"start": 195.0, "end": 196.0, "speed": 3.0}, {"start": 196.0, "end": 197.0, "speed": 3.0}, {"start": 197.0, "end": 198.0, "speed": 3.0}, {"start": 198.0, "end": 199.0, "speed": 2.68}, {"start": 199.0, "end": 200.0, "speed": 1.52}, {"start": 200.0, "end": 201.0, "speed": 1.5}, {"start": 201.0, "end": 202.0, "speed": 1.5}, {"start": 202.0, "end": 203.0, "speed": 1.47}, {"start": 203.0, "end": 204.0, "speed": 1.09}, {"start": 204.0, "end": 205.0, "speed": 1.0}, {"start": 205.0, "end": 206.0, "speed": 1.0}, {"start": 206.0, "end": 207.0, "speed": 1.0}, {"start": 207.0, "end": 208.0, "speed": 1.0}, {"start": 208.0, "end": 209.0, "speed": 1.05}, {"start": 209.0, "end": 210.0, "speed": 1.43}, {"start": 210.0, "end": 211.0, "speed": 1.5}, {"start": 211.0, "end": 212.0, "speed": 2.48}, {"start": 212.0, "end": 213.0, "speed": 3.0}, {"start": 213.0, "end": 214.0, "speed": 2.94}, {"start": 214.0, "end": 215.0, "speed": 1.65}, {"start": 215.0, "end": 216.0, "speed": 1.5}, {"start": 216.0, "end": 217.0, "speed": 1.5}, {"start": 217.0, "end": 218.0, "speed": 1.19}, {"start": 218.0, "end": 219.0, "speed": 1.0}, {"start": 219.0, "end": 220.0, "speed": 1.0}, {"start": 220.0, "end": 221.0, "speed": 1.0}, {"start": 221.0, "end": 222.0, "speed": 1.0}, {"start": 222.0, "end": 223.0, "speed": 1.04}, {"start": 223.0, "end": 224.0, "speed": 2.52}, {"start": 224.0, "end": 225.0, "speed": 2.85}, {"start": 225.0, "end": 226.0, "speed": 1.57}, {"start": 226.0, "end": 227.0, "speed": 1.29}, {"start": 227.0, "end": 228.0, "speed": 1.01}, {"start": 228.0, "end": 229.0, "speed": 1.0}, {"start": 229.0, "end": 230.0, "speed": 1.0}, {"start": 230.0, "end": 231.0, "speed": 1.0}, {"start": 231.0, "end": 232.0, "speed": 1.01}, {"start": 232.0, "end": 233.0, "speed": 2.1}, {"start": 233.0, "end": 234.0, "speed": 3.0}, {"start": 234.0, "end": 235.0, "speed": 2.9}, {"start": 235.0, "end": 236.0, "speed": 1.61}, {"start": 236.0, "end": 237.0, "speed": 1.5}, {"start": 237.0, "end": 238.0, "speed": 1.5}, {"start": 238.0, "end": 239.0, "speed": 1.5}, {"start": 239.0, "end": 240.0, "speed": 1.51}, {"start": 240.0, "end": 241.0, "speed": 2.62}, {"start": 241.0, "end": 242.0, "speed": 3.0}, {"start": 242.0, "end": 243.0, "speed": 3.0}, {"start": 243.0, "end": 244.0, "speed": 3.0}, {"start": 244.0, "end": 245.0, "speed": 3.0}, {"start": 245.0, "end": 246.0, "speed": 2.44}, {"start": 246.0, "end": 247.0, "speed": 1.5}, {"start": 247.0, "end": 248.0, "speed": 1.5}, {"start": 248.0, "end": 249.0, "speed": 1.5}, {"start": 249.0, "end": 250.0, "speed": 1.5}, {"start": 250.0, "end": 251.0, "speed": 1.5}, {"start": 251.0, "end": 252.0, "speed": 1.5}, {"start": 252.0, "end": 253.0, "speed": 1.5}, {"start": 253.0, "end": 254.0, "speed": 1.49}, {"start": 254.0, "end": 255.0, "speed": 1.15}, {"start": 255.0, "end": 256.0, "speed": 1.0}, {"start": 256.0, "end": 257.0, "speed": 1.0}, {"start": 257.0, "end": 258.0, "speed": 1.0}, {"start": 258.0, "end": 259.0, "speed": 1.0}, {"start": 259.0, "end": 260.0, "speed": 1.02}, {"start": 260.0, "end": 261.0, "speed": 1.38}, {"start": 261.0, "end": 262.0, "speed": 1.5}, {"start": 262.0, "end": 263.0, "speed": 1.5}, {"start": 263.0, "end": 264.0, "speed": 1.5}, {"start": 264.0, "end": 265.0, "speed": 1.5}, {"start": 265.0, "end": 266.0, "speed": 1.5}, {"start": 266.0, "end": 267.0, "speed": 1.5}, {"start": 267.0, "end": 268.0, "speed": 1.5}, {"start": 268.0, "end": 269.0, "speed": 1.5}, {"start": 269.0, "end": 270.0, "speed": 1.5}, {"start": 270.0, "end": 271.0, "speed": 1.5}, {"start": 271.0, "end": 272.0, "speed": 1.5}, {"start": 272.0, "end": 273.0, "speed": 1.5}, {"start": 273.0, "end": 274.0, "speed": 1.5}, {"start": 274.0, "end": 275.0, "speed": 1.5}, {"start": 275.0, "end": 276.0, "speed": 1.5}, {"start": 276.0, "end": 277.0, "speed": 1.5}, {"start": 277.0, "end": 278.0, "speed": 1.28}, {"start": 278.0, "end": 279.0, "speed": 1.01}, {"start": 279.0, "end": 280.0, "speed": 1.0}, {"start": 280.0, "end": 281.0, "speed": 1.0}, {"start": 281.0, "end": 282.0, "speed": 1.0}, {"start": 282.0, "end": 283.0, "speed": 1.0}, {"start": 283.0, "end": 284.0, "speed": 1.0}, {"start": 284.0, "end": 285.0, "speed": 1.0}, {"start": 285.0, "end": 286.0, "speed": 1.0}, {"start": 286.0, "end": 287.0, "speed": 1.0}, {"start": 287.0, "end": 288.0, "speed": 1.0}, {"start": 288.0, "end": 289.0, "speed": 1.01}, {"start": 289.0, "end": 290.0, "speed": 2.13}, {"start": 290.0, "end": 291.0, "speed": 3.0}, {"start": 291.0, "end": 292.0, "speed": 2.71}, {"start": 292.0, "end": 293.0, "speed": 1.53}, {"start": 293.0, "end": 294.0, "speed": 1.5}, {"start": 294.0, "end": 295.0, "speed": 1.47}, {"start": 295.0, "end": 296.0, "speed": 1.1}, {"start": 296.0, "end": 297.0, "speed": 1.0}, {"start": 297.0, "end": 298.0, "speed": 1.0}, {"start": 298.0, "end": 299.0, "speed": 1.0}, {"start": 299.0, "end": 300.0, "speed": 1.0}, {"start": 300.0, "end": 301.0, "speed": 1.17}, {"start": 301.0, "end": 302.0, "speed": 2.86}, {"start": 302.0, "end": 303.0, "speed": 2.56}, {"start": 303.0, "end": 304.0, "speed": 1.51}, {"start": 304.0, "end": 305.0, "speed": 1.5}, {"start": 305.0, "end": 306.0, "speed": 1.45}, {"start": 306.0, "end": 307.0, "speed": 1.07}, {"start": 307.0, "end": 308.0, "speed": 1.0}, {"start": 308.0, "end": 309.0, "speed": 1.0}, {"start": 309.0, "end": 310.0, "speed": 1.0}, {"start": 310.0, "end": 311.0, "speed": 1.0}, {"start": 311.0, "end": 312.0, "speed": 1.07}, {"start": 312.0, "end": 313.0, "speed": 1.45}, {"start": 313.0, "end": 314.0, "speed": 1.5}, {"start": 314.0, "end": 315.0, "speed": 1.5}, {"start": 315.0, "end": 316.0, "speed": 1.5}, {"start": 316.0, "end": 317.0, "speed": 1.5}, {"start": 317.0, "end": 318.0, "speed": 1.5}, {"start": 318.0, "end": 319.0, "speed": 1.32}, {"start": 319.0, "end": 320.0, "speed": 1.01}, {"start": 320.0, "end": 321.0, "speed": 1.0}, {"start": 321.0, "end": 322.0, "speed": 1.0}, {"start": 322.0, "end": 323.0, "speed": 1.0}, {"start": 323.0, "end": 324.0, "speed": 1.0}, {"start": 324.0, "end": 325.0, "speed": 1.97}, {"start": 325.0, "end": 326.0, "speed": 1.64}, {"start": 326.0, "end": 327.0, "speed": 1.01}, {"start": 327.0, "end": 328.0, "speed": 1.0}, {"start": 328.0, "end": 329.0, "speed": 1.0}, {"start": 329.0, "end": 330.0, "speed": 1.0}, {"start": 330.0, "end": 331.0, "speed": 1.0}, {"start": 331.0, "end": 332.0, "speed": 1.25}, {"start": 332.0, "end": 333.0, "speed": 1.5}, {"start": 333.0, "end": 334.0, "speed": 1.5}, {"start": 334.0, "end": 335.0, "speed": 2.29}, {"start": 335.0, "end": 336.0, "speed": 3.0}, {"start": 336.0, "end": 337.0, "speed": 2.99}, {"start": 337.0, "end": 338.0, "speed": 1.79}, {"start": 338.0, "end": 339.0, "speed": 1.5}, {"start": 339.0, "end": 340.0, "speed": 1.5}, {"start": 340.0, "end": 341.0, "speed": 1.25}, {"start": 341.0, "end": 342.0, "speed": 1.0}, {"start": 342.0, "end": 343.0, "speed": 1.0}, {"start": 343.0, "end": 344.0, "speed": 1.0}, {"start": 344.0, "end": 345.0, "speed": 1.0}, {"start": 345.0, "end": 346.0, "speed": 1.02}, {"start": 346.0, "end": 347.0, "speed": 2.28}, {"start": 347.0, "end": 348.0, "speed": 3.0}, {"start": 348.0, "end": 349.0, "speed": 3.0}, {"start": 349.0, "end": 350.0, "speed": 2.17}, {"start": 350.0, "end": 351.0, "speed": 1.01}, {"start": 351.0, "end": 352.0, "speed": 1.0}, {"start": 352.0, "end": 353.0, "speed": 1.0}, {"start": 353.0, "end": 354.0, "speed": 1.0}, {"start": 354.0, "end": 355.0, "speed": 1.01}, {"start": 355.0, "end": 356.0, "speed": 1.27}, {"start": 356.0, "end": 357.0, "speed": 1.5}, {"start": 357.0, "end": 358.0, "speed": 1.5}, {"start": 358.0, "end": 359.0, "speed": 1.5}, {"start": 359.0, "end": 360.0, "speed": 1.5}, {"start": 360.0, "end": 361.0, "speed": 1.5}, {"start": 361.0, "end": 362.0, "speed": 1.5}, {"start": 362.0, "end": 363.0, "speed": 1.24}, {"start": 363.0, "end": 364.0, "speed": 1.0}, {"start": 364.0, "end": 365.0, "speed": 1.0}, {"start": 365.0, "end": 366.0, "speed": 1.0}, {"start": 366.0, "end": 367.0, "speed": 1.0}, {"start": 367.0, "end": 368.0, "speed": 1.02}, {"start": 368.0, "end": 369.0, "speed": 2.29}, {"start": 369.0, "end": 370.0, "speed": 2.95}, {"start": 370.0, "end": 371.0, "speed": 1.66}, {"start": 371.0, "end": 372.0, "speed": 1.5}, {"start": 372.0, "end": 373.0, "speed": 1.5}, {"start": 373.0, "end": 374.0, "speed": 1.5}, {"start": 374.0, "end": 375.0, "speed": 1.45}, {"start": 375.0, "end": 376.0, "speed": 1.07}, {"start": 376.0, "end": 377.0, "speed": 1.0}, {"start": 377.0, "end": 378.0, "speed": 1.0}, {"start": 378.0, "end": 379.0, "speed": 1.0}, {"start": 379.0, "end": 380.0, "speed": 1.0}, {"start": 380.0, "end": 381.0, "speed": 1.07}, {"start": 381.0, "end": 382.0, "speed": 1.45}, {"start": 382.0, "end": 383.0, "speed": 1.5}, {"start": 383.0, "end": 384.0, "speed": 1.5}, {"start": 384.0, "end": 385.0, "speed": 1.5}, {"start": 385.0, "end": 386.0, "speed": 1.5}, {"start": 386.0, "end": 387.0, "speed": 1.5}, {"start": 387.0, "end": 388.0, "speed": 1.64}, {"start": 388.0, "end": 389.0, "speed": 2.94}, {"start": 389.0, "end": 390.0, "speed": 3.0}, {"start": 390.0, "end": 391.0, "speed": 3.0}, {"start": 391.0, "end": 392.0, "speed": 3.0}, {"start": 392.0, "end": 393.0, "speed": 3.0}, {"start": 393.0, "end": 394.0, "speed": 1.99}, {"start": 394.0, "end": 395.0, "speed": 1.5}, {"start": 395.0, "end": 396.0, "speed": 1.5}, {"start": 396.0, "end": 397.0, "speed": 1.31}, {"start": 397.0, "end": 398.0, "speed": 1.01}, {"start": 398.0, "end": 399.0, "speed": 1.0}, {"start": 399.0, "end": 400.0, "speed": 1.0}, {"start": 400.0, "end": 401.0, "speed": 1.0}, {"start": 401.0, "end": 402.0, "speed": 1.0}, {"start": 402.0, "end": 403.0, "speed": 1.0}, {"start": 403.0, "end": 404.0, "speed": 1.0}, {"start": 404.0, "end": 405.0, "speed": 1.0}, {"start": 405.0, "end": 406.0, "speed": 1.0}, {"start": 406.0, "end": 407.0, "speed": 1.05}, {"start": 407.0, "end": 408.0, "speed": 1.42}, {"start": 408.0, "end": 409.0, "speed": 1.5}, {"start": 409.0, "end": 410.0, "speed": 1.5}, {"start": 410.0, "end": 411.0, "speed": 1.5}, {"start": 411.0, "end": 412.0, "speed": 1.5}, {"start": 412.0, "end": 413.0, "speed": 1.94}, {"start": 413.0, "end": 414.0, "speed": 3.0}, {"start": 414.0, "end": 415.0, "speed": 3.0}, {"start": 415.0, "end": 416.0, "speed": 2.13}, {"start": 416.0, "end": 417.0, "speed": 1.5}, {"start": 417.0, "end": 418.0, "speed": 1.5}, {"start": 418.0, "end": 419.0, "speed": 1.5}, {"start": 419.0, "end": 420.0, "speed": 1.5}, {"start": 420.0, "end": 421.0, "speed": 1.5}, {"start": 421.0, "end": 422.0, "speed": 1.5}, {"start": 422.0, "end": 423.0, "speed": 1.5}, {"start": 423.0, "end": 424.0, "speed": 1.46}, {"start": 424.0, "end": 425.0, "speed": 1.08}, {"start": 425.0, "end": 426.0, "speed": 1.0}, {"start": 426.0, "end": 427.0, "speed": 1.0}, {"start": 427.0, "end": 428.0, "speed": 1.0}, {"start": 428.0, "end": 429.0, "speed": 1.0}, {"start": 429.0, "end": 430.0, "speed": 1.06}, {"start": 430.0, "end": 431.0, "speed": 1.28}, {"start": 431.0, "end": 432.0, "speed": 1.01}, {"start": 432.0, "end": 433.0, "speed": 1.0}, {"start": 433.0, "end": 434.0, "speed": 1.0}, {"start": 434.0, "end": 435.0, "speed": 1.0}, {"start": 435.0, "end": 436.0, "speed": 1.0}, {"start": 436.0, "end": 437.0, "speed": 1.88}, {"start": 437.0, "end": 438.0, "speed": 3.0}, {"start": 438.0, "end": 439.0, "speed": 2.43}, {"start": 439.0, "end": 440.0, "speed": 1.5}, {"start": 440.0, "end": 441.0, "speed": 1.5}, {"start": 441.0, "end": 442.0, "speed": 1.42}, {"start": 442.0, "end": 443.0, "speed": 1.04}, {"start": 443.0, "end": 444.0, "speed": 1.0}, {"start": 444.0, "end": 445.0, "speed": 1.0}, {"start": 445.0, "end": 446.0, "speed": 1.0}, {"start": 446.0, "end": 447.0, "speed": 1.0}, {"start": 447.0, "end": 448.0, "speed": 1.45}, {"start": 448.0, "end": 449.0, "speed": 2.99}, {"start": 449.0, "end": 450.0, "speed": 2.26}, {"start": 450.0, "end": 451.0, "speed": 1.5}, {"start": 451.0, "end": 452.0, "speed": 1.38}, {"start": 452.0, "end": 453.0, "speed": 1.03}, {"start": 453.0, "end": 454.0, "speed": 1.0}, {"start": 454.0, "end": 455.0, "speed": 1.0}, {"start": 455.0, "end": 456.0, "speed": 1.0}, {"start": 456.0, "end": 457.0, "speed": 1.0}, {"start": 457.0, "end": 458.0, "speed": 1.66}, {"start": 458.0, "end": 459.0, "speed": 3.0}, {"start": 459.0, "end": 460.0, "speed": 2.8}, {"start": 460.0, "end": 461.0, "speed": 1.55}, {"start": 461.0, "end": 462.0, "speed": 1.5}, {"start": 462.0, "end": 463.0, "speed": 1.48}, {"start": 463.0, "end": 464.0, "speed": 1.12}, {"start": 464.0, "end": 465.0, "speed": 1.0}, {"start": 465.0, "end": 466.0, "speed": 1.0}, {"start": 466.0, "end": 467.0, "speed": 1.0}, {"start": 467.0, "end": 468.0, "speed": 1.0}, {"start": 468.0, "end": 469.0, "speed": 1.11}, {"start": 469.0, "end": 470.0, "speed": 2.76}, {"start": 470.0, "end": 471.0, "speed": 3.0}, {"start": 471.0, "end": 472.0, "speed": 3.0}, {"start": 472.0, "end": 473.0, "speed": 3.0}, {"start": 473.0, "end": 474.0, "speed": 2.18}, {"start": 474.0, "end": 475.0, "speed": 1.5}, {"start": 475.0, "end": 476.0, "speed": 1.5}, {"start": 476.0, "end": 477.0, "speed": 1.5}, {"start": 477.0, "end": 478.0, "speed": 1.5}, {"start": 478.0, "end": 479.0, "speed": 1.5}, {"start": 479.0, "end": 480.0, "speed": 1.5}, {"start": 480.0, "end": 481.0, "speed": 1.5}, {"start": 481.0, "end": 482.0, "speed": 1.5}, {"start": 482.0, "end": 483.0, "speed": 1.5}, {"start": 483.0, "end": 484.0, "speed": 1.5}, {"start": 484.0, "end": 485.0, "speed": 1.5}, {"start": 485.0, "end": 486.0, "speed": 1.5}, {"start": 486.0, "end": 487.0, "speed": 1.5}, {"start": 487.0, "end": 488.0, "speed": 1.5}, {"start": 488.0, "end": 489.0, "speed": 1.5}, {"start": 489.0, "end": 490.0, "speed": 1.5}, {"start": 490.0, "end": 491.0, "speed": 1.5}, {"start": 491.0, "end": 492.0, "speed": 1.5}, {"start": 492.0, "end": 493.0, "speed": 1.5}, {"start": 493.0, "end": 494.0, "speed": 1.5}, {"start": 494.0, "end": 495.0, "speed": 1.5}, {"start": 495.0, "end": 496.0, "speed": 1.5}, {"start": 496.0, "end": 497.0, "speed": 1.5}, {"start": 497.0, "end": 498.0, "speed": 1.5}, {"start": 498.0, "end": 499.0, "speed": 1.5}, {"start": 499.0, "end": 500.0, "speed": 1.49}, {"start": 500.0, "end": 501.0, "speed": 1.18}, {"start": 501.0, "end": 502.0, "speed": 1.0}, {"start": 502.0, "end": 503.0, "speed": 1.0}, {"start": 503.0, "end": 504.0, "speed": 1.0}, {"start": 504.0, "end": 505.0, "speed": 1.0}, {"start": 505.0, "end": 506.0, "speed": 1.02}, {"start": 506.0, "end": 507.0, "speed": 1.35}, {"start": 507.0, "end": 508.0, "speed": 1.5}, {"start": 508.0, "end": 509.0, "speed": 1.5}, {"start": 509.0, "end": 510.0, "speed": 1.49}, {"start": 510.0, "end": 511.0, "speed": 1.17}, {"start": 511.0, "end": 512.0, "speed": 1.0}, {"start": 512.0, "end": 513.0, "speed": 1.0}, {"start": 513.0, "end": 514.0, "speed": 1.0}, {"start": 514.0, "end": 515.0, "speed": 1.0}, {"start": 515.0, "end": 516.0, "speed": 1.02}, {"start": 516.0, "end": 517.0, "speed": 1.36}, {"start": 517.0, "end": 518.0, "speed": 1.3}, {"start": 518.0, "end": 519.0, "speed": 1.01}, {"start": 519.0, "end": 520.0, "speed": 1.0}, {"start": 520.0, "end": 521.0, "speed": 1.0}, {"start": 521.0, "end": 522.0, "speed": 1.0}, {"start": 522.0, "end": 523.0, "speed": 1.0}, {"start": 523.0, "end": 524.0, "speed": 1.23}, {"start": 524.0, "end": 525.0, "speed": 1.5}, {"start": 525.0, "end": 526.0, "speed": 1.5}, {"start": 526.0, "end": 527.0, "speed": 1.5}, {"start": 527.0, "end": 528.0, "speed": 1.5}, {"start": 528.0, "end": 529.0, "speed": 1.5}, {"start": 529.0, "end": 530.0, "speed": 1.49}, {"start": 530.0, "end": 531.0, "speed": 1.14}, {"start": 531.0, "end": 532.0, "speed": 1.0}, {"start": 532.0, "end": 533.0, "speed": 1.0}, {"start": 533.0, "end": 534.0, "speed": 1.0}, {"start": 534.0, "end": 535.0, "speed": 1.0}, {"start": 535.0, "end": 536.0, "speed": 1.03}, {"start": 536.0, "end": 537.0, "speed": 1.38}, {"start": 537.0, "end": 538.0, "speed": 1.5}, {"start": 538.0, "end": 539.0, "speed": 1.5}, {"start": 539.0, "end": 540.0, "speed": 1.5}, {"start": 540.0, "end": 541.0, "speed": 1.5}, {"start": 541.0, "end": 542.0, "speed": 1.5}, {"start": 542.0, "end": 543.0, "speed": 1.5}, {"start": 543.0, "end": 543.5333333333333, "speed": 1.5}], "sourceOrder": ["demo-01.mp4", "demo-02.mp4", "demo-03.mp4"], "silentOriginalAudio": true, "publicRedaction": true};
+    const $ = id => document.getElementById(id);
+    const video = $("video");
+    const steps = CONFIG.steps;
+    const cues = CONFIG.cues;
+    let activeCue = -1;
+    let nextCue = 0;
+    let ready = false;
+    let busy = false;
+    let seekVersion = 0;
+    let held = false;
+    let objectUrl = null;
+    let frameHandle = null;
+    let initialized = false;
+
+    function showError(message) {
+      $("error").textContent = message;
+      $("error").hidden = false;
+    }
+    function notice(message) {
+      $("notice").textContent = message;
+      $("notice").hidden = false;
+    }
+    function time(value) {
+      const seconds = Math.max(0, Math.floor(value));
+      return `${String(Math.floor(seconds / 60)).padStart(2,"0")}:${String(seconds % 60).padStart(2,"0")}`;
+    }
+    function currentStep() {
+      return activeCue < 0 ? 0 : cues[activeCue].step;
+    }
+    function controls() {
+      $("back").disabled = !ready || busy || currentStep() === 0;
+      $("next").disabled = !ready || busy || currentStep() === steps.length - 1;
+      $("resume").disabled = !ready || busy;
+      $("restart").disabled = !ready || busy;
+      $("timeline").disabled = !ready || busy;
+      $("resume").textContent = video.ended ? "Replay" : video.paused ? "Resume" : "Pause";
+    }
+    function focus() {
+      const cue = cues[activeCue];
+      const ring = $("focus");
+      const outer = $("stage").getBoundingClientRect();
+      const width = Math.min(outer.width, outer.height * CONFIG.width / CONFIG.height);
+      const height = width * CONFIG.height / CONFIG.width;
+      const scene = $("scene");
+      scene.style.width = `${width}px`;
+      scene.style.height = `${height}px`;
+      scene.style.left = `${(outer.width - width) / 2}px`;
+      scene.style.top = `${(outer.height - height) / 2}px`;
+      scene.style.right = "auto";
+      scene.style.bottom = "auto";
+      if (!cue || !held || !$("focus-toggle").checked) {
+        $("scene").style.transform = "translate(0px,0px) scale(1)";
+        $("scene").dataset.zoom = "1";
+        ring.hidden = true;
+        return;
+      }
+      const rect = cue.rect;
+      const box = {width,height};
+      const fitX = CONFIG.width / rect.width * .90;
+      const fitY = CONFIG.height / rect.height * .83;
+      const zoom = Math.min(2.7, Math.max(1.12, Math.min(fitX, fitY)));
+      const centerX = (rect.x + rect.width / 2) / CONFIG.width * box.width;
+      const centerY = (rect.y + rect.height / 2) / CONFIG.height * box.height;
+      const x = Math.max(box.width * (1 - zoom), Math.min(0, box.width / 2 - centerX * zoom));
+      const y = Math.max(box.height * (1 - zoom), Math.min(0, box.height / 2 - centerY * zoom));
+      $("scene").style.transform = `translate(${x}px,${y}px) scale(${zoom})`;
+      $("scene").dataset.zoom = zoom.toFixed(4);
+      ring.style.left = `${rect.x / CONFIG.width * 100}%`;
+      ring.style.top = `${rect.y / CONFIG.height * 100}%`;
+      ring.style.width = `${rect.width / CONFIG.width * 100}%`;
+      ring.style.height = `${rect.height / CONFIG.height * 100}%`;
+      ring.hidden = false;
+    }
+    function display(index, stopped = false) {
+      activeCue = index;
+      held = stopped;
+      const cue = cues[index];
+      const step = steps[cue.step];
+      $("chapter").textContent = step.chapter;
+      $("step-count").textContent = `Step ${cue.step + 1} of ${steps.length}`;
+      $("phase").textContent = cue.kind === "result" ? "Recorded result" : step.kind === "prompt" ? "Read the recorded prompt" : "Recorded action";
+      $("step-title").textContent = step.title;
+      $("prompt-heading").textContent = step.kind === "prompt" ? "Recorded prompt" : "Recorded action / input";
+      $("prompt").textContent = step.prompt;
+      $("purpose").textContent = step.purpose;
+      $("expected").textContent = step.expected;
+      $("result-block").hidden = cue.kind !== "result";
+      $("result").textContent = step.result || "";
+      $("caution-block").hidden = !step.caution;
+      $("caution").textContent = step.caution || "";
+      $("overlay-label").textContent = `${cue.kind === "result" ? "Recorded result" : "Prompt / action"} ${stopped ? "| paused for you" : ""}`;
+      $("overlay-label").hidden = false;
+      $("recap").hidden = true;
+      document.querySelectorAll(".rail-step").forEach((button,i) => {
+        if (i === cue.step) button.setAttribute("aria-current","step");
+        else button.removeAttribute("aria-current");
+      });
+      focus();
+      controls();
+    }
+    async function seekTo(seconds) {
+      if (!Number.isFinite(seconds) || seconds < 0 || seconds > video.duration) {
+        throw new Error("This step has an invalid video position.");
+      }
+      if (Math.abs(video.currentTime - seconds) < .001 && video.readyState >= 2) return;
+      await new Promise((resolve,reject) => {
+        const timer = setTimeout(() => {
+          clean();
+          reject(new Error("The video could not seek to this step. Use Choose video file if your host does not support seeking."));
+        }, 20000);
+        const done = () => { clean(); resolve(); };
+        const fail = () => { clean(); reject(new Error("Video loading failed while seeking.")); };
+        function clean() {
+          clearTimeout(timer);
+          video.removeEventListener("seeked",done);
+          video.removeEventListener("error",fail);
+        }
+        video.addEventListener("seeked",done,{once:true});
+        video.addEventListener("error",fail,{once:true});
+        video.currentTime = seconds;
+      });
+    }
+    async function hold(index) {
+      const version = ++seekVersion;
+      busy = true;
+      video.pause();
+      controls();
+      try {
+        await seekTo(cues[index].time);
+        if (version !== seekVersion) return;
+        nextCue = index + 1;
+        display(index,true);
+        $("stage").dataset.stoppedCue = String(index);
+        $("stage").dataset.stoppedTime = String(video.currentTime);
+      } catch (error) {
+        showError(error.message);
+      } finally {
+        if (version === seekVersion) {
+          busy = false;
+          controls();
+          $("resume").focus({preventScroll:true});
+        }
+      }
+    }
+    async function goStep(index) {
+      if (!ready || index < 0 || index >= steps.length) return;
+      await hold(cues.findIndex(cue => cue.step === index && cue.kind !== "result"));
+    }
+    async function toggle() {
+      if (!ready || busy) return;
+      if (!video.paused) {
+        video.pause();
+        held = activeCue >= 0;
+        focus();
+        controls();
+        return;
+      }
+      if (video.ended) { await goStep(0); return; }
+      held = false;
+      focus();
+      $("overlay-label").textContent = "Recorded playback | will pause at the next step";
+      try { await video.play(); }
+      catch (error) { showError(`Playback could not start: ${error.message}`); }
+      controls();
+    }
+    function checkCues() {
+      if (!ready || busy || video.paused || video.seeking) return;
+      while (nextCue < cues.length && video.currentTime >= cues[nextCue].time) {
+        const index = nextCue++;
+        const shouldStop = $("auto-toggle").checked && (cues[index].kind !== "result" || $("replies-toggle").checked);
+        if (shouldStop) { void hold(index); return; }
+        display(index,false);
+      }
+    }
+    function tick() {
+      if (ready) {
+        $("clock").textContent = `${time(video.currentTime)} / ${time(video.duration)}`;
+        $("timeline").value = String(video.currentTime);
+        const segment = CONFIG.speeds.find(item => video.currentTime >= item.start && video.currentTime < item.end);
+        if (segment) {
+          $("speed-label").textContent = segment.speed > 1.6 ? `Fast forward ${segment.speed.toFixed(1)}x` : "Edited recording";
+          $("speed-label").hidden = false;
+        }
+        checkCues();
+      }
+      frameHandle = requestAnimationFrame(tick);
+    }
+    async function initialize() {
+      if (initialized) return;
+      if (!Number.isFinite(video.duration) || Math.abs(video.duration - CONFIG.duration) > 1) {
+        showError("The selected video does not match this walkthrough. Choose the accompanying edited MP4.");
+        return;
+      }
+      initialized = true;
+      ready = true;
+      $("loading").hidden = true;
+      $("error").hidden = true;
+      $("timeline").max = String(video.duration);
+      await goStep(0);
+    }
+    function useVideo(url, isObjectUrl) {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      objectUrl = isObjectUrl ? url : null;
+      initialized = false;
+      ready = false;
+      video.src = url;
+      video.load();
+    }
+    async function load() {
+      $("prompt").textContent = steps[0].prompt;
+      $("purpose").textContent = steps[0].purpose;
+      $("expected").textContent = steps[0].expected;
+      if (location.protocol === "file:") {
+        useVideo(CONFIG.video,false);
+        return;
+      }
+      try {
+        const response = await fetch(CONFIG.video);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const blob = await response.blob();
+        if (!blob.size) throw new Error("The video file is empty.");
+        useVideo(URL.createObjectURL(blob),true);
+      } catch (error) {
+        notice(`Video download was unavailable (${error.message}). Trying direct playback; choose the MP4 if seeking is unavailable.`);
+        useVideo(CONFIG.video,false);
+      }
+    }
+
+    for (const [index,step] of steps.entries()) {
+      const button = document.createElement("button");
+      button.className = "rail-step";
+      const number = document.createElement("span");
+      number.className = "number";
+      number.textContent = String(index + 1);
+      const label = document.createElement("span");
+      label.textContent = step.title;
+      const chapter = document.createElement("small");
+      chapter.textContent = step.chapter;
+      label.append(chapter);
+      button.append(number,label);
+      button.addEventListener("click",() => { if (!busy) void goStep(index); });
+      $("rail").append(button);
+    }
+    $("resume").addEventListener("click",() => void toggle());
+    $("back").addEventListener("click",() => void goStep(currentStep() - 1));
+    $("next").addEventListener("click",() => void goStep(currentStep() + 1));
+    $("restart").addEventListener("click",() => void goStep(0));
+    $("focus-toggle").addEventListener("change",event => { event.target.blur(); focus(); });
+    $("replies-toggle").addEventListener("change",event => event.target.blur());
+    $("auto-toggle").addEventListener("change",event => event.target.blur());
+    $("timeline").addEventListener("change",async () => {
+      if (!ready || busy) return;
+      busy = true;
+      video.pause();
+      try {
+        const position = Number($("timeline").value);
+        await seekTo(position);
+        nextCue = cues.findIndex(cue => cue.time > position + .02);
+        if (nextCue < 0) nextCue = cues.length;
+        display(Math.max(0,nextCue - 1),false);
+      } catch (error) { showError(error.message); }
+      finally { busy = false; controls(); }
+    });
+    $("fullscreen").addEventListener("click",async () => {
+      try {
+        if (document.fullscreenElement) await document.exitFullscreen();
+        else await $("stage").requestFullscreen();
+      } catch (error) { showError(`Fullscreen is unavailable: ${error.message}`); }
+    });
+    $("choose-file").addEventListener("click",() => $("file").click());
+    $("file").addEventListener("change",() => {
+      const file = $("file").files[0];
+      if (file) useVideo(URL.createObjectURL(file),true);
+    });
+    video.addEventListener("loadeddata",() => void initialize());
+    video.addEventListener("play",controls);
+    video.addEventListener("pause",controls);
+    video.addEventListener("timeupdate",checkCues);
+    video.addEventListener("playing",checkCues);
+    video.addEventListener("ended",() => {
+      held = false;
+      focus();
+      $("recap").hidden = false;
+      $("overlay-label").textContent = "Walkthrough complete";
+      controls();
+    });
+    video.addEventListener("error",() => {
+      $("loading").hidden = true;
+      showError(`The video could not load. Keep ${CONFIG.video} beside this HTML, or use Choose video file.`);
+      ready = false;
+      controls();
+    });
+    document.addEventListener("keydown",event => {
+      if (event.altKey || event.ctrlKey || event.metaKey || ["INPUT","TEXTAREA","SELECT"].includes(event.target.tagName)) return;
+      if (event.target.tagName === "BUTTON" && event.target.id !== "resume" && (event.key === " " || event.key === "Enter")) return;
+      if (event.key === " " || event.key === "Enter") { event.preventDefault(); void toggle(); }
+      else if (event.key === "ArrowRight") { event.preventDefault(); void goStep(currentStep() + 1); }
+      else if (event.key === "ArrowLeft") { event.preventDefault(); void goStep(currentStep() - 1); }
+    });
+    new ResizeObserver(focus).observe($("stage"));
+    window.addEventListener("pagehide",() => {
+      cancelAnimationFrame(frameHandle);
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    });
+    window.demoPlayer = {
+      goStep, hold, steps, cues, video,
+      get state() { return {ready,busy,activeCue,nextCue,held,step:currentStep()}; },
+    };
+    tick();
+    void load();
+  </script>
+</body>
+</html>
