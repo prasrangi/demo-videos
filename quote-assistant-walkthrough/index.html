@@ -1,0 +1,588 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>[hidden]{display:none!important}body{margin:0}</style>
+<title>Quote Assistant Walkthrough</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Lato:wght@400;700&family=Poppins:wght@500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: video stage on the left with controls and a step rail under it; a step panel on the right.
+   One committed dark look (navy ground, amber for the thing to click or read next). */
+:root{
+  --bg:#0a172b; --surface:#102240; --surface-2:#17325c; --ink:#07111f; --line:#2b4873;
+  --fg:#eaf1fb; --muted:#a6b9d6; --accent:#f5b83d; --accent-fg:#1b1305; --good:#62d6a6; --focus:#9ccbff;
+  --f-display:'Poppins',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-body:'Lato',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,Consolas,'Courier New',monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg)}
+body{margin:0;color:var(--fg);font:15px/1.55 var(--f-body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 36px}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.app{max-width:1500px;margin:0 auto}
+.hdr{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:8px 24px;margin-bottom:14px}
+.hdr h1{margin:0;font:600 clamp(20px,2.6vw,28px)/1.15 var(--f-display);letter-spacing:-.01em}
+.hdr .sub{margin:2px 0 0;color:var(--muted);font-size:14px}
+.where{font:500 13px/1.3 var(--f-display);color:var(--muted);text-align:right;min-width:0}
+.where b{color:var(--fg);font-weight:600}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:20px;align-items:start}
+.left,.side{min-width:0}
+
+/* stage */
+.stage{position:relative;aspect-ratio:1920/1008;width:100%;background:#000;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.zoomer{position:absolute;inset:0;transform-origin:0 0;transition:transform .7s cubic-bezier(.2,.7,.2,1);will-change:transform}
+.zoomer video{position:absolute;inset:0;width:100%;height:100%;display:block;background:#000}
+.hl{position:absolute;border:calc(3px / var(--s,1)) solid var(--accent);border-radius:calc(6px / var(--s,1));
+  box-shadow:0 0 0 100vmax rgba(5,12,24,.58);pointer-events:none;opacity:0;transition:opacity .35s .25s}
+.hl.on{opacity:1}
+.hl-tag{position:absolute;left:calc(-3px / var(--s,1));bottom:100%;transform-origin:0 100%;transform:scale(calc(1 / var(--s,1)));
+  background:var(--accent);color:var(--accent-fg);font:600 13px/1 var(--f-display);padding:6px 10px;border-radius:6px 6px 0 0;white-space:nowrap;letter-spacing:.02em}
+.hl.flip .hl-tag{bottom:auto;top:100%;transform-origin:0 0;border-radius:0 0 6px 6px}
+.ff{position:absolute;right:12px;top:12px;background:rgba(7,17,31,.82);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font:600 13px/1 var(--f-display);color:var(--accent)}
+.scard{position:absolute;left:50%;transform:translateX(-50%);width:min(86%,640px);background:rgba(7,17,31,.94);border:1px solid var(--accent);border-radius:8px;padding:10px 14px 12px;box-shadow:0 8px 28px rgba(0,0,0,.45);transition:opacity .3s .3s}
+.scard.at-top{top:12px}.scard.at-bottom{bottom:16px}
+.scard small{display:block;font:600 11px/1 var(--f-display);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+.scard pre{margin:0;font:400 clamp(11px,1.15vw,14px)/1.45 var(--f-mono);white-space:pre-wrap;overflow-wrap:anywhere;color:var(--fg);max-height:36vh;overflow:hidden}
+.bar{position:absolute;left:0;right:0;bottom:0;height:5px;background:rgba(255,255,255,.12)}
+.bar i{display:block;height:100%;width:0;background:var(--accent)}
+.bar b{position:absolute;top:-3px;width:2px;height:11px;background:var(--fg);opacity:.55}
+.veil{position:absolute;inset:0;display:grid;place-items:center;background:rgba(7,17,31,.97);padding:20px;text-align:center}
+.veil .box{max-width:600px}
+.veil h2{margin:0 0 8px;font:600 clamp(20px,3vw,30px)/1.15 var(--f-display)}
+.veil p{margin:0 0 14px;color:var(--muted)}
+.veil ul{margin:0 0 16px;padding:0;list-style:none;color:var(--muted);font-size:14px;text-align:left}
+.veil li{padding:3px 0}
+.veil li b{color:var(--fg)}
+
+/* controls */
+.controls{display:flex;flex-wrap:wrap;align-items:center;gap:10px 12px;margin-top:12px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;border-radius:8px;border:1px solid var(--line);background:var(--surface);cursor:pointer;font:600 14px/1 var(--f-display)}
+.btn:hover{background:var(--surface-2)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn svg{width:16px;height:16px;fill:currentColor;flex:none}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-fg);min-width:148px;min-height:50px;font-size:16px;padding:0 22px}
+.btn.primary:hover{background:#ffc95c}
+.hint{flex:1 1 220px;min-width:0;color:var(--muted);font-size:13.5px}
+.clock{font:500 13px var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.sw{display:inline-flex;align-items:center;gap:8px;min-height:44px;cursor:pointer;font-size:14px;color:var(--muted)}
+.sw input{position:absolute;opacity:0;width:1px;height:1px}
+.sw .t{width:40px;height:22px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);position:relative;flex:none;transition:background .2s}
+.sw .t::after{content:"";position:absolute;left:2px;top:2px;width:16px;height:16px;border-radius:50%;background:var(--fg);transition:transform .2s}
+.sw input:checked+.t{background:var(--accent);border-color:var(--accent)}
+.sw input:checked+.t::after{transform:translateX(18px);background:var(--accent-fg)}
+.sw input:focus-visible+.t{outline:3px solid var(--focus);outline-offset:2px}
+
+/* step rail */
+.rail{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-top:18px}
+.chap{min-width:0}
+.chap h3{margin:0;font:600 11px/1.2 var(--f-display);letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.chap p{margin:2px 0 8px;font:500 13px/1.3 var(--f-display);color:var(--fg);min-height:34px}
+.steps{display:flex;flex-wrap:wrap;gap:6px}
+.st{width:42px;height:42px;border-radius:8px;border:1px solid var(--line);background:var(--surface);cursor:pointer;font:600 14px var(--f-display);font-variant-numeric:tabular-nums;color:var(--muted);position:relative}
+.st:hover{background:var(--surface-2);color:var(--fg)}
+.st.seen{color:var(--fg)}
+.st.seen::after{content:"";position:absolute;right:4px;top:4px;width:6px;height:6px;border-radius:50%;background:var(--good)}
+.st.cur{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.st.cur::after{background:var(--accent-fg)}
+
+/* side panel */
+.side{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px 18px 20px;position:sticky;top:max(12px,env(safe-area-inset-top,0px))}
+.eyebrow{font:600 11px/1.3 var(--f-display);letter-spacing:.09em;text-transform:uppercase;color:var(--accent);margin:0 0 6px}
+.side h2{margin:0 0 4px;font:600 21px/1.2 var(--f-display);text-wrap:balance}
+.meta{margin:0 0 14px;color:var(--muted);font-size:13.5px}
+.sec{margin:0 0 14px}
+.sec h4{margin:0 0 4px;font:600 11px/1.2 var(--f-display);letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.sec p{margin:0}
+.sec.saw{background:var(--ink);border:1px solid var(--good);border-radius:8px;padding:10px 12px}
+.sec.saw h4{color:var(--good)}
+.pbox{position:relative;background:var(--ink);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.pbox pre{margin:0;font:400 13px/1.5 var(--f-mono);white-space:pre-wrap;overflow-wrap:anywhere;max-height:240px;overflow:auto}
+.copy{margin-top:8px;min-height:36px;padding:0 12px;font-size:13px}
+.note{margin:0;font-size:13px;color:var(--muted)}
+details.kq summary{cursor:pointer;color:var(--accent);font:600 13px var(--f-display);min-height:32px;display:flex;align-items:center}
+.srcnote{margin:14px 0 0;color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);padding-top:10px}
+
+@media (max-width:1180px){
+  .main{grid-template-columns:minmax(0,1fr) 340px}
+  .rail{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media (max-width:900px){
+  .main{grid-template-columns:minmax(0,1fr);gap:14px}
+  .left{display:contents}
+  .stage{order:1}.controls{order:2;margin-top:0}.side{order:3}.rail{order:4;margin-top:6px}
+  .side{position:static}
+  .rail{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .scard{display:none}
+}
+@media (max-width:560px){
+  .rail{grid-template-columns:minmax(0,1fr)}
+  .where{text-align:left}
+  .btn.primary{flex:1 1 100%}
+  .st{width:44px;height:44px}
+}
+@media (prefers-reduced-motion:reduce){
+  .zoomer,.hl,.scard,.sw .t,.sw .t::after{transition:none!important}
+}
+</style>
+
+
+</head>
+<body>
+<div class="app">
+  <header class="hdr">
+    <div>
+      <h1>Quote Assistant walkthrough</h1>
+      <p class="sub">A click-through of the recorded demo. It stops at every step.</p>
+    </div>
+    <div class="where" id="where" aria-live="polite"></div>
+  </header>
+
+  <div class="main">
+    <section class="left" aria-label="Demo player">
+      <div class="stage" id="stage">
+        <div class="zoomer" id="zoomer">
+          <video id="vid" playsinline muted preload="auto"></video>
+          <div class="hl" id="hl"><span class="hl-tag" id="hlTag"></span></div>
+        </div>
+        <div class="ff" id="ff" hidden></div>
+        <div class="scard at-top" id="scard" hidden><small id="scTag"></small><pre id="scText"></pre></div>
+        <div class="bar" id="bar" aria-hidden="true"><i id="barFill"></i></div>
+
+        <div class="veil" id="intro">
+          <div class="box">
+            <h2>Walk through the demo one step at a time</h2>
+            <p>Each step stops the video on the prompt you give, with a box around it, a zoom, what we are trying to do next and what output to expect. Press Resume to carry on.</p>
+            <ul>
+              <li><b>22 steps</b> in 5 chapters, about 6 minutes of video plus your clicks</li>
+              <li><b>Space</b> or <b>Enter</b> pauses and resumes, <b>←</b> and <b>→</b> move between stops</li>
+              <li>The notes come from your LAB-DEMO-GUIDE.md</li>
+            </ul>
+            <button class="btn primary" id="startBtn" type="button" disabled>Loading video…</button>
+          </div>
+        </div>
+        <div class="veil" id="outro" hidden>
+          <div class="box">
+            <h2>End of the recording</h2>
+            <p>All 22 steps are done. Not covered in this recording, per the guide: two wrong products corrected one at a time, slow proposal validation with automatic callbacks, the review-only validation, and native Dataverse audit checks.</p>
+            <button class="btn primary" id="againBtn" type="button">Start again</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button class="btn" id="backBtn" type="button" disabled><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 2h2v12H3zM14 2v12L6 8z"/></svg>Back</button>
+        <button class="btn primary" id="mainBtn" type="button" disabled><svg viewBox="0 0 16 16" aria-hidden="true" id="mainIcon"><path d="M3 1.5v13L14 8z"/></svg><span id="mainLbl">Resume</span></button>
+        <button class="btn" id="nextBtn" type="button" disabled>Next stop<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11 2h2v12h-2zM2 2v12l8-6z"/></svg></button>
+        <label class="sw" for="resSw"><input type="checkbox" id="resSw" checked><span class="t"></span>Pause on results</label>
+        <span class="clock" id="clock">00:00 / 00:00</span>
+        <p class="hint" id="hint"></p>
+      </div>
+
+      <nav class="rail" id="rail" aria-label="Steps"></nav>
+    </section>
+
+    <aside class="side" id="side" aria-label="Current step"></aside>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var CUES={"duration":362.4667,"speeds":[[5.6,6.233,24],[6.6,7.033,24],[13.167,13.967,16],[20.3,21.4,6],[24.6,25.7,3],[30.7,31.233,8],[31.267,31.967,16],[32.067,32.567,4],[35.7,36.5,4],[67.333,69.767,4],[71.133,71.967,3],[71.967,72.733,4],[80.7,82.133,4],[82.133,82.6,3],[82.6,89.133,4],[97.867,98.8,4],[102.0,103.3,3],[106.667,107.2,4],[107.2,107.667,3],[116.967,117.567,6],[117.567,118.167,4],[123.7,124.467,4],[130.933,132.1,6],[135.133,136.033,12],[136.633,137.167,3],[144.2,144.7,6],[144.7,145.533,8],[152.933,153.4,4],[153.4,153.8,3],[157.267,158.333,4],[165.7,166.533,3],[167.0,167.5,3],[181.1,183.033,3],[192.6,193.0,3],[193.0,194.0,4],[197.167,198.333,8],[201.3,201.767,3],[201.767,202.433,4],[205.633,206.133,3],[216.667,217.333,2],[220.667,221.333,3],[227.767,229.167,3],[233.867,235.067,6],[242.433,243.1,12],[243.167,243.7,4],[246.833,247.867,8],[251.233,251.833,6],[251.833,252.433,4],[255.8,256.567,3],[260.0,261.133,6],[264.267,265.4,12],[277.4,278.567,16],[284.6,285.467,4],[285.767,286.167,4],[289.267,290.433,8],[293.5,293.967,8],[294.133,294.633,3],[294.8,295.233,6],[298.4,299.567,8],[302.7,303.767,3],[313.6,319.133,6],[319.667,320.1,4],[320.1,320.7,3],[321.9,323.467,3],[360.733,361.667,2]],"stops":[{"id":"p1","step":"p1","type":"in","t":3.15,"rect":[262.4,797.9,1459.2,166.4]},{"id":"p1o","step":"p1","type":"out","t":8.1833,"rect":[252.8,387.2,1316.3,457.6]},{"id":"p2","step":"p2","type":"in","t":17.8167,"rect":[262.4,829.9,1459.2,134.4]},{"id":"p2o","step":"p2","type":"out","t":22.6833,"rect":[252.8,372.3,1316.3,536.5]},{"id":"p2o2","step":"p2","type":"out","t":26.95,"rect":[252.8,0,1316.3,1008]},{"id":"p3","step":"p3","type":"in","t":33.0167,"rect":[262.4,891.7,1459.2,72.5]},{"id":"p3o","step":"p3","type":"out","t":37.8833,"rect":[252.8,485.3,1316.3,423.5]},{"id":"p4","step":"p4","type":"in","t":51.1167,"rect":[262.4,891.7,1459.2,72.5]},{"id":"p4o","step":"p4","type":"out","t":55.75,"rect":[252.8,364.8,1101.9,483.2]},{"id":"p5","step":"p5","type":"in","t":57.3167,"rect":[262.4,891.7,1459.2,72.5]},{"id":"p5o","step":"p5","type":"out","t":62.5833,"rect":[252.8,588.8,790.4,369.1]},{"id":"cm1","step":"conn","type":"in","t":69.4833,"rect":[39.3,258.3,1880.7,91.6]},{"id":"cm2","step":"conn","type":"out","t":92.0167,"rect":[39.3,254.0,1880.7,109.1]},{"id":"rt","step":"retry","type":"in","t":94.2167,"rect":[277.3,603.7,746.7,325.3]},{"id":"rto","step":"retry","type":"out","t":104.5167,"rect":[252.8,184.5,1316.3,683.7]},{"id":"p6","step":"p6","type":"in","t":111.05,"rect":[262.4,829.9,1459.2,134.4]},{"id":"p6o","step":"p6","type":"out","t":122.0167,"rect":[252.8,0,1316.3,949.3]},{"id":"p7","step":"p7","type":"in","t":128.65,"rect":[262.4,891.7,1459.2,72.5]},{"id":"p7o","step":"p7","type":"out","t":133.2833,"rect":[252.8,154.7,1251.2,752.0]},{"id":"p9","step":"p9","type":"in","t":141.85,"rect":[262.4,797.9,1459.2,166.4]},{"id":"p9o","step":"p9","type":"out","t":146.75,"rect":[252.8,250.7,1316.3,664.5]},{"id":"p10","step":"p10","type":"in","t":154.7833,"rect":[262.4,891.7,1459.2,72.5]},{"id":"p10o","step":"p10","type":"out","t":159.5833,"rect":[252.8,120.5,1316.3,788.3]},{"id":"il1","step":"idlab","type":"in","t":164.7833,"rect":[45.0,58.0,1875.0,140.0]},{"id":"il2","step":"idlab","type":"in","t":167.6167,"rect":[1700.0,88.0,220.0,90.0]},{"id":"il3","step":"idlab","type":"out","t":175.55,"rect":[710.0,0,1210.0,976.0]},{"id":"p11","step":"p11","type":"in","t":194.7167,"rect":[262.4,891.7,1459.2,72.5]},{"id":"p11o","step":"p11","type":"out","t":199.55,"rect":[252.8,77.9,1028.3,820.3]},{"id":"p12","step":"p12","type":"in","t":209.9167,"rect":[262.4,605.9,1459.2,358.4]},{"id":"p12o","step":"p12","type":"out","t":219.5167,"rect":[252.8,0,1333.3,846.9]},{"id":"c1","step":"card1","type":"in","t":229.15,"rect":[298.7,585.6,698.7,165.3]},{"id":"c1o","step":"card1","type":"out","t":239.0167,"rect":[252.8,0,1316.3,949.3]},{"id":"p13","step":"p13","type":"in","t":244.3167,"rect":[262.4,891.7,1459.2,72.5]},{"id":"p13o","step":"p13","type":"out","t":249.2167,"rect":[252.8,244.3,1316.3,662.4]},{"id":"p14","step":"p14","type":"in","t":257.5833,"rect":[262.4,605.9,1459.2,358.4]},{"id":"p14o","step":"p14","type":"out","t":268.25,"rect":[252.8,0,1316.3,949.3]},{"id":"c2","step":"card2","type":"in","t":270.95,"rect":[298.7,677.3,698.7,256.0]},{"id":"c2o","step":"card2","type":"out","t":283.2833,"rect":[252.8,0,1316.3,949.3]},{"id":"p17","step":"p17","type":"in","t":286.8833,"rect":[262.4,891.7,1459.2,72.5]},{"id":"p17o","step":"p17","type":"out","t":291.6833,"rect":[252.8,69.3,1316.3,845.9]},{"id":"p8","step":"p8","type":"in","t":296.0167,"rect":[262.4,891.7,1459.2,72.5]},{"id":"p8o","step":"p8","type":"out","t":300.7833,"rect":[252.8,502.4,1316.3,410.7]},{"id":"fc","step":"fresh","type":"in","t":313.7833,"rect":[1282.0,0,638.0,680.0]},{"id":"kq","step":"kql","type":"in","t":329.2833,"rect":[499.0,251.0,1421.0,295.0]},{"id":"kqo","step":"kql","type":"out","t":337.5167,"rect":[56.0,263.0,1864.0,675.0]}]};
+var CHAPTERS=[
+  "Request a quote in the background",
+  "Connect your own account and create a quote",
+  "Follow a tracked request end to end",
+  "Correct a bad part and a bad CSV",
+  "Review the results and telemetry"
+];
+
+var KQL="let demos = datatable(BusinessReference:string, RequestId:string)\n[\n    \"MYQUOTE-1101-2224\", \"B3U-6eeb2b1cc929d2d878ed6ed741c2ffd7\",\n    \"TRACK-1101-2232\",  \"f1f64f99-e383-4159-9531-6df5411233c7\",\n    \"PARTS-1101-2243\",  \"B11-1f050a89efd9181a9ad9a45f9ccf0593\",\n    \"CSV-1101-2249\",    \"B11-e5b8c2669d95acdddc84fdbe3018b29b\"\n];\ncustomEvents\n| where timestamp >= datetime(2026-11-01T00:00:00Z)\n    and timestamp < datetime(2026-11-03T00:00:00Z)\n| extend\n    RequestId = tostring(customDimensions.businessRequestId),\n    EventId = tostring(customDimensions.eventId)\n| where RequestId in (demos | project RequestId)\n| summarize arg_max(timestamp, *) by RequestId, EventId\n| lookup kind=inner demos on RequestId\n| project\n    TimeIST = format_datetime(timestamp + 330m, \"yyyy-MM-dd HH:mm:ss\"),\n    BusinessReference,\n    Stage = tostring(customDimensions.stage),\n    Revision = tostring(customDimensions.revision),\n    RecordedState = coalesce(\n        tostring(customDimensions.status),\n        tostring(customDimensions.outcome)),\n    HandoverMatched = tostring(customDimensions.handoverMatched),\n    TraceId = tostring(customDimensions.traceId),\n    TraceMatches = operation_Id == tostring(customDimensions.traceId)\n| order by BusinessReference asc, TimeIST asc";
+
+var STEPS=[
+{id:"p1",ch:0,kind:"prompt",tag:"Your prompt",title:"Submit a slow background request",
+ prompt:"Prepare a new sample quote using the slower background option. Confirm when it starts, save it so I can find it in a new chat, and notify me when it's ready.",
+ goal:"Start a quote the slow, background way, so the assistant can answer straight away while the work carries on separately.",
+ expected:"The assistant confirms a saved request before the quote is finished: reference SAMPLE-20261101-01 and an expected processing time of about 150 seconds.",
+ saw:"Accepted and saved as SAMPLE-20261101-01, about 150 seconds expected. Processing continues separately from this reply.",
+ note:"This shows the background path only. The earlier timeout comparison was not rerun in this walkthrough."},
+{id:"p2",ch:0,kind:"prompt",tag:"Your prompt",title:"Check progress without creating another quote",
+ prompt:"Show me my latest saved background quote, its status, quote number and total. Don't create another quote.",
+ goal:"Look up the saved request while it is still processing. This is a read-only lookup.",
+ expected:"Status Running at product validation, with no quote number or total yet. The reply should say so instead of inventing them.",
+ saw:"Running at validate_and_add_parts. Quote number and total are not available yet, and no new quote was created."},
+{id:"p3",ch:0,kind:"prompt",tag:"Your prompt",title:"Find today's saved background work",
+ prompt:"Show me the background quotes I created today.",
+ goal:"Read back what was saved today from history. Nothing new is submitted.",
+ expected:"Two completed references, SAMPLE-20261101-01 and CALC-20261029-01, each USD 291.",
+ saw:"Both completed references are listed at USD 291 each. This was a saved-history lookup, not a new submission."},
+{id:"p4",ch:0,kind:"prompt",tag:"Your prompt",title:"List the full saved history",
+ prompt:"Show me my saved background quotes.",
+ goal:"Ask for every saved background request, not just today's.",
+ expected:"The 12 most recent saved requests: ten Completed, one ValidationError and one TrackingFailed. The two error entries are older, separate records.",
+ saw:"A list of 12 requests with status and total. TrackingFailed means tracking failed; it does not by itself show that the quote failed."},
+{id:"p5",ch:1,kind:"prompt",tag:"Your prompt",title:"Check access without creating a quote",
+ prompt:"Check if my account can create quotes. Don't create one yet.",
+ goal:"Ask whether your own account can create quotes. This is an access check only.",
+ expected:"The assistant asks you to connect first, with Open connection manager and Retry, because the personal connection is Stale.",
+ saw:"\"Let's get you connected first\" with Open connection manager and Retry. Access is not established until the connection is usable."},
+{id:"conn",ch:1,kind:"scene",title:"Repair the stale connection",
+ goal:"Open the connection manager in Copilot Studio and review the personal \"User Quotes\" connection, which shows Stale.",
+ expected:"The connection is reviewed and repaired through the normal sign-in screens. Passwords and tokens are never pasted into chat.",
+ saw:"Both connections now show Connected. Opening the manager alone did not establish access; the check still has to complete.",
+ tag:"Stale connection"},
+{id:"retry",ch:1,kind:"scene",title:"Go back to Teams and select Retry",tag:"Retry",
+ goal:"Return to the chat and select Retry so the pending access check can finish.",
+ expected:"Access check complete: your individual user connection is verified with the required scope, and no quote is created.",
+ saw:"Access check complete. The connection was verified with the cel.user.quotes scope, using a simulated named-user grant. No quote was created."},
+{id:"p6",ch:1,kind:"prompt",tag:"Your prompt",title:"Create the supported personal quote",
+ prompt:"Create a quote for Canada with 4 QO120, 1 QO220 and 1 QO115 using my account. Use reference MYQUOTE-1101-2224. I approve creating it.",
+ goal:"Create one quote with your own mapped application account, using the bounded Canada basket.",
+ expected:"One saved personal quote completes as UQ-6ED741C2FFD7 for CAD 190 under MYQUOTE-1101-2224, with QO120 x4, QO220 x1 and QO115 x1.",
+ saw:"Individual-user quote completed: UQ-6ED741C2FFD7, CAD 190. It ran under your mapped individual application account, not the centrally managed technical executor."},
+{id:"p7",ch:1,kind:"prompt",tag:"Your prompt",title:"Retrieve the same quote",
+ prompt:"Show my latest quote, including its items and total.",
+ goal:"Read the quote back without creating another.",
+ expected:"The same quote number, the same three products and quantities, status Completed and CAD 190.",
+ saw:"Same quote UQ-6ED741C2FFD7: QO120 x4, QO220 x1, QO115 x1, CAD 190. The text appears twice, but both copies are the same quote."},
+{id:"p9",ch:2,kind:"prompt",tag:"Your prompt",title:"Start a tracked managed request",
+ prompt:"Create a sample quote with end-to-end tracking using the managed workflow. Use the slow option and reference TRACK-1101-2232. Give me the tracking number right away.",
+ goal:"Start a centrally managed quote you can follow stage by stage, and get its tracking number straight away.",
+ expected:"A tracking number comes back immediately while processing continues: f1f64f99-e383-4159-9531-6df5411233c7.",
+ saw:"Tracking started with that number, slow profile. The guide flags that this reply also held premature completion-shaped JSON and a wrong quote number (DEMO-QUOTE-33C7), which was not trusted as proof."},
+{id:"p10",ch:2,kind:"prompt",tag:"Your prompt",title:"Read the current stage and history",
+ prompt:"Show my latest tracked quote, including its status, total and processing history.",
+ goal:"Check the tracked request while it is still running.",
+ expected:"Status Running at product validation and no completed total yet. History lists gateway verification, queuing, the blank-quote stage and product validation.",
+ saw:"Running at product validation, no total yet. Evidence shows Synchronized even though processing is not complete; the two statuses describe different things."},
+{id:"idlab",ch:2,kind:"scene",title:"Inspect the saved record in Identity Lab",tag:"Identity Lab",
+ goal:"Open the Identity Lab activity page, sign in with Ping and read the saved record for this tracked request.",
+ expected:"The saved record shows who asked, who authorized and who executed, with the eight recorded processing stages.",
+ saw:"Identity mapping and responsibility: the end-to-end trace with eight recorded stages, and the Entra and Ping user mapping for the requester."},
+{id:"p11",ch:2,kind:"prompt",tag:"Your prompt",title:"Read the final tracked result",
+ prompt:"Show the final result and processing history for my latest tracked quote.",
+ goal:"Ask for the finished result of the tracked request.",
+ expected:"Completed, USD 291, evidence Synchronized, the same tracking number and the persisted quote number, with eight stages from gateway verification to completion.",
+ saw:"The final response matches the saved record. Stages run from 17:05:13 UTC (gateway verified) to 17:07:55 (Completed), about 162 seconds."},
+{id:"p12",ch:3,kind:"prompt",tag:"Your prompt",title:"Submit a parts list with an unknown product",
+ prompt:"Create a proposal for Harbor Electrical's office upgrade in Canada.\nUse reference PARTS-1101-2243 and the fast option.\nCheck the parts first. I approve creation only after all parts pass.\n\npartNumber,quantity,description\nQO120,4,Breaker\nQO999999,1,Breaker\nQO115,1,Breaker",
+ goal:"Submit a proposal that contains one bad part (QO999999). Creation is approved only after every part passes validation.",
+ expected:"The request is saved at revision 1 and validation starts. A failure card names QO999999 as UnknownProduct and a second card asks for a replacement. No quote is created yet.",
+ saw:"Proposal validation failed: line 2, QO999999, UnknownProduct. No quote was created. A \"Correct this proposal\" card asks for the right part number."},
+{id:"card1",ch:3,kind:"card",tag:"Card input",title:"Correct the part in the card",
+ prompt:"QO220",promptLabel:"Enter in the replacement-part field, not as a chat message",
+ goal:"Type the replacement part in the card and save, so the existing request is corrected instead of restarted.",
+ expected:"The same request moves to revision 2, passes validation, then completes for CAD 190. The rejected revision 1 is kept.",
+ saw:"Proposal completed: revision 2, CAD 190. Creation happened only after revision 2 passed validation."},
+{id:"p13",ch:3,kind:"prompt",tag:"Your prompt",title:"Retrieve the saved proposal",
+ prompt:"Show my latest proposal, including its quote number, items and total.",
+ goal:"Run a read-only check on the latest proposal.",
+ expected:"PARTS-1101-2243 at revision 2, CAD 190, with QO120 x4, QO220 x1 and QO115 x1.",
+ saw:"The latest proposal is listed with its quote number, revision 2, CAD 190 and the three items. The guide notes the saved record was verified separately from this chat reply."},
+{id:"p14",ch:3,kind:"prompt",tag:"Your prompt",title:"Submit a list with a missing part number",
+ prompt:"Create a proposal for Harbor Electrical's office upgrade in Canada.\nUse reference CSV-1101-2249 and the fast option.\nCheck this list first. I approve creation only after all rows pass.\n\npartNumber,quantity,description\nQO120,4,Breaker\n,1,Breaker\nQO115,1,Breaker",
+ goal:"Submit a CSV where the second product row has no part number.",
+ expected:"The request is saved, not refused. A failure card reports InvalidCsvRow for CSV row 3 (the header counts as row 1), and a card asks for the complete corrected CSV.",
+ saw:"Proposal validation failed: InvalidCsvRow, CSV row 3 needs exactly three non-empty fields. A card asks for the full corrected CSV."},
+{id:"card2",ch:3,kind:"card",tag:"Card input",title:"Repair it with the full corrected CSV",
+ prompt:"partNumber,quantity,description\nQO120,4,Breaker\nQO220,1,Breaker\nQO115,1,Breaker",promptLabel:"Paste the whole CSV, header included, into the card",
+ goal:"Paste the entire corrected CSV into the correction card and save.",
+ expected:"The same request moves to revision 2, passes validation and completes for CAD 190. The original InvalidCsvRow error stays in the archived revision.",
+ saw:"Proposal completed, revision 2, CAD 190. Creation happened only after the corrected revision passed validation."},
+{id:"p17",ch:4,kind:"prompt",tag:"Your prompt",title:"Review every saved background quote",
+ prompt:"Show my saved background quotes, with their status and totals.",
+ goal:"Read all saved requests back with their statuses and totals. Nothing new is created.",
+ expected:"The 12 saved requests in this Teams thread. This shows saved-history retrieval, not recovery in a new conversation.",
+ saw:"The same 12 requests are listed with their status and total."},
+{id:"p8",ch:4,kind:"prompt",tag:"Your prompt",title:"Check whose account made the personal quote",
+ prompt:"Show whose account was used to create my latest personal quote.",
+ goal:"Confirm which identity executed the personal quote.",
+ expected:"The same personal quote and its mapped individual account (simulated application user CPQ-USER-001), with no shared service-account fallback.",
+ saw:"Quote UQ-6ED741C2FFD7 (MYQUOTE-1101-2224) was created with your mapped individual Ping user account. It is a simulated named-user grant, not proof of commercial licensing."},
+{id:"fresh",ch:4,kind:"scene",title:"Try the history in a fresh conversation",tag:"Connect to continue",sawNow:true,
+ goal:"Open a brand-new Copilot Studio test conversation and ask for today's saved background quotes, to check recovery without chat memory.",
+ expected:"Existing background records and their saved totals, with no new quote.",
+ saw:"It stopped at \"Connect to continue\" and waited for connection permission. No saved-history result was obtained, so the guide marks this test not completed."},
+{id:"kql",ch:4,kind:"query",tag:"KQL query",title:"Run the Application Insights query",
+ prompt:KQL,promptLabel:"Pasted into Application Insights Logs, KQL mode",
+ goal:"In Application Insights Logs, run the combined query for the four completed journeys.",
+ expected:"Rows for MYQUOTE-1101-2224, TRACK-1101-2232, PARTS-1101-2243 and CSV-1101-2249, with stage, revision, recorded state and TraceMatches = true.",
+ saw:"Query output came back with rows per journey, stage, revision and recorded state. The guide marks event completeness, ordering and trace matches as still to be reviewed."}
+];
+
+var STOPTXT={
+ p2o2:{head:"A little later: completion cards arrive",goal:"Leave the background work to finish. The assistant posts a completion card in Teams on its own.",expected:"A saved-request update showing Completed, with a quote ID and the total. Delivery is not guaranteed on every run, so saved history stays the reliable way back.",saw:"Teams delivers completion cards: Completed, 291 USD. Two cards appear with different request IDs; the guide says that is not proof of a duplicate."},
+ cm1:{},
+ il1:{head:"Open the Identity Lab page",goal:"Open the Identity Lab activity page for the tracked request.",expected:"The Identity Lab landing page, where you sign in to see your own saved requests.",tag:"Identity Lab"},
+ il2:{head:"Sign in with Ping",goal:"Select Sign in with Ping so your own saved requests and quotes load.",expected:"Your quote activity appears for the signed-in identity.",tag:"Sign in"},
+ il3:{head:"Read the saved proof trail",tag:"Proof trail"},
+ rt:{tag:"Retry"}
+};
+
+var REUSE={p7:"Don't create another.",p8:"Don't create another.",p10:"Don't create another.",p11:"Don't create another.",p13:"Don't create another.",p17:"Don't create anything."};
+var stepIdx={}; STEPS.forEach(function(s,i){stepIdx[s.id]=i;});
+var stops=CUES.stops.map(function(s,i){return {i:i,id:s.id,step:s.step,type:s.type,t:s.t,rect:s.rect};});
+var $=function(id){return document.getElementById(id);};
+var vid=$("vid"),zoomer=$("zoomer"),hl=$("hl"),hlTag=$("hlTag"),ff=$("ff"),scard=$("scard"),scTag=$("scTag"),scText=$("scText");
+var intro=$("intro"),outro=$("outro"),startBtn=$("startBtn"),againBtn=$("againBtn");
+var mainBtn=$("mainBtn"),mainLbl=$("mainLbl"),mainIcon=$("mainIcon"),backBtn=$("backBtn"),nextBtn=$("nextBtn"),resSw=$("resSw");
+var clock=$("clock"),hint=$("hint"),side=$("side"),where=$("where"),barFill=$("barFill"),bar=$("bar"),rail=$("rail");
+var W=1920,H=1008,DUR=CUES.duration;
+var cur=-1, playing=false, started=false, ready=false, seen={}, raf=0, arriving=false;
+var ICON_PLAY="M3 1.5v13L14 8z", ICON_PAUSE="M3 2h4v12H3zM9 2h4v12H9z";
+
+function fmt(t){t=Math.max(0,Math.floor(t));return ("0"+Math.floor(t/60)).slice(-2)+":"+("0"+(t%60)).slice(-2);}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c];});}
+function stepOf(st){return STEPS[stepIdx[st.step]];}
+function qualifies(st){return st.type==="in"||resSw.checked;}
+function nextIdx(from){for(var k=from+1;k<stops.length;k++){if(qualifies(stops[k]))return k;}return -1;}
+function prevIdx(from){for(var k=from-1;k>=0;k--){if(qualifies(stops[k]))return k;}return -1;}
+function firstStopOfStep(id){for(var k=0;k<stops.length;k++){if(stops[k].step===id)return k;}return -1;}
+
+/* ticks on the progress bar */
+stops.forEach(function(st){ if(st.type==="in"){var b=document.createElement("b");b.style.left=(st.t/DUR*100)+"%";bar.appendChild(b);} });
+
+/* step rail */
+(function(){
+  var html="",n=0;
+  CHAPTERS.forEach(function(title,ci){
+    html+='<div class="chap"><h3>Chapter '+(ci+1)+'</h3><p>'+esc(title)+'</p><div class="steps">';
+    STEPS.forEach(function(s,i){ if(s.ch===ci){ html+='<button type="button" class="st" data-step="'+s.id+'" title="'+esc(s.title)+'" aria-label="Step '+(i+1)+': '+esc(s.title)+'">'+(i+1)+'</button>'; } });
+    html+='</div></div>';
+  });
+  rail.innerHTML=html;
+  rail.addEventListener("click",function(e){
+    var b=e.target.closest(".st"); if(!b||!ready) return;
+    var k=firstStopOfStep(b.getAttribute("data-step")); if(k>=0) goStop(k);
+  });
+})();
+
+/* video loading: fetch into a Blob so seeking works on hosts without byte ranges */
+function loadVideo(){
+  function ok(url){vid.src=url;vid.load();var done=function(){ready=true;startBtn.disabled=false;startBtn.textContent="Start walkthrough";setButtons();};
+    if(vid.readyState>=1)done();else vid.addEventListener("loadedmetadata",done,{once:true});}
+  function direct(){ok("base.mp4");}
+  if(!window.fetch||!window.URL||!window.ReadableStream){direct();return;}
+  fetch("base.mp4").then(function(r){
+    if(!r.ok)throw new Error("http "+r.status);
+    var total=+r.headers.get("content-length")||0, got=0, parts=[], rd=r.body.getReader();
+    function pump(){return rd.read().then(function(x){
+      if(x.done){ok(URL.createObjectURL(new Blob(parts,{type:"video/mp4"})));return;}
+      parts.push(x.value);got+=x.value.length;
+      if(total)startBtn.textContent="Loading video… "+Math.round(got/total*100)+"%";
+      return pump();});}
+    return pump();
+  }).catch(direct);
+}
+
+/* seek helper */
+function seekTo(t){
+  return new Promise(function(res){
+    var done=false,fin=function(){if(done)return;done=true;vid.removeEventListener("seeked",fin);res();};
+    vid.addEventListener("seeked",fin);
+    setTimeout(fin,1800);
+    if(Math.abs(vid.currentTime-t)<0.0005){fin();return;}
+    vid.currentTime=t;
+  });
+}
+
+/* focus: spotlight rectangle + zoom */
+function focusRect(st){
+  var r=st.rect, pad=24;
+  var rx=Math.max(0,r[0]-pad), ry=Math.max(0,r[1]-pad), rw=Math.min(W-rx,r[2]+2*pad), rh=Math.min(H-ry,r[3]+2*pad);
+  var s=Math.max(1,Math.min(W/rw,H/rh,2.4));
+  var cx=rx+rw/2, cy=ry+rh/2, tx=W/2-cx*s, ty=H/2-cy*s;
+  tx=Math.min(0,Math.max(W-W*s,tx)); ty=Math.min(0,Math.max(H-H*s,ty));
+  zoomer.style.setProperty("--s",s.toFixed(3));
+  zoomer.style.transform="translate("+(tx/W*100).toFixed(3)+"%,"+(ty/H*100).toFixed(3)+"%) scale("+s.toFixed(3)+")";
+  hl.style.left=(r[0]/W*100)+"%";hl.style.top=(r[1]/H*100)+"%";hl.style.width=(r[2]/W*100)+"%";hl.style.height=(r[3]/H*100)+"%";
+  hl.classList.toggle("flip",r[1]<70);
+  hl.classList.add("on");
+  return {cx:cx,cy:cy,s:s};
+}
+function clearFocus(){
+  zoomer.style.setProperty("--s","1");
+  zoomer.style.transform="translate(0,0) scale(1)";
+  hl.classList.remove("on");
+  scard.hidden=true;
+}
+
+/* side panel */
+function content(st){
+  var S=stepOf(st), o=STOPTXT[st.id]||{};
+  return {S:S,head:o.head||S.title,goal:o.goal||S.goal,expected:o.expected||S.expected,
+    saw:(st.type==="out"||S.sawNow)?(o.saw||S.saw):null,tag:o.tag||S.tag};
+}
+function renderSide(st){
+  var c=content(st),S=c.S,i=stepIdx[S.id],n=STEPS.length;
+  var h='<p class="eyebrow">Chapter '+(S.ch+1)+' of 5 · '+esc(CHAPTERS[S.ch])+'</p>';
+  h+='<h2>'+esc(c.head)+'</h2><p class="meta">Step '+(i+1)+' of '+n+' · '+(st.type==="out"?"Result":(S.kind==="prompt"?"Prompt in Teams":S.kind==="card"?"Card input":S.kind==="query"?"Query":"Screen"))+'</p>';
+  h+='<div class="sec"><h4>What we are doing next</h4><p>'+esc(c.goal)+'</p></div>';
+  if(S.prompt){
+    var lab=S.promptLabel||"Prompt you give";
+    if(S.kind==="query"){
+      h+='<div class="sec"><h4>'+esc(lab)+'</h4><details class="kq"><summary>Show the query</summary><div class="pbox"><pre id="pTxt">'+esc(S.prompt)+'</pre></div></details><button class="btn copy" type="button" id="copyBtn">Copy query</button></div>';
+    }else{
+      h+='<div class="sec"><h4>'+esc(lab)+'</h4><div class="pbox"><pre id="pTxt">'+esc(S.prompt)+'</pre></div><button class="btn copy" type="button" id="copyBtn">Copy text</button></div>';
+    }
+  }
+  h+='<div class="sec"><h4>Expected output</h4><p>'+esc(c.expected)+'</p></div>';
+  if(c.saw){ h+='<div class="sec saw"><h4>What we saw</h4><p>'+esc(c.saw)+'</p></div>'; }
+  if(S.note&&c.saw){ h+='<p class="note">'+esc(S.note)+'</p>'; }
+  if(REUSE[S.id]){ h+='<p class="note">When you reuse this lookup, the guide adds "'+esc(REUSE[S.id])+'" at the end. The recording omitted it.</p>'; }
+  h+='<p class="srcnote">Goals and expected outputs are written from LAB-DEMO-GUIDE.md. Prompt text is as typed in the recording.</p>';
+  side.innerHTML=h;
+  var cb=$("copyBtn");
+  if(cb){cb.addEventListener("click",function(){
+    var txt=S.prompt;
+    function done(ok){cb.textContent=ok?"Copied":"Select the text to copy";setTimeout(function(){cb.textContent=S.kind==="query"?"Copy query":"Copy text";},1800);}
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(function(){done(true);},function(){sel();});}else sel();
+    function sel(){try{var r=document.createRange();r.selectNodeContents($("pTxt"));var g=window.getSelection();g.removeAllRanges();g.addRange(r);}catch(e){}done(false);}
+  });}
+}
+
+function showStop(k){
+  var st=stops[k], c=content(st), S=c.S;
+  cur=k; seen[S.id]=true;
+  var f=focusRect(st);
+  hlTag.textContent=st.type==="out"?(c.tag&&S.kind==="scene"?c.tag:"Reply"):c.tag||"Look here";
+  if(st.type==="out"&&S.kind!=="scene"&&S.kind!=="query") hlTag.textContent=S.kind==="card"?"Result":"Reply";
+  if(st.type==="out"&&S.kind==="query") hlTag.textContent="Query output";
+  if(STOPTXT[st.id]&&STOPTXT[st.id].tag) hlTag.textContent=STOPTXT[st.id].tag;
+  /* stage card with the exact prompt, opposite the rectangle */
+  if(st.type==="in"&&S.prompt){
+    var lines=S.prompt.split("\n"); var show=S.kind==="query"?lines.slice(0,4).join("\n")+"\n…":S.prompt;
+    scTag.textContent=S.kind==="card"?"Typed into the card":S.kind==="query"?"Query pasted in the editor":"Prompt you give";
+    scText.textContent=show;
+    var cyFrac=(st.rect[1]+st.rect[3]/2)/H;
+    scard.className="scard "+(cyFrac>0.5?"at-top":"at-bottom");
+    scard.hidden=false;
+  }else scard.hidden=true;
+  ff.hidden=true;
+  renderSide(st);
+  var i=stepIdx[S.id];
+  where.innerHTML='Step <b>'+(i+1)+' of '+STEPS.length+'</b> · Stop '+(k+1)+' of '+stops.length;
+  Array.prototype.forEach.call(rail.querySelectorAll(".st"),function(b){
+    var id=b.getAttribute("data-step");
+    b.classList.toggle("cur",id===S.id); b.classList.toggle("seen",!!seen[id]&&id!==S.id);
+  });
+  var hs={prompt:"Resume sends this prompt and plays the reply.",card:"Resume submits the card and plays on.",query:"Resume runs the query.",scene:"Resume carries on with the recording."};
+  hint.textContent=st.type==="out"?"Resume moves on to the next step.":(hs[S.kind]||"");
+  setMain(false);
+  setButtons();
+}
+function setMain(isPlaying){
+  mainLbl.textContent=isPlaying?"Pause":"Resume";
+  mainIcon.firstElementChild.setAttribute("d",isPlaying?ICON_PAUSE:ICON_PLAY);
+}
+function setButtons(){
+  var on=ready&&started;
+  var atCur=cur>=0&&!playing&&!arriving&&Math.abs(vid.currentTime-stops[cur].t)<0.05;
+  mainBtn.disabled=!on;
+  backBtn.disabled=!on||cur<0||(atCur&&prevIdx(cur)<0);
+  nextBtn.disabled=!on||nextIdx(cur)<0;
+}
+
+/* playback */
+function tick(){
+  if(!playing){return;}
+  var t=vid.currentTime, ns=nextIdx(cur);
+  clock.textContent=fmt(t)+" / "+fmt(DUR);
+  barFill.style.width=(t/DUR*100)+"%";
+  var seg=null;for(var q=0;q<CUES.speeds.length;q++){var sp=CUES.speeds[q];if(t>=sp[0]&&t<sp[1]){seg=sp;break;}}
+  if(seg){ff.textContent="Fast forward "+seg[2]+"x";ff.hidden=false;}else ff.hidden=true;
+  if(ns>=0&&t>=stops[ns].t-0.017&&!arriving){arrive(ns);return;}
+  raf=requestAnimationFrame(tick);
+}
+function arrive(k){
+  arriving=true;
+  vid.pause(); playing=false;
+  cancelAnimationFrame(raf);
+  seekTo(stops[k].t).then(function(){
+    arriving=false;
+    clock.textContent=fmt(vid.currentTime)+" / "+fmt(DUR);
+    barFill.style.width=(vid.currentTime/DUR*100)+"%";
+    showStop(k);
+    mainBtn.focus({preventScroll:true});
+  });
+}
+function resume(){
+  if(!ready||!started)return;
+  clearFocus(); outro.hidden=true;
+  hint.textContent="";
+  playing=true; setMain(true); setButtons();
+  var p=vid.play(); if(p&&p.catch)p.catch(function(){playing=false;setMain(false);});
+  cancelAnimationFrame(raf); raf=requestAnimationFrame(tick);
+}
+function pause(){
+  playing=false; vid.pause(); cancelAnimationFrame(raf);
+  setMain(false); hint.textContent="Paused. Resume plays on to the next stop.";
+  ff.hidden=true; setButtons();
+}
+function goStop(k){
+  if(!ready)return;
+  if(!started){started=true;intro.hidden=true;}
+  outro.hidden=true; playing=false; vid.pause(); cancelAnimationFrame(raf); arriving=true;
+  clearFocus();
+  seekTo(stops[k].t).then(function(){
+    arriving=false;
+    clock.textContent=fmt(vid.currentTime)+" / "+fmt(DUR);
+    barFill.style.width=(vid.currentTime/DUR*100)+"%";
+    showStop(k); mainBtn.focus({preventScroll:true});
+  });
+}
+function start(){
+  if(!ready)return;
+  started=true; intro.hidden=true; cur=-1;
+  /* play from the beginning to the first stop */
+  seekTo(0).then(function(){
+    where.innerHTML='Step <b>1 of '+STEPS.length+'</b>';
+    resume();
+  });
+}
+vid.addEventListener("ended",function(){
+  playing=false;cancelAnimationFrame(raf);setMain(false);ff.hidden=true;
+  barFill.style.width="100%";clearFocus();outro.hidden=false;hint.textContent="";setButtons();
+  againBtn.focus({preventScroll:true});
+});
+
+startBtn.addEventListener("click",start);
+againBtn.addEventListener("click",function(){
+  outro.hidden=true;cur=-1;seen={};started=false;playing=false;
+  Array.prototype.forEach.call(rail.querySelectorAll(".st"),function(b){b.classList.remove("cur","seen");});
+  seekTo(0).then(function(){clearFocus();intro.hidden=false;barFill.style.width="0";clock.textContent="00:00 / "+fmt(DUR);where.textContent="";side.innerHTML=SIDE_EMPTY;setButtons();startBtn.focus({preventScroll:true});});
+});
+mainBtn.addEventListener("click",function(){ if(playing)pause(); else resume(); });
+nextBtn.addEventListener("click",function(){var k=nextIdx(cur);if(k>=0)goStop(k);});
+backBtn.addEventListener("click",function(){
+  var atCur=cur>=0&&Math.abs(vid.currentTime-stops[cur].t)<0.05&&!playing;
+  var k=atCur?prevIdx(cur):cur; if(k>=0)goStop(k);
+});
+resSw.addEventListener("change",function(){resSw.blur();setButtons();});
+document.addEventListener("keydown",function(e){
+  var tg=e.target&&e.target.tagName; if(e.metaKey||e.ctrlKey||e.altKey)return;
+  if((e.key===" "||e.key==="Enter")&&tg!=="BUTTON"&&tg!=="INPUT"&&tg!=="SUMMARY"&&tg!=="A"){e.preventDefault();if(!started){start();}else if(!mainBtn.disabled){mainBtn.click();}}
+  else if(e.key==="ArrowRight"&&started&&!nextBtn.disabled&&tg!=="INPUT"){nextBtn.click();}
+  else if(e.key==="ArrowLeft"&&started&&!backBtn.disabled&&tg!=="INPUT"){backBtn.click();}
+});
+
+var SIDE_EMPTY='<p class="eyebrow">Before you start</p><h2>Quote Assistant demo</h2><p class="meta">22 steps · 5 chapters</p>'+
+  '<div class="sec"><h4>What you will see</h4><p>The assistant runs background quotes, repairs a personal connection, creates a quote under your own account, follows a tracked request, corrects a bad part and a bad CSV, and checks the results and telemetry.</p></div>'+
+  '<p class="srcnote">Goals and expected outputs are written from LAB-DEMO-GUIDE.md. Prompt text is as typed in the recording.</p>';
+side.innerHTML=SIDE_EMPTY;
+clock.textContent="00:00 / "+fmt(DUR);
+setMain(false);
+loadVideo();
+window.__player={stops:stops,vid:vid,get cur(){return cur;},get playing(){return playing;}};
+})();
+</script>
+
+</body>
+</html>
