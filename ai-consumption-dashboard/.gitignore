@@ -1,0 +1,17 @@
+# Customer information must never be staged in this public project.
+private/
+reports/
+incoming/
+originals/
+dashboard.json
+*.approval*.json
+*.csv
+*.tsv
+*.xlsx
+*.xls
+*.pdf
+*.zip
+.env
+.env.*
+node_modules/
+*.log
