@@ -1,7 +1,8 @@
 // This adapter runs only on the private local server. It contains no customer data.
+import {enrichActual} from '../benchmarks.mjs';
 const count=(value,name)=>{if(typeof value!=='number'||!Number.isFinite(value)||value<0)throw new Error(`Invalid private ${name}.`);return value;};
 const optional=(value,name)=>value===null?null:count(value,name);
-export function actualDashboard(source){
+export function actualDashboard(source,measurements=null){
  if(source.fictional!==false||source.version!==1||!/^\d{4}-\d{2}-\d{2}$/.test(source.asOf)||!Array.isArray(source.reports)||source.reports.length!==4)throw new Error('Invalid approved source dataset.');
  const kinds=new Set(source.reports.map(r=>r.kind));if(kinds.size!==4||!['credits','azure','activity','inventory'].every(k=>kinds.has(k)))throw new Error('Incomplete source coverage.');
  const report=kind=>source.reports.find(r=>r.kind===kind),credit=report('credits').metrics,activity=report('activity'),inventory=report('inventory');
@@ -21,7 +22,7 @@ export function actualDashboard(source){
  if(runs!==activity.metrics.runs||testRuns!==activity.metrics.testRuns||runs-testRuns!==activity.metrics.otherRuns||byEnvironment.size!==activity.metrics.environments)throw new Error('Activity summaries do not reconcile.');
  if(records.length!==inventory.metrics.agents||environmentCounts.size!==inventory.metrics.environments)throw new Error('Inventory summaries do not reconcile.');
  const azure=optional(report('azure').metrics.azureAiCost,'Azure AI billed cost'),copilot=optional(credit.copilotCost,'Copilot Studio billed cost');
- return {version:1,fictional:false,asOf:source.asOf,scope:'Connected tenant',currency:'USD',
+ const base={version:1,fictional:false,asOf:source.asOf,scope:'Connected tenant',currency:'USD',
   credits:{prepaid,payg,total:prepaid+payg,capacity,remaining:Math.max(0,capacity-prepaid),sourceUpdatedAt:credit.lastUpdated},
   costs:{azure,copilot,total:azure===null||copilot===null?null:azure+copilot},
   adoption:{mau:null,pau:null},value:{hoursSaved:null,benefit:null,net:null,roi:null},
@@ -29,4 +30,5 @@ export function actualDashboard(source){
   inventory:{agents:records.length,environments:environmentCounts.size,byEnvironment:[...environmentCounts.entries()].sort(([a],[b])=>a.localeCompare(b)).map(([,agents],i)=>({label:`Env ${i+1}`,agents}))},
   reports:source.reports.map(({kind,file,receivedAt,period,warnings})=>({kind,file,receivedAt,period,warnings})),
   forecastAvailable:false,forecastReason:'The approved reports contain a single month-to-date credit snapshot and no complete monthly billed-cost history.'};
+ return enrichActual(base,measurements);
 }

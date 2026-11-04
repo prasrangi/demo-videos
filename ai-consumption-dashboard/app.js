@@ -1,7 +1,7 @@
 import {sampleData} from './sample-data.mjs';
 import {validateRows,total,spend,previousMonth,change,baselineGrowth,forecast,businessValue,csvEscape} from './model.mjs';
 import {stackedBars,donutChart} from './charts.mjs';
-import {renderActualSection,actualExportRows} from './actual-view.mjs';
+import {renderActualSection,actualExportRows,updateActualValueScenario} from './actual-view.mjs';
 
 const $ = selector => document.querySelector(selector);
 const escape = value => String(value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -96,7 +96,7 @@ $('#customer-filter').addEventListener('change',refreshScope);$('#month-filter')
 window.addEventListener('hashchange',render);
 $('#content').addEventListener('click',event=>{const button=event.target.closest('[data-customer]');if(button){$('#customer-filter').value=button.dataset.customer;refreshScope();}});
 $('#content').addEventListener('input',event=>{
- if(dataMode==='actual')return;
+ if(dataMode==='actual'){if(event.target.id.startsWith('actual-')&&actualData)$('#export-button').disabled=updateActualValueScenario(actualData)===false;return;}
  if(event.target.id==='growth'){growth=Number(event.target.value)/100;updateForecast();}
  if(event.target.id==='hourly-rate'){const v=Number(event.target.value);if(event.target.value!==''&&Number.isFinite(v)&&v>=0&&v<=1000){rate=v;updateValue();}}
  if(event.target.id==='realization'){realization=Number(event.target.value)/100;updateValue();}
@@ -104,7 +104,7 @@ $('#content').addEventListener('input',event=>{
 $('#export-button').addEventListener('click',()=>{
  if(dataMode==='actual'){
   if(!actualData)return;
-  const fields=['report','metric','value','unit','period','sourceUpdatedAt'];
+  const fields=['report','metric','value','unit','period','sourceUpdatedAt','basis'];
   downloadCSV(actualExportRows(actualData),fields,`ai-consumption-actual-${actualData.asOf}.csv`);
   $('#load-status').textContent='Actual source measures exported. Unavailable values remain explicit.';
   return;

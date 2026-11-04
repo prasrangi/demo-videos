@@ -13,7 +13,7 @@ if(!Number.isInteger(port)||port<1024||port>65535)throw new Error('Invalid local
 const root=fileURLToPath(new URL('../',import.meta.url));
 const storage=privateMode?await assertPrivateStorage(arg('--storage')):null;
 if(privateMode&&!storage)throw new Error('Private storage is required.');
-const types={'index.html':'text/html; charset=utf-8','reports.html':'text/html; charset=utf-8','reports.js':'text/javascript; charset=utf-8','app.js':'text/javascript; charset=utf-8','actual-view.mjs':'text/javascript; charset=utf-8','charts.mjs':'text/javascript; charset=utf-8','model.mjs':'text/javascript; charset=utf-8','sample-data.mjs':'text/javascript; charset=utf-8','styles.css':'text/css; charset=utf-8','favicon.svg':'image/svg+xml'};
+const types={'index.html':'text/html; charset=utf-8','reports.html':'text/html; charset=utf-8','reports.js':'text/javascript; charset=utf-8','app.js':'text/javascript; charset=utf-8','actual-view.mjs':'text/javascript; charset=utf-8','benchmarks.mjs':'text/javascript; charset=utf-8','charts.mjs':'text/javascript; charset=utf-8','model.mjs':'text/javascript; charset=utf-8','sample-data.mjs':'text/javascript; charset=utf-8','styles.css':'text/css; charset=utf-8','favicon.svg':'image/svg+xml'};
 const server=http.createServer(async(req,res)=>{
  res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('Referrer-Policy','no-referrer');res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'none'");
  if(req.headers.host!==`127.0.0.1:${port}`){res.writeHead(403);res.end('Invalid host.');return;}
@@ -25,7 +25,9 @@ const server=http.createServer(async(req,res)=>{
   }
   if(pathname==='/api/actual'&&privateMode){
    const data=JSON.parse(await readFile(path.join(storage,'reports.json'),'utf8'));
-   res.writeHead(200,{'Content-Type':'application/json; charset=utf-8'});res.end(req.method==='HEAD'?'':JSON.stringify(actualDashboard(data)));return;
+   let measurements=null;try{measurements=JSON.parse(await readFile(path.join(storage,'measurements.json'),'utf8'));}catch(error){if(error.code!=='ENOENT')throw error;}
+   const clean=actualDashboard(data,measurements);
+   res.writeHead(200,{'Content-Type':'application/json; charset=utf-8'});res.end(req.method==='HEAD'?'':JSON.stringify(clean));return;
   }
   if(pathname==='/api/reports'&&privateMode){
    const data=JSON.parse(await readFile(path.join(storage,'reports.json'),'utf8'));
