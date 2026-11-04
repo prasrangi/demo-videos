@@ -1,0 +1,13 @@
+const $=selector=>document.querySelector(selector),escape=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const number=value=>value===null||value===undefined?'Unavailable':new Intl.NumberFormat('en-US',{maximumFractionDigits:2}).format(value);
+const titles={credits:'Copilot Studio credits',azure:'Azure AI usage & cost',activity:'Agent activity',inventory:'Agent inventory'};
+try{
+ if(!['127.0.0.1','localhost','[::1]'].includes(location.hostname))throw new Error('Open this page through the local private viewer. No private data is available on GitHub Pages.');
+ const response=await fetch('./api/reports',{cache:'no-store'});if(!response.ok)throw new Error('Approved reports are unavailable. Start the private report viewer.');
+ const data=await response.json();if(data.fictional!==false||!Array.isArray(data.reports)||data.reports.length!==4)throw new Error('Invalid private source dataset.');
+ const get=kind=>data.reports.find(r=>r.kind===kind)?.metrics||{};
+ $('#report-status').textContent=`${data.reports.length} approved reports ingested · ${data.asOf}. Verified MAU, PAU, billed AI cost, forecasting and business value remain unavailable until matching source measures and history are supplied.`;
+ const items=[['Month-to-date credits',number(get('credits').totalCredits),'Tenant-level · not agent attribution'],['Azure AI billed cost',get('azure').azureAiCost===null?'Unavailable':`$${number(get('azure').azureAiCost)}`,'Only matching AI-account cost rows'],['Observed agent runs',number(get('activity').runs),'Rolling window · includes test traffic'],['Configured agents',number(get('inventory').agents),'Inventory · not active users']];
+ $('#report-kpis').innerHTML=items.map(([label,value,note])=>`<article class="kpi"><div class="kpi-label">${label}</div><div class="kpi-value">${value}</div><div class="kpi-meta">${note}</div></article>`).join('');
+ $('#report-content').innerHTML=data.reports.map(report=>`<article class="definition"><h2>${escape(titles[report.kind]||report.kind)}</h2><p>${escape(report.file)}<br>Received: ${escape(report.receivedAt)}<br>Scope: ${escape(report.period)}</p><div class="metrics-list">${Object.entries(report.metrics).map(([key,value])=>`<div class="metric-row"><span>${escape(key.replace(/([A-Z])/g,' $1').toLowerCase())}</span><strong>${escape(typeof value==='number'||value===null?number(value):value)}</strong></div>`).join('')}</div><ul>${report.warnings.map(w=>`<li>${escape(w)}</li>`).join('')}</ul></article>`).join('');
+}catch(error){$('#report-status').classList.add('error');$('#report-status').textContent=error.message;}

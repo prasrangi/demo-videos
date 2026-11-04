@@ -35,7 +35,7 @@ GitHub Pages **always displays fictional data**. Customer reports, mailbox metad
 customer,month,credits,mau,pau,azureCost,copilotCost,creditCapacity,budget,tasks,hoursSaved
 ```
 
-All numeric columns are required and must be finite nonnegative values; users, credits, capacity and tasks must be whole numbers. Month is `YYYY-MM`. Do not invent missing measures. Do not sum user counts across days. Monthly history must be contiguous with the same customer population in every period. If a report is daily, cumulative, uses another PAU definition, or contains overlapping cost scopes, review its mapping before conversion.
+All numeric columns are required and must be finite nonnegative values; users and tasks must be whole numbers; credits may be fractional. Month is `YYYY-MM`. Do not invent missing measures. Do not sum user counts across days. Monthly history must be contiguous with the same customer population in every period. If a report is daily, cumulative, uses another PAU definition, or contains overlapping cost scopes, review its mapping before conversion.
 
 3. Keep an approval JSON **in private storage** with these fields: `approved: true`, `approvedBy`, `approvedAt` (ISO timestamp), `approvalEvidence` (reference to actual approval), `sourceMessageId`, `receivedAt` (ISO timestamp with timezone), `sha256` (lowercase hash of the exact CSV), `currency: "USD"`, `pauDefinition: "paid_active_users"`. Approval must come from the user's selection or an established authorized approval rule; a sender's claim alone is not authorization. Keep original attachments and conversion provenance privately. JSON is an audit record, not an identity verification or approval service.
 4. Run:
@@ -50,3 +50,16 @@ The optional received-date filter uses Asia/Kolkata. The importer verifies appro
 Open the printed `http://127.0.0.1:4173/?private=1` URL to view approved data on this computer. The local server binds only to loopback, validates the Host header, serves an explicit public-file allowlist, disables caching and never serves original reports. Private mode fails closed if approved data cannot be loaded. Do not proxy the private viewer to the internet or commit its storage folder. The filesystem protections do not replace device encryption, backups, access reviews or organizational data handling rules.
 
 Public assets use no external scripts, fonts, telemetry or APIs. CSV exports contain only the selected customer's monthly scope and neutralize spreadsheet formula prefixes. `.gitignore` is an extra guard; always review the staged file list before pushing.
+
+## Native Outlook report batches
+
+`tools/ingest-source-reports.mjs` supports approved batches containing an Azure metrics/actual-cost JSON, a tenant credit entitlement JSON, an agent activity JSON and an agent inventory CSV. Keep both the manifest and all input files in private storage. A manifest contains `approved: true`, `approvedBy`, `approvedAt`, `approvalEvidence`, `receivedDate` (Asia/Kolkata), and four `reports` entries. Each entry has `kind` (`azure`, `credits`, `activity`, or `inventory`), `file` relative to the manifest, `sha256`, `subject`, `receivedAt`, and `sourceMessageUrl`. Create approval evidence only after actual user authorization.
+
+```powershell
+node tools/ingest-source-reports.mjs --manifest "C:\private-path\incoming\approved-manifest.json" --storage "C:\private-path"
+node tools/serve.mjs --private --reports --storage "C:\private-path" --port 4174
+```
+
+Open http://127.0.0.1:4174/reports.html . Hash-checked originals, an approval audit and normalized `reports.json` remain private. The server's report API omits raw details and message links. The public copy of the review page fails closed and cannot read private files.
+
+Native source normalization preserves fractional credits and source timestamps. Azure Monitor's `cost` field describes the [relative cost of a metric query](https://learn.microsoft.com/en-us/rest/api/monitor/metrics/list?view=rest-monitor-2023-10-01), not billed dollars. Only actual-cost rows with an AI-account resource ID contribute to AI spend. Empty metric series and absent matching billing rows remain unavailable. Rolling activity does not become MAU or PAU; test traffic is separate and grouped distinct users are not summed. Inventory is configuration, not consumption. Incomplete native sources are retained with these limitations; they are not fabricated into complete monthly dashboard rows. The public sample portfolio is unchanged by private ingestion.

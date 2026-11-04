@@ -10,7 +10,7 @@ export function validateRows(rows) {
     const copy = {customer: row.customer.trim(), month: row.month};
     for (const key of numericFields) {
       if (typeof row[key] !== 'number' || !Number.isFinite(row[key]) || row[key] < 0 || row[key] > 1e12) fail(`invalid ${key}.`);
-      if (['credits','mau','pau','creditCapacity','tasks'].includes(key) && !Number.isInteger(row[key])) fail(`${key} must be an integer.`);
+      if (['mau','pau','tasks'].includes(key) && !Number.isInteger(row[key])) fail(`${key} must be an integer.`);
       copy[key] = row[key];
     }
     if (copy.pau > copy.mau) fail('PAU cannot exceed MAU.');
