@@ -4,6 +4,10 @@ Public URL: https://prasrangi.github.io/demo-videos/ai-consumption-dashboard/
 
 A dependency-free static dashboard with fictional monthly data, customer/month filters, Copilot Studio Credits, MAU, PAU, Azure AI costs, three-month scenario forecasts, adjustable business value estimates, and CSV export. All public customer names and values are made up. USD is the only supported currency.
 
+The **Data source** selector switches the private dashboard between **Sample Data** and **Actual Data**. Actual Data is loaded only from the loopback server's approved report storage. The public GitHub Pages site keeps Actual Data disabled and makes no requests to private endpoints.
+
+For the approved four-report batch, start the unified private dashboard with `node tools/serve.mjs --private --storage "C:\private-path" --port 4174` and open http://127.0.0.1:4174/?private=1 . The same bar, grouped-bar and donut chart components render the sample portfolio and the available actual credits, credit capacity, agent activity and inventory. A month-to-date snapshot is not expanded into fictional monthly history. Missing billed costs, verified MAU/PAU and productivity measurements stay unavailable in the actual forecasting and value views. Sample assumptions never fill actual-data gaps. Actual exports identify each measure's reporting scope and keep missing values explicit. Inventory environment labels are private-view aliases and are not mapped to telemetry environments without source evidence.
+
 ## Run and verify
 
 Requires Node.js 20 or newer. From this folder:

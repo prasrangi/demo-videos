@@ -1,5 +1,7 @@
 import {sampleData} from './sample-data.mjs';
 import {validateRows,total,spend,previousMonth,change,baselineGrowth,forecast,businessValue,csvEscape} from './model.mjs';
+import {stackedBars,donutChart} from './charts.mjs';
+import {renderActualSection,actualExportRows} from './actual-view.mjs';
 
 const $ = selector => document.querySelector(selector);
 const escape = value => String(value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -12,6 +14,7 @@ const paths={overview:'M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z',us
 const icon = name => `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="${paths[name]||paths.overview}"/></svg>`;
 const sections={overview:['Overview','Consumption overview','Understand adoption, manage spend, and see what AI delivers.'],usage:['Usage & cost','Usage & cost','Follow credit consumption, user adoption, and Azure AI spend.'],forecast:['Forecasting','Plan the next quarter','Explore a transparent spend forecast and test your assumptions.'],value:['Business value','Turn consumption into value','Connect AI adoption to time saved and estimated business impact.'],methodology:['Data & methodology','Know the numbers','Definitions, assumptions, and the boundary between demo and private data.']};
 let dataset=sampleData,rows=[],customer='all',month='2026-10',section='overview',growth=0,rate=45,realization=.7;
+let dataMode='sample',actualData=null,privateAvailable=false;
 const privateRequested = new URLSearchParams(location.search).get('private') === '1';
 const selectedRows = (m=month) => rows.filter(row=> row.month===m && (customer==='all'||row.customer===customer));
 const series = () => [...new Set(rows.map(r=>r.month))].sort().filter(m=>m<=month).slice(-6).map(m=>({...total(selectedRows(m)),month:m}));
@@ -21,16 +24,10 @@ const kpi = (label,value,meta,symbol,unit='') => `<article class="kpi"><div clas
 const cardHead = (title,sub,extra='') => `<div class="panel-head"><div><h2>${title}</h2><p class="panel-sub">${sub}</p></div>${extra}</div>`;
 const chartLegend = () => '<div class="legend"><span><i class="dot"></i>Copilot Studio</span><span><i class="dot blue"></i>Azure AI</span></div>';
 function bars(data) {
-  const w=640,h=242,left=47,right=15,top=14,bottom=34,plot=h-top-bottom,max=Math.max(1,...data.map(r=>r.spend))*1.2;
-  let svg=`<svg class="chart" viewBox="0 0 ${w} ${h}" role="img" aria-label="Monthly AI spend, split between Copilot Studio and Azure AI"><title>Monthly spend in USD</title>`;
-  for(let i=0;i<=4;i++){const y=top+plot*(1-i/4);svg+=`<line class="chart-grid" x1="${left}" x2="${w-right}" y1="${y}" y2="${y}"/><text x="${left-10}" y="${y+3}" text-anchor="end">${shortMoney(max*i/4)}</text>`;}
-  const cell=(w-left-right)/Math.max(1,data.length),bw=Math.min(43,cell*.45);
-  data.forEach((r,i)=>{const x=left+cell*i+(cell-bw)/2,ch=r.copilotCost/max*plot,ah=r.azureCost/max*plot;svg+=`<g><title>${monthName(r.month)}: Copilot Studio ${money(r.copilotCost)}; Azure AI ${money(r.azureCost)}; total ${money(r.spend)}</title><rect x="${x}" y="${top+plot-ch}" width="${bw}" height="${ch}" rx="3" fill="#8967dd"/><rect x="${x}" y="${top+plot-ch-ah}" width="${bw}" height="${ah}" rx="3" fill="#b5c2f0"/><text x="${x+bw/2}" y="${h-10}" text-anchor="middle">${monthName(r.month,true)}</text></g>`;});
-  return svg+'</svg>';
+  return stackedBars(data.map(row=>({...row,label:monthName(row.month,true)})),{keys:['copilotCost','azureCost'],format:money,axis:shortMoney,description:'Monthly AI spend, split between Copilot Studio and Azure AI'});
 }
 function donut(t) {
-  const shares=t.spend>0?[t.copilotCost/t.spend,t.azureCost/t.spend]:[0,0];let offset=0;
-  return `<div class="donut-layout"><div class="donut-wrap"><svg viewBox="0 0 160 160" role="img" aria-label="Spend mix: Copilot Studio ${money(t.copilotCost)}, Azure AI ${money(t.azureCost)}"><circle cx="80" cy="80" r="64" fill="none" stroke="#f3f1f8" stroke-width="17"/>${shares.map((share,i)=>{const start=offset;offset+=share*402.124;return `<circle cx="80" cy="80" r="64" fill="none" stroke="${i?'#b5c2f0':'#8967dd'}" stroke-width="17" stroke-dasharray="${share*402.124} 402.124" stroke-dashoffset="${-start}"/>`;}).join('')}</svg><div class="donut-label"><small>Total AI spend</small><strong>${shortMoney(t.spend)}</strong></div></div><div class="cost-legend">${[['Copilot Studio',t.copilotCost,false],['Azure AI',t.azureCost,true]].map(([name,cost,blue])=>`<div><i class="dot ${blue?'blue':''}"></i><strong>${name}</strong><small>${money(cost)} <span>· ${t.spend?(cost/t.spend*100).toFixed(0):0}%</span></small></div>`).join('')}</div></div>`;
+  return donutChart([{label:'Copilot Studio',value:t.copilotCost},{label:'Azure AI',value:t.azureCost}],{description:'Monthly AI spend mix',centerLabel:'Total AI spend',centerValue:shortMoney(t.spend),format:money});
 }
 function table(mode='overview') {
  const sorted=selectedRows().sort((a,b)=>spend(b)-spend(a));
@@ -46,10 +43,7 @@ function usage() {
 }
 const metric=(label,value)=>`<div class="metric-row"><span>${label}</span><strong>${value}</strong></div>`;
 function adoptionChart() {
- const data=series(),max=Math.max(1,...data.map(r=>r.mau))*1.2,w=620,h=253,left=45,plot=195;
- let svg=`<div class="legend"><span><i class="dot"></i>MAU</span><span><i class="dot blue"></i>PAU</span></div><svg class="chart" viewBox="0 0 ${w} ${h}" role="img" aria-label="Monthly MAU and PAU"><title>Monthly active and paid active users</title>`;
- for(let i=0;i<5;i++){const y=15+plot*(1-i/4);svg+=`<line class="chart-grid" x1="${left}" x2="605" y1="${y}" y2="${y}"/><text x="35" y="${y+4}" text-anchor="end">${compact(max*i/4)}</text>`;}
- data.forEach((r,i)=>{const x=left+(560/data.length)*(i+.5),mh=r.mau/max*plot,ph=r.pau/max*plot;svg+=`<g><title>${monthName(r.month)}: ${num(r.mau)} MAU, ${num(r.pau)} PAU</title><rect x="${x-17}" y="${210-mh}" width="15" height="${mh}" fill="#8967dd" rx="3"/><rect x="${x+2}" y="${210-ph}" width="15" height="${ph}" fill="#b5c2f0" rx="3"/><text x="${x}" y="235" text-anchor="middle">${monthName(r.month,true)}</text></g>`;});return svg+'</svg>';
+ return '<div class="legend"><span><i class="dot"></i>MAU</span><span><i class="dot blue"></i>PAU</span></div>'+stackedBars(series().map(row=>({...row,label:monthName(row.month,true)})),{keys:['mau','pau'],format:num,axis:compact,description:'Monthly MAU and PAU',grouped:true});
 }
 function forecastPage() {
  return `<div class="notice">Directional planning estimate. The model compounds the latest monthly spend; the lower and higher scenarios are ±25% of that estimate. They are not confidence intervals.</div><div id="forecast-cards" class="scenario-grid"></div><div class="two-col"><section class="panel">${cardHead('Spend outlook','Historical spend and a three-month projection','<span class="chip">USD</span>')}<div class="panel-body"><div class="legend"><span><i class="dot"></i>Actual</span><span><i class="dot blue"></i>Projected</span></div><div id="forecast-chart"></div></div></section><section class="panel">${cardHead('Planning assumptions','Adjust the scenario to explore the impact')}<div class="panel-body"><div class="control-group"><label for="growth">Monthly spend growth <output id="growth-output" for="growth"></output></label><input id="growth" type="range" min="-20" max="30" step="1" value="${Math.round(growth*100)}"></div><div id="forecast-metrics" class="metrics-list"></div><p class="chart-note">Default growth is the average of the last two available monthly growth rates (capped at ±20%). Your scenario can range from −20% to +30%. Budget is held constant each month.</p></div></section></div>`;
@@ -83,44 +77,83 @@ function render() {
  section=location.hash.slice(1) in sections?location.hash.slice(1):'overview';
  const [label,title,subtitle]=sections[section];
  $('#breadcrumb').textContent=label;$('#page-title').textContent=title;$('#page-subtitle').textContent=subtitle;
- document.title=`${label} · AI Consumption Dashboard`;
+ document.title=`${label} · ${dataMode==='actual'?'Actual Data':'Sample Data'} · AI Consumption Dashboard`;
  document.querySelectorAll('nav a').forEach(a=>{const active=a.hash===`#${section}`;a.classList.toggle('active',active);if(active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
+ if(dataMode==='actual'){
+  $('#content').innerHTML=actualData?renderActualSection(section,actualData,{kpi,cardHead,metric,icon}):'';
+  return;
+ }
  $('#content').innerHTML=({overview,usage,forecast:forecastPage,value:valuePage,methodology}[section])();
  if(!dataset.fictional) document.querySelectorAll('.customer-name small').forEach(el=>el.textContent='Approved private report');
  if(section==='forecast')updateForecast();if(section==='value')updateValue();
  // Capacity meters avoid inline style so the strict Content Security Policy is respected.
  document.querySelectorAll('.progress span').forEach(el=>{const width=el.dataset.width;el.style.width=`${width||0}%`;});
 }
-function refreshScope() {customer=$('#customer-filter').value;month=$('#month-filter').value;growth=baselineGrowth(series());render();}
+function refreshScope() {if(dataMode==='actual')return;customer=$('#customer-filter').value;month=$('#month-filter').value;growth=baselineGrowth(series());render();}
 $('#navigation').innerHTML=Object.entries(sections).map(([id,[label]])=>`<a href="#${id}">${icon(id)}${label}</a>`).join('');
 $('#export-icon').innerHTML=icon('download');
 $('#customer-filter').addEventListener('change',refreshScope);$('#month-filter').addEventListener('change',refreshScope);
 window.addEventListener('hashchange',render);
 $('#content').addEventListener('click',event=>{const button=event.target.closest('[data-customer]');if(button){$('#customer-filter').value=button.dataset.customer;refreshScope();}});
 $('#content').addEventListener('input',event=>{
+ if(dataMode==='actual')return;
  if(event.target.id==='growth'){growth=Number(event.target.value)/100;updateForecast();}
  if(event.target.id==='hourly-rate'){const v=Number(event.target.value);if(event.target.value!==''&&Number.isFinite(v)&&v>=0&&v<=1000){rate=v;updateValue();}}
  if(event.target.id==='realization'){realization=Number(event.target.value)/100;updateValue();}
 });
 $('#export-button').addEventListener('click',()=>{
+ if(dataMode==='actual'){
+  if(!actualData)return;
+  const fields=['report','metric','value','unit','period','sourceUpdatedAt'];
+  downloadCSV(actualExportRows(actualData),fields,`ai-consumption-actual-${actualData.asOf}.csv`);
+  $('#load-status').textContent='Actual source measures exported. Unavailable values remain explicit.';
+  return;
+ }
  const fields=['customer','month','credits','mau','pau','azureCost','copilotCost','creditCapacity','budget','tasks','hoursSaved'];
- const csv=[fields.map(csvEscape).join(','),...selectedRows().map(row=>fields.map(key=>csvEscape(row[key])).join(','))].join('\r\n');
- const link=document.createElement('a');link.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));link.download=`ai-consumption-${dataset.fictional?'sample':'private'}-${month}.csv`;link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000);
+ downloadCSV(selectedRows(),fields,`ai-consumption-sample-${month}.csv`);
  $('#load-status').textContent='Selected monthly data exported.';
 });
-async function initialize() {
- try {
-  if(privateRequested){
-   if(!['localhost','127.0.0.1','[::1]'].includes(location.hostname))throw new Error('Private mode is available only through the local private viewer.');
-   const response=await fetch('./api/dashboard',{cache:'no-store'});if(!response.ok)throw new Error('Private data could not be loaded. Start the private viewer and confirm approved reports were ingested.');
-   dataset=await response.json();if(dataset.fictional!==false||dataset.currency!=='USD'||!/^\d{4}-\d{2}-\d{2}$/.test(dataset.asOf))throw new Error('Invalid private dataset metadata.');
+function downloadCSV(data,fields,filename){
+ const csv=[fields.map(csvEscape).join(','),...data.map(row=>fields.map(key=>csvEscape(row[key])).join(','))].join('\r\n');
+ const link=document.createElement('a');link.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));link.download=filename;link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000);
+}
+async function selectDataMode(mode){
+ $('#data-source').disabled=true;$('#export-button').disabled=true;$('#load-status').className='';$('#load-status').textContent='';$('#content').innerHTML='';
+ dataMode=mode;$('#data-source').value=mode;customer='all';rate=45;realization=.7;
+ try{
+  if(mode==='actual'){
+   if(!privateAvailable)throw new Error('Actual Data is available only through the private dashboard on this computer.');
+   $('#load-status').textContent='Loading approved Actual Data…';
+   const response=await fetch('./api/actual',{cache:'no-store'});if(!response.ok)throw new Error('Actual Data could not be loaded from private storage. You can switch to Sample Data.');
+   actualData=await response.json();if(actualData.fictional!==false||actualData.version!==1||!actualData.credits||!actualData.activity||!actualData.inventory||actualData.reports?.length!==4)throw new Error('Actual Data failed validation. No sample values have been substituted.');
+   $('#customer-filter').innerHTML='<option value="all">Connected tenant</option>';
+   $('#month-filter').innerHTML=`<option>${escape(actualData.asOf)} snapshot</option>`;
+   $('#customer-filter').disabled=true;$('#month-filter').disabled=true;
+   $('#scope-label').textContent='Scope';$('#period-label').textContent='Reporting snapshot';$('#customer-filter').setAttribute('aria-label','Scope');$('#month-filter').setAttribute('aria-label','Reporting snapshot');
+   $('#asof').textContent='Actual reports · '+actualData.asOf;
+   $('#mode-badge').textContent='ACTUAL DATA · PRIVATE';$('#sidebar-mode').textContent='Actual Data active';$('#sidebar-note').textContent='Four approved reports, read from private local storage.';$('#workspace-subtitle').textContent='Approved actual reports';$('#footer-label').textContent='Actual Data · private local view · customer-sensitive';
+  }else{
+   dataset=sampleData;rows=validateRows(dataset.rows);month=[...new Set(rows.map(r=>r.month))].sort().at(-1);
+   $('#customer-filter').innerHTML='<option value="all">All customers</option>'+[...new Set(rows.map(r=>r.customer))].sort().map(name=>`<option value="${escape(name)}">${escape(name)}</option>`).join('');
+   $('#month-filter').innerHTML=[...new Set(rows.map(r=>r.month))].sort().reverse().map(m=>`<option value="${m}">${monthName(m)}</option>`).join('');
+   $('#customer-filter').disabled=false;$('#month-filter').disabled=false;
+   $('#scope-label').textContent='Customer';$('#period-label').textContent='Reporting period';$('#customer-filter').setAttribute('aria-label','Customer');$('#month-filter').setAttribute('aria-label','Reporting period');
+   $('#asof').textContent='Sample snapshot · 31 Oct 2026';
+   $('#mode-badge').textContent='FICTIONAL SAMPLE DATA';$('#sidebar-mode').textContent='Sample Data active';$('#sidebar-note').textContent='Explore the portfolio with fictional data.';$('#workspace-subtitle').textContent='Fictional sample portfolio';$('#footer-label').textContent='Fictional portfolio · USD · No customer data';
+   growth=baselineGrowth(series());
   }
-  rows=validateRows(dataset.rows);month=[...new Set(rows.map(r=>r.month))].sort().at(-1);
-  $('#customer-filter').innerHTML='<option value="all">All customers</option>'+[...new Set(rows.map(r=>r.customer))].sort().map(name=>`<option value="${escape(name)}">${escape(name)}</option>`).join('');
-  $('#month-filter').innerHTML=[...new Set(rows.map(r=>r.month))].sort().reverse().map(m=>`<option value="${m}">${monthName(m)}</option>`).join('');
-  $('#asof').textContent=`${dataset.fictional?'Sample snapshot':'Private snapshot'} · ${new Date(dataset.asOf+'T00:00:00Z').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'})}`;
-  if(!dataset.fictional){$('#mode-badge').textContent='PRIVATE · LOCAL DEVICE';$('#sidebar-mode').textContent='Private reports active';$('#sidebar-note').textContent='Approved records served only on this device.';$('#workspace-subtitle').textContent='Approved private portfolio';$('#footer-label').textContent='Private local view · USD · Customer-sensitive';}
-  growth=baselineGrowth(series());render();
- }catch(error){$('#load-status').className='notice error';$('#load-status').textContent=error.message;$('#export-button').disabled=true;$('#customer-filter').disabled=true;$('#month-filter').disabled=true;}
+  const url=new URL(location.href);if(mode==='actual')url.searchParams.set('private','1');else url.searchParams.delete('private');history.replaceState(null,'',url.pathname+url.search+url.hash);
+  $('#load-status').textContent='';$('#export-button').disabled=false;render();
+ }catch(error){actualData=null;$('#load-status').className='notice error';$('#load-status').textContent=error.message;$('#mode-badge').textContent='ACTUAL DATA UNAVAILABLE';$('#sidebar-mode').textContent='Actual Data unavailable';$('#sidebar-note').textContent='Select Sample Data to explore fictional data.';$('#workspace-subtitle').textContent='Private source unavailable';$('#footer-label').textContent='Actual source unavailable · no sample values substituted';$('#customer-filter').innerHTML='';$('#month-filter').innerHTML='';$('#customer-filter').disabled=true;$('#month-filter').disabled=true;}
+ finally{$('#data-source').disabled=false;}
+}
+$('#data-source').addEventListener('change',event=>selectDataMode(event.target.value));
+async function initialize(){
+ if(['127.0.0.1','localhost','[::1]'].includes(location.hostname)){
+  try{const response=await fetch('./api/capabilities',{cache:'no-store'});if(response.ok)privateAvailable=(await response.json()).privateMode===true;}catch{}
+ }
+ $('#data-source option[value="actual"]').disabled=!privateAvailable;
+ $('#data-source').title=privateAvailable?'Choose fictional Sample Data or approved private Actual Data.':'Actual Data is available in the private dashboard on this computer.';
+ await selectDataMode(privateRequested?'actual':'sample');
 }
 initialize();
