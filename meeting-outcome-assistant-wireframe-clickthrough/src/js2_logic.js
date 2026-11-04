@@ -14,6 +14,7 @@ function freshState() {
     lookup: { outcome: 'signin', status: 'idle', result: null, simSignIn: false, selectedMatch: null, contacts: false, opps: false },
     ui: { drawer: false, wide: false, edit: null, help: false, tech: false, start: false, notesPanel: false },
     presenter: { on: false, step: 1, auto: false, sub: null, prev: null, ctxHide: false },
+    sf: { pending: null, selectedOpp: null, analysed: false, taskReq: null, nextReq: null },
     scen: null, busy: false
   };
 }
@@ -151,7 +152,7 @@ function startCaptureFromUI() {
   const raw = normNotes(S.notes || '');
   if (!raw) { S.capErr = 'Paste the notes you are authorised to use, or choose Load sample notes.'; render(); return; }
   const kind = raw === normNotes(NOTES.main) ? 'main' : raw === normNotes(NOTES.inject) ? 'inject' : null;
-  if (!kind) { S.capErr = 'This wireframe can only process the supplied sample notes, because every result is simulated. Choose Load sample notes to continue.'; render(); return; }
+  if (!kind) { S.capErr = 'This wireframe can only process the supplied sample notes here, because every result is simulated. Choose Load sample notes to continue. (The demo notes for the Salesforce prompts go in the chat instead.)'; render(); return; }
   S.capErr = '';
   captureFlow(kind, (S.instruction || '').trim() || DEFAULT_INSTRUCTION);
 }
@@ -159,13 +160,23 @@ function startCaptureFromUI() {
 /* ==========================================================================
    Actions on a single Event
    ========================================================================== */
+/* Which Event does the text point at? Clauses that only say what to leave alone (“Leave the commercial review unchanged.”) are ignored. */
+function targetClauses(text) {
+  const all = splitSentences(text);
+  const keep = all.filter(c => !/^\s*(?:please\s+)?(?:leave|keep|preserve|don['\u2019]?t|do not|never)\b/i.test(c) && !/\b(unchanged|untouched|as is|as-is)\b/i.test(c));
+  return (keep.length ? keep : all).join(' ');
+}
 function pickEvent(text, evs) {
   if (evs.length === 1) return evs[0];
-  const m = text.match(/event\s*(\d)/i); if (m) { const e = evs.find(x => x.n === +m[1]); if (e) return e; }
-  if (/commercial/i.test(text)) return evs.find(e => /commercial/i.test(e.f.purpose.v || '')) || null;
-  if (/scope/i.test(text)) return evs.find(e => /scope/i.test(e.f.purpose.v || '')) || null;
-  if (/\b(first|1st)\b/i.test(text)) return evs[0];
-  if (/\b(second|2nd)\b/i.test(text)) return evs[1] || null;
+  const t = targetClauses(text);
+  const only = t.match(/\bonly\s+(?:the\s+)?([^.,]*?)(?:\s+(?:to|at|by|from)\b|[.,]|$)/i);
+  const sel = only ? only[1] + ' ' + t : t;
+  const m = sel.match(/event\s*(\d)/i); if (m) { const e = evs.find(x => x.n === +m[1]); if (e) return e; }
+  const probe = only ? only[1] : t;
+  if (/commercial/i.test(probe)) return evs.find(e => /commercial/i.test(e.f.purpose.v || '')) || null;
+  if (/scope|technical/i.test(probe)) return evs.find(e => /scope|technical/i.test(e.f.purpose.v || '')) || null;
+  if (/\b(first|1st)\b/i.test(probe)) return evs[0];
+  if (/\b(second|2nd)\b/i.test(probe)) return evs[1] || null;
   return null;
 }
 function evLabel(ev) { return `Event ${ev.n} · ${ev.f.title.v || ev.f.purpose.v || 'Untitled'}`; }
@@ -234,12 +245,12 @@ function showReview(ev) {
     ACT([{ label: 'Mark reviewed — keep unsaved', act: 'markReviewed', n: ev.n, primary: true }, { label: 'Revise details', act: 'revise', n: ev.n }, { label: 'Show evidence', act: 'showEvidence', n: ev.n }, { label: 'Discard proposal', act: 'discardEv', n: ev.n }]));
 }
 function markReviewed(ev, text) {
-  const st = statusOf(ev);
+  const st = statusOf(ev), wantsDetails = /\b(?:final details|details|sources?)\b/i.test(text || '') && /\b(?:show|list|give|with)\b/i.test(text || '');
   S.activeEv = ev.n; S.panelTab = 'review';
   if (st === 'needs' || st === 'conflict') { aSay(P(`Event ${ev.n} still has an open question, so it can't be marked reviewed yet.`), ...afterUpdateBlocks(ev, null, null).filter(b => b.t === 'q')); return; }
-  if (st === 'reviewed') { aSay(P(`Event ${ev.n} is already reviewed and still unsaved.`)); return; }
+  if (st === 'reviewed') { aSay(P(`Event ${ev.n} is already reviewed and still unsaved.`), ...(wantsDetails ? finalDetailsBlocks(ev) : [])); return; }
   ev.reviewed = true;
-  aSay(NOTICE('info', '<strong>Reviewed — unsaved.</strong> You have reviewed the proposal. No CRM/calendar Event or invitation has been created.'), evCard(ev), P('<span class="muted small">Review status is conversational only. Timestamp not captured.</span>'));
+  aSay(NOTICE('info', '<strong>Reviewed — unsaved.</strong> You have reviewed the proposal. No CRM/calendar Event or invitation has been created.'), evCard(ev), ...(wantsDetails ? finalDetailsBlocks(ev) : []), P('<span class="muted small">Review status is conversational only. Timestamp not captured.</span>'));
   announce('Reviewed, unsaved. No CRM or calendar Event or invitation has been created.');
 }
 
@@ -323,6 +334,8 @@ function applyMove(ev, Pm, text) {
     lead = `Moved <strong>${esc(evLabel(ev))}</strong> to ${fmtTime(mins)}, keeping ${durText(dur)}. Only the time changed. Date, location, participants and organizer are unchanged. Revision ${ev.rev}.`;
   }
   if (!items) { aSay(P('That is already how this Event is set, so nothing changed.')); return; }
+  const others = liveEvents().filter(o => o.n !== ev.n);
+  if (others.length) lead += ` ${others.map(o => `${esc(evLabel(o))} is unchanged.`).join(' ')}`;
   aSay(...afterUpdateBlocks(ev, lead, items));
   S.activeEv = ev.n; S.panelTab = 'changes';
 }
@@ -390,9 +403,10 @@ function resolveReply(ev, text) {
       if (tz && tz.kind === 'ok') setTz(e, 'kolkata', { basis: 'derived', src: [id], quote: tz.quote, calc: `“${tz.quote}” normalized to Asia/Kolkata, UTC+05:30`, note: 'Normalized from your reply. Your profile timezone was not used.' });
       else if (tz && tz.kind === 'ambig') { e.tzAmbig = { set: tz.set, raw: tz.raw }; put(e, 'tz', { v: null, basis: 'conflict', src: [id], quote: text, state: 'conflict', note: `“${tz.raw}” can mean more than one timezone. None was chosen.` }); }
     }
-    const lm = t.match(/\bon\s+(Teams|Zoom|Google Meet)\b/i);
-    if (lm && !e.f.location.v) put(e, 'location', Object.assign({ v: lm[1][0].toUpperCase() + lm[1].slice(1), basis: 'user', note: 'Location as text only.' }, src));
-    if (/\bI\s*(?:will|'ll)\s+organi[sz]e\b/i.test(t) && !e.f.organizer.v) put(e, 'organizer', Object.assign({ v: 'You (demo seller)', basis: 'user', note: 'Shown as a generic demo seller.' }, src));
+    const lm = t.match(LOC_RE);
+    if (lm && !e.f.location.v) put(e, 'location', Object.assign({ v: titleCase(lm[1]), basis: 'user', note: 'Location as text only.' }, src));
+    const om = t.match(ORG_NAMED_RE) || t.match(ORG_RE);
+    if (om && !e.f.organizer.v) put(e, 'organizer', Object.assign({ v: om[1] || 'You (demo seller)', basis: 'user', note: om[1] ? 'Named in your reply.' : 'Shown as a generic demo seller.' }, src));
   });
 }
 function tryResolveOpenIssues(text) {
@@ -415,17 +429,23 @@ function closeQuestionsFor(n) { S.chat.forEach(m => (m.blocks || []).forEach(b =
    Customer context (optional, simulated)
    ========================================================================== */
 const LOOKUP = {
-  account: { name: 'Atlas Metals Group', details: ['Account type: Customer (sample)', 'Industry: Metals and mining (sample)', 'Account owner: Demo account owner (sample)'] },
+  account: { name: 'Atlas Metals Group', industry: 'Metals and mining', website: 'www.atlasmetals.example', details: ['Account type: Customer (sample)', 'Industry: Metals and mining (sample)', 'Website: www.atlasmetals.example (sample)', 'Account owner: Demo account owner (sample)'] },
   matches: [
     { id: 'm1', name: 'Atlas Metals Group', detail: 'Customer · Pune, India · Metals and mining (sample)' },
     { id: 'm2', name: 'Atlas Metals Group Holdings', detail: 'Prospect · Rotterdam, Netherlands · Holding company (sample)' },
     { id: 'm3', name: 'Atlas Metals Group LLC', detail: 'Customer · Houston, USA · Metals distribution (sample)' }
   ],
   contacts: [
-    { name: 'Elena (sample contact)', role: 'Decision maker' }, { name: 'Mateo (sample contact)', role: 'Evaluator' },
-    { name: 'Priya (sample contact)', role: 'Finance approver' }, { name: 'Samuel (sample contact)', role: 'Technical lead' }
+    { name: 'Elena Schmidt', title: 'Head of Operations', role: 'Decision maker' },
+    { name: 'Mateo Murphy', title: 'Engineering Manager', role: 'Evaluator' },
+    { name: 'Anika Wilson', title: 'Commercial Manager', role: 'Commercial contact' },
+    { name: 'Priya Nair', title: 'Finance Controller', role: 'Finance approver' }
   ],
-  opps: [{ name: 'Atlas Metals Group · Scope expansion (sample)', stage: 'Stage: Qualification (sample)' }, { name: 'Atlas Metals Group · Annual renewal (sample)', stage: 'Stage: Proposal (sample)' }]
+  opps: [
+    { id: 'o1', name: 'Atlas Metals Group · Scope expansion (sample)', stage: 'Qualification (sample)', close: '29 January 2027 (sample)' },
+    { id: 'o2', name: 'Atlas Metals Group · Annual renewal (sample)', stage: 'Proposal (sample)', close: '15 December 2026 (sample)' },
+    { id: 'o3', name: 'MOA POC TEST - Meeting Outcome 2026-11-03', stage: 'Discovery (sample)', close: '30 November 2026 (sample)', next: 'Confirm the date of the technical scope review', demo: true }
+  ]
 };
 function lookupVerifiedName() {
   const L = S.lookup;
@@ -439,13 +459,21 @@ function runLookup() {
   S.panelTab = 'customer'; S.route = 'events';
   const hasEv = liveEvents().length > 0;
   const cont = { label: 'Continue with customer unverified', act: 'lk', a: 'continue' };
+  if (o === 'match' && S.sf.pending) {
+    aSay(P('I found <strong>one exact match</strong> for Atlas Metals Group in this simulated check. It is marked <strong>Verified CRM · Simulated result</strong>. Continuing with your request.'));
+    sfContinue();
+    return;
+  }
   if (o === 'match') {
     aSay(P('I found <strong>one exact match</strong> for Atlas Metals Group in this simulated check. It is marked <strong>Verified CRM · Simulated result</strong>.'), P('Customer context is optional and read-only. Drafting from notes never needs it.'),
       ACT([hasEv ? { label: `Use this Account for Event ${activeEvent().n}`, act: 'lk', a: 'use', primary: true } : null, { label: 'Show related contacts', act: 'lk', a: 'contacts' }, { label: 'Show open opportunities', act: 'lk', a: 'opps' }, cont].filter(Boolean)));
   } else if (o === 'multi') {
     aSay(P('I found <strong>3 Accounts with similar names</strong>. I have not picked one. Choose the one you mean, or continue unverified.'), ACT([...LOOKUP.matches.map(m => ({ label: m.name, act: 'lk', a: 'pick', id: m.id })), cont]));
   } else if (o === 'none') {
-    aSay(P('<strong>No matching Account was found</strong> in this simulated, successful search. The customer relationship stays unverified.'), ACT([cont]));
+    const hadAsk = !!S.sf.pending; S.sf.pending = null;
+    aSay(P('<strong>No matching Account was found</strong> in this simulated, successful search. The customer relationship stays unverified.'), hadAsk ? P('So I can’t read anything else from Salesforce for it.') : null, ACT([cont]));
+  } else if (S.sf.pending) {
+    aSay(NOTICE('warn', '<strong>I need to sign in to Salesforce first.</strong> Sign-in is required before I can read Salesforce records, so nothing has been searched yet. This is not the same as “no match”.'), P('Sign in (simulated) and I will carry on with your question straight away.'), ACT([{ label: 'Sign in (simulated)', act: 'lk', a: 'signin', primary: true }, { label: 'Try again', act: 'lk', a: 'retry' }, cont]));
   } else {
     aSay(NOTICE('warn', '<strong>Verification did not complete.</strong> Sign-in is required before I can check customer context. This is not the same as “no match”: nothing was searched.'), P('You can still review the proposal. The customer simply stays unverified.'), ACT([{ label: 'Sign in (simulated)', act: 'lk', a: 'signin' }, { label: 'Try again', act: 'lk', a: 'retry' }, cont]));
   }
@@ -456,11 +484,16 @@ function lkAction(a, id) {
   if (a === 'retry') { userSay('Try again.'); runLookup(); return; }
   if (a === 'signin') { L.simSignIn = true; S.panelTab = 'customer'; S.route = 'events'; aSay(NOTICE('info', '<strong>Simulated sign-in.</strong> This wireframe never opens a real sign-in window and never asks for credentials. In the configured agent, sign-in would be completed in the Microsoft 365 / Sales host.'), ACT([{ label: 'Simulate a completed sign-in', act: 'lk', a: 'simdone', primary: true }, { label: 'Continue with customer unverified', act: 'lk', a: 'continue' }])); return; }
   if (a === 'simdone') { L.outcome = 'match'; L.simSignIn = false; userSay('I have signed in (simulated).'); runLookup(); return; }
-  if (a === 'pick') { L.selectedMatch = id; const m = LOOKUP.matches.find(x => x.id === id); aSay(P(`You chose <strong>${esc(m.name)}</strong>. It is marked <strong>Verified CRM · Simulated result</strong>.`), ACT([ev ? { label: `Use this Account for Event ${ev.n}`, act: 'lk', a: 'use', primary: true } : null, { label: 'Continue with customer unverified', act: 'lk', a: 'continue' }].filter(Boolean))); S.panelTab = 'customer'; return; }
+  if (a === 'pick') {
+    L.selectedMatch = id; const m = LOOKUP.matches.find(x => x.id === id); S.panelTab = 'customer';
+    if (S.sf.pending) { aSay(P(`You chose <strong>${esc(m.name)}</strong>. It is marked <strong>Verified CRM · Simulated result</strong>. Continuing with your request.`)); sfContinue(); return; }
+    aSay(P(`You chose <strong>${esc(m.name)}</strong>. It is marked <strong>Verified CRM · Simulated result</strong>.`), ACT([ev ? { label: `Use this Account for Event ${ev.n}`, act: 'lk', a: 'use', primary: true } : null, { label: 'Continue with customer unverified', act: 'lk', a: 'continue' }].filter(Boolean)));
+    return;
+  }
   if (a === 'use') { const nm = lookupVerifiedName(); if (ev && nm) useAccount(ev, nm, true); return; }
   if (a === 'contacts') { if (!lookupVerifiedName()) { aSay(P('Find the customer first. Related contacts are only shown for a verified Account.')); return; } L.contacts = true; S.panelTab = 'customer'; aSay(P('Showing <strong>limited sample results</strong> (up to 5). This is not a complete contact list.'), NOTICE('info', 'A CRM contact role does not make someone an attendee. Attendees stay the names you or your notes supplied.')); return; }
   if (a === 'opps') { if (!lookupVerifiedName()) { aSay(P('Find the customer first. Open opportunities are only shown for a verified Account.')); return; } L.opps = true; S.panelTab = 'customer'; aSay(P('Showing <strong>limited sample results</strong> (up to 5). This is not a complete pipeline, and no total is implied.'), NOTICE('info', 'Nothing is attached to the Event. Related opportunity stays Not provided unless you add one.')); return; }
-  if (a === 'continue') { userSay('Continue with customer unverified.'); if (ev && ev.f.customer.v) doKeepUnverified(ev, {}, 'Continue with customer unverified.'); else aSay(P('Okay. The customer stays unverified and nothing changed. Review can continue.')); return; }
+  if (a === 'continue') { userSay('Continue with customer unverified.'); S.sf.pending = null; if (ev && ev.f.customer.v) doKeepUnverified(ev, {}, 'Continue with customer unverified.'); else aSay(P('Okay. The customer stays unverified and nothing changed. Review can continue.')); return; }
 }
 
 /* ==========================================================================
@@ -504,7 +537,9 @@ function applyFieldEdit(ev, k, raw, keepDur) {
    Natural-language interpreter (simulated, rule-based)
    ========================================================================== */
 const RE = {
-  book: /\b(book it|book the (meeting|event|call)|send (out )?(the )?(invite|invitation)s?|create the (crm )?event|save (it |this )?(to|in) (the )?crm|put it (in|on) (my )?calendar)\b/i,
+  book: /\b(book it|book the (meeting|event|call)s?|send (out )?(the |any |all )?(invite|invitation)s?|create (the |a |an )?(crm |calendar )?event|save (it |this )?(to|in) (the )?crm|put it (in|on) (my )?calendar)\b/i,
+  saveSf: /\b(?:save|create|write|store)\b[^.]*\b(?:in|to|as)\s+(?:a |an |the )?salesforce\b|\bcreate (?:the |a )?salesforce event\b/i,
+  prov: /\b(?:came|come|comes)\s+from\b[^.]*\b(?:instruction|salesforce|crm|request)|\bwhich details\b|\bfrom my instructions\b/i,
   discard: /\b(discard|drop)\b/i,
   find: /^\s*find\s+(.+?)\.?\s*$/i,
   addAtt: /\badd\s+(.+?)\s+(?:to|as)\b[^.]*?\b(attendees?|participants?|invitees?|guests?)\b/i,
@@ -514,11 +549,23 @@ const RE = {
   draft: /\bdraft\b/i,
   evidence: /\b(show|see|open)\b[^.]*\b(evidence|sources?)\b|^\s*evidence\b|where did .* come from/i,
   missing: /\b(missing|what details|what('?s| is) (still )?(needed|required)|what do you need)\b/i,
-  approve: /^\s*(looks good|lgtm|that'?s right|approved?|accept|mark (it |this )?(as )?reviewed)\b/i,
+  approve: /\b(?:looks good|lgtm|that['\u2019]?s right)\b|^\s*(?:approved?|accept)\b|\bmark\s+(?:it |this |them |the [\w\s]{1,40}?\s)?(?:as )?reviewed\b/i,
   review: /\breview (the|this|my)\s+(proposal|event|details)|\bready to review\b|^\s*review\s*$/i,
   contacts: /\b(related )?contacts?\b/i,
   opps: /\bopen opportunit/i
 };
+/* Quotes and apostrophes are normalised for matching only. The original text is what the seller sees and what is quoted as evidence. */
+const nq = t => String(t).replace(/[\u2018\u2019\u02BC]/g, "'").replace(/[\u201C\u201D]/g, '"');
+const NEG_RE = /\b(?:do not|don't|doesn't|never|without|not to|no need to|won't|shouldn't|must not|cannot|can't)\b/i;
+/* True when re matches in a clause with no negation before the match, so “don't send invitations” is not a request to send them. */
+function affirmed(text, re) {
+  const g = new RegExp(re.source, re.flags.replace('g', '') + 'g');
+  return splitSentences(nq(text)).flatMap(c => c.split(/\s*[\u2014\u2013]\s*|;\s*/)).some(c => {
+    g.lastIndex = 0; let m;
+    while ((m = g.exec(c))) { if (!NEG_RE.test(c.slice(0, m.index))) return true; if (m[0] === '') g.lastIndex++; }
+    return false;
+  });
+}
 const DO = { addAttendee: doAddAttendee, keepUnverified: doKeepUnverified, markReviewed: (e, a, t) => markReviewed(e, t), showReview: (e) => showReview(e), discard: (e) => doDiscard(e) };
 function withTarget(text, action, args, askText) {
   const evs = liveEvents();
@@ -545,24 +592,27 @@ function handleUserText(raw) {
   userSay(text);
   S.route = 'events';
   if (S.pending && resolvePending(text)) return;
-  if (RE.book.test(text)) { aSay(NOTICE('gray', 'This phase supports capture and review only. Your proposal remains unsaved. No meeting has been booked and no invitations have been sent.')); return; }
-  if (RE.discard.test(text)) return withTarget(text, 'discard', {}, 'Which proposal should I discard?');
+  const T = nq(text);
+  if (sfRoute(text, T)) return;
+  if (affirmed(T, RE.book)) { aSay(NOTICE('gray', 'This phase supports capture and review only. Your proposal remains unsaved. No meeting has been booked and no invitations have been sent.')); return; }
+  if (RE.discard.test(T)) return withTarget(text, 'discard', {}, 'Which proposal should I discard?');
   const fm = text.match(RE.find);
   if (fm) { if (/atlas/i.test(fm[1])) { runLookup(); return; } aSay(P('This wireframe only has sample data for <strong>Atlas Metals Group</strong>. Try “Find Atlas Metals Group.”')); return; }
   const am = text.match(RE.addAtt);
   if (am) { const names = am[1].split(/,|\band\b/i).map(s => s.trim()).filter(Boolean); const evs = liveEvents(); if (!evs.length) { aSay(...noEventBlocks()); return; } names.forEach(name => withTarget(text, 'addAttendee', { name, text }, `Which Event should ${name} be added to?`)); return; }
-  if (RE.keepUnv.test(text)) return withTarget(text, 'keepUnverified', {}, 'Which Event do you mean?');
-  if (RE.capture.test(text)) { handleCaptureText(text); return; }
-  if (RE.move.test(text)) { handleMove(text); return; }
-  if (RE.draft.test(text)) { draftFlow(text); return; }
+  if (RE.keepUnv.test(T)) return withTarget(text, 'keepUnverified', {}, 'Which Event do you mean?');
+  if (RE.capture.test(T)) { handleCaptureText(text); return; }
+  if (RE.move.test(T)) { handleMove(text); return; }
+  if (RE.draft.test(T)) { draftFlow(text); return; }
   if (tryResolveOpenIssues(text)) return;
-  if (/related contacts|show contacts|show (the )?contacts/i.test(text)) { lkAction('contacts'); return; }
-  if (RE.opps.test(text)) { lkAction('opps'); return; }
-  if (RE.evidence.test(text)) { showEvidence(); return; }
-  if (RE.missing.test(text)) { showMissing(); return; }
-  if (RE.approve.test(text)) return withTarget(text, 'markReviewed', {}, 'Which Event have you reviewed?');
-  if (RE.review.test(text)) return withTarget(text, 'showReview', {}, 'Which Event should I open for review?');
-  aSay(P('In this wireframe I respond to the demo prompts, not to free text. Here are some to try:'), CHIPS(promptSuggestions()));
+  if (RE.approve.test(T)) return withTarget(text, 'markReviewed', {}, 'Which Event have you reviewed?');
+  if (RE.prov.test(T)) { showProvenance(); return; }
+  if (/related contacts|show contacts|show (the )?contacts/i.test(T)) { lkAction('contacts'); return; }
+  if (RE.opps.test(T)) { lkAction('opps'); return; }
+  if (RE.evidence.test(T)) { showEvidence(); return; }
+  if (RE.missing.test(T)) { showMissing(); return; }
+  if (RE.review.test(T)) return withTarget(text, 'showReview', {}, 'Which Event should I open for review?');
+  aSay(P('In this wireframe I respond to the demo prompts, not to free text. Here are some to try, or open Demo prompts (16) for the full list:'), CHIPS(promptSuggestions()));
 }
 function handleCaptureText(text) {
   if (S.captured && S.events.length) {
@@ -578,7 +628,16 @@ function draftFlow(text) {
   const multi = buildMulti(S.nextN, text);
   if (multi.length >= 2) {
     multi.forEach(e => S.events.push(e)); S.nextN += multi.length; S.activeEv = multi[0].n; S.panelTab = 'event';
-    aSay(P(`I drafted <strong>${multi.length} separate Event proposals</strong>. They are independent: changing one does not change the other.`), ...multi.map(evCard), NOTICE('info', `Participants and organizer are Not provided, because you did not supply them. ${NO_SAVE}`));
+    const blocks = [P(`I drafted <strong>${multi.length} separate Event proposals</strong>. They are independent: changing one does not change the other.`), ...multi.map(evCard)];
+    const worked = []; multi.forEach(e => derivedList(e).forEach(d => worked.push(`<strong>Event ${e.n}</strong> · ${d}`)));
+    if (worked.length) blocks.push(P('What I worked out rather than read directly:'), LIST(worked));
+    const gaps = multi.map(e => optionalMissing(e));
+    const same = gaps.every(g => g.join('|') === gaps[0].join('|'));
+    const gapText = gaps.every(g => !g.length) ? 'Every key detail has a source in your request.' : same ? `Not provided in any of them: ${joinAnd(gaps[0])}.` : `Not provided: ${multi.map((e, i) => gaps[i].length ? `Event ${e.n}: ${joinAnd(gaps[i])}` : null).filter(Boolean).join('; ')}.`;
+    const custs = multi.filter(e => e.f.customer.v).map(e => e.f.customer.v).filter(uniq);
+    blocks.push(NOTICE('info', `${gapText}${custs.length ? ` The customer ${joinAnd(custs)} is from your request and stays CRM-unverified.` : ''} ${NO_SAVE} No invitations were sent.`));
+    multi.forEach(e => { const q = openQuestion(e); if (q) blocks.push(qBlock(q, { evN: e.n })); });
+    aSay(...blocks);
     return;
   }
   const ev = buildDraft(S.nextN, text); S.nextN++; S.events.push(ev); S.activeEv = ev.n; S.panelTab = 'event';
@@ -619,7 +678,7 @@ function showMissing() {
 }
 function promptSuggestions() {
   const live = liveEvents();
-  if (!S.events.length) return ['Draft an Event from my notes.', 'Find Atlas Metals Group.', 'Draft a meeting with Elena on 9 November 2026.'];
+  if (!S.events.length) return ['Draft an Event from my notes.', 'Find Atlas Metals Group.', 'Draft a meeting with Elena on 9 November 2026.', 'Show me the contacts for Atlas Metals Group and their job titles.'];
   if (live.length > 1) return ['Move it to 11.', 'Move the scope review to 11 am and keep its 30-minute duration.', 'Discard the commercial review.', 'Show the evidence.', 'Review the proposal.'];
   const base = ['Show the evidence.', 'What details are missing?', 'Move it to 3 pm and keep it 30 minutes.', 'Add Anika to the proposed attendees.', 'Keep the customer unverified.', 'Find Atlas Metals Group.', 'Looks good.', 'Book it and send the invites.'];
   return base;

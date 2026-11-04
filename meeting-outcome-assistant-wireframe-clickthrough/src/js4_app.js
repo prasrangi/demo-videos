@@ -33,7 +33,7 @@ function closeDialogs() {
 }
 
 /* ==========================================================================
-   Presenter view: 10 steps + optional appendix
+   Presenter view: 10 steps + 5 optional appendices (A1 to A5)
    ========================================================================== */
 function quickCapture(kind) { kind = kind || 'main'; applyCapture(kind); userSay(DEFAULT_INSTRUCTION); aSay(...captureBlocks(kind, S.events[0])); }
 const FIND = 'Find Atlas Metals Group.';
@@ -74,7 +74,7 @@ const STEPS = [
     key: 'Click Create Task to show the reason. Then name the five readiness labels one by one.', say: 'Finally, the questions we need your help to answer.', likely: 'Can we turn Task creation back on? Not in this phase. The two mutation tools are removed from the active allowlist.',
     setup() { S.route = 'capability'; S.capTab = 'paused'; } },
   { t: 'Questions to agree', cap: 'These business-process questions need your agreement: required fields, ownership, evidence, production CRM mapping and recording governance.', hood: 'Questions, not decisions. Nothing here implies approval of the proposed solution.',
-    key: 'Do not close with production-ready. Ask which question matters most to them.', say: 'Optional appendix: multiple Events and an embedded command.', likely: 'What is bFO? A possible future customer target. It needs process and field-mapping agreement first.',
+    key: 'Do not close with production-ready. Ask which question matters most to them.', say: 'Optional appendices: multiple Events, an embedded command, Salesforce questions, notes and Task, and the Event save boundary.', likely: 'What is bFO? A possible future customer target. It needs process and field-mapping agreement first.',
     setup() { S.route = 'capability'; S.capTab = 'decisions'; } },
   { t: 'Appendix: multiple Events', cap: 'With two Event proposals, an ambiguous edit needs a choice. Changing one proposal never changes the other.', hood: 'Move it to 11 could be a time or a date, and could mean either Event.',
     key: 'Answer the clarification with the quick replies. Then show that only the chosen Event changed.', say: 'Last: what happens when a command is hidden in the notes.', likely: 'Does Event 2 move too? No. Each proposal has its own fields, evidence and revision.',
@@ -82,8 +82,41 @@ const STEPS = [
     setup(v) { loadScenario('multi'); handleUserText(v.x); S.panelTab = v.id === 2 ? 'changes' : 'event'; S.route = 'events'; } },
   { t: 'Appendix: embedded command', cap: 'A line in the notes tells the assistant to save and invite. It is treated as text and ignored. External actions: zero.', hood: 'Corrections you type are requests. Text inside pasted notes is source material.',
     key: 'Point at the ignored line, then open the help drawer to show the five rules.', say: 'Close with the open questions. Do not claim readiness or approval.', likely: 'Could a note ever trigger a save? No. Notes are source text, and this phase cannot save at all.',
-    setup() { loadScenario('inject'); S.route = 'meeting'; S.meetingTab = 'outcomes'; } }
+    setup() { loadScenario('inject'); S.route = 'meeting'; S.meetingTab = 'outcomes'; } },
+  { t: 'Appendix: Salesforce questions', cap: 'The seller asks about the customer in plain words. Replies are read-only and come from fixed sample data after a simulated sign-in.', hood: 'The same prompts are in the Demo prompts menu above the chat. Nothing is searched and nothing is written.',
+    key: 'Say “sample data” out loud and point at the badge: Configured · Sign-in required for verification. A CRM contact role does not make someone an attendee.', say: 'Next: turn meeting notes into decisions and actions, and see what is paused.', likely: 'Is this reading our Salesforce? No. It is fixed sample data. The configured agent uses read-only Salesforce Hosted MCP tools and needs a real sign-in.',
+    variants: [
+      { l: 'Overview', n: 1 },
+      { l: 'Contacts', n: 2, cap: 'The contacts for the customer, with sample job titles and CRM roles. The list is limited and says so.', hood: 'Prompt 2. Contacts are context, not attendees.' },
+      { l: 'Open opportunities', n: 3, cap: 'The open opportunities with stage and close date. It is a limited sample, and no total is implied.', hood: 'Prompt 3. Nothing is attached to an Event.' },
+      { l: 'Select the demo opportunity', n: 4, cap: 'One named opportunity is found and selected for this chat, with its current next step. The Task and next-step prompts would use it.', hood: 'Prompt 4. The selection is not attached to any Event.' }
+    ],
+    setup(v) { sfDemoSetup(); handleUserText(sfPrompt(v.n).text); S.panelTab = 'customer'; S.route = 'events'; } },
+  { t: 'Appendix: notes, Task and Next Step', cap: 'Meeting notes become decisions, risks and actions without saving. Asking for a Task, a next-step update or a note gets an honest answer: requested, not created.', hood: 'Prompts 5 to 10. Task and next-step updates are paused. Saving a note is future scope.',
+    key: 'Read the amber or grey box each time: it says what was not done. Then point at the Requested, not created line. Nothing is hidden or queued.', say: 'Last: two meeting proposals, from the first draft to the save request.', likely: 'Can we switch Task creation on for the demo? Not in this phase. The two custom mutation tools are removed from the active allowlist.',
+    variants: [
+      { l: 'Analyse notes', n: [5], cap: 'The notes become decisions, risks and follow-up actions. Owners and deadlines the notes did not give say Not provided. Nothing is saved.', hood: 'Prompt 5.' },
+      { l: 'Prepare a note', n: [5, 6], cap: 'A note preview with the account it would link to. Saving a note is future scope, so the Save button is disabled and there is no link.', hood: 'Prompt 6. Note saving has not yet been validated in the agent.' },
+      { l: 'Create a Task', n: [4, 7], cap: 'The Task request is shown back as asked, with its subject, due date and opportunity, and marked Requested, not created.', hood: 'Prompt 7. Task creation is paused.' },
+      { l: 'Verify the Task', n: [4, 7, 8], cap: 'Checking for the Task finds none, because none was created. The assistant says so instead of inventing a due date or status.', hood: 'Prompt 8.' },
+      { l: 'Update next step', n: [4, 9], cap: 'The next-step update is shown back as asked and marked Requested, not updated. Other opportunity details are untouched.', hood: 'Prompt 9. The NextStep update is paused.' },
+      { l: 'Verify next step', n: [4, 9, 10], cap: 'The read-back shows the next step, stage and close date unchanged, and says the update was never saved.', hood: 'Prompt 10.' }
+    ],
+    setup(v) { sfDemoSetup(); v.n.forEach(k => handleUserText(sfPrompt(k).text)); S.panelTab = 'customer'; S.route = 'events'; } },
+  { t: 'Appendix: two meeting proposals', cap: 'Two meetings drafted from one paragraph, each with its sources. Change one, discard one, review the last, and see what happens when the seller asks to save it.', hood: 'Prompts 11 to 16, in a new Sales chat. Everything stays unsaved. The save request gets a boundary reply.',
+    key: 'Run the variants in order: they build on each other. Point at Event 2 staying unchanged, and at the Future scope box on the last one.', say: 'Close with the open questions. Do not claim readiness or approval.', likely: 'Does the save request create a Salesforce Event? No. Saving an Event needs to be enabled and tested first. The reply shows the details a confirmation would contain.',
+    variants: [
+      { l: 'Two drafts', n: 11 },
+      { l: 'Show the evidence', n: 12, cap: 'For each meeting: what came from the seller’s instructions, what was worked out, what came from Salesforce (nothing) and what is missing.', hood: 'Prompt 12.' },
+      { l: 'Change one meeting', n: 13, cap: 'Only the technical scope review moves to 3 pm, keeping 30 minutes. The commercial review is untouched.', hood: 'Prompt 13.' },
+      { l: 'Discard one', n: 14, cap: 'The commercial review is discarded in the conversation only. Nothing was saved, so nothing was deleted.', hood: 'Prompt 14.' },
+      { l: 'Mark reviewed', n: 15, cap: 'Reviewed — unsaved, with the final details and their sources listed. No calendar event is created and no invitation is sent.', hood: 'Prompt 15.' },
+      { l: 'Save request', n: 16, cap: 'The save request is declined plainly. The details a confirmation would show are listed, and the Save control is disabled as future scope.', hood: 'Prompt 16. Saving a Salesforce Event is future scope.' }
+    ],
+    setup(v) { for (let k = 11; k <= v.n; k++) handleUserText(sfPrompt(k).text); S.panelTab = v.n >= 15 ? 'review' : v.n === 12 ? 'evidence' : v.n === 13 ? 'changes' : 'event'; S.route = 'events'; } }
 ];
+/* Presenter helper: the appendix prompts run as if the seller had already completed the simulated sign-in. */
+function sfDemoSetup() { const L = S.lookup; L.outcome = 'match'; L.status = 'done'; L.result = 'match'; }
 const MAIN_STEPS = 10;
 
 /* Context for each step: the goal when we arrive, and the outcome we state when the presenter moves on.
@@ -122,7 +155,16 @@ const STEP_CTX = [
             'Only the scope review moved (to 11 am, 30 minutes kept). The commercial review was untouched.',
             'The commercial review was discarded in the conversation only. Nothing was saved, so nothing was deleted, and it can be restored.'] },
   { goal: 'An optional extra on trust. We load notes that hide a command and see how the assistant treats it.',
-    done: 'The embedded command was shown as source text and ignored. External actions: 0. Nothing was created or sent.' }
+    done: 'The embedded command was shown as source text and ignored. External actions: 0. Nothing was created or sent.' },
+  { goal: 'An optional extra for handover. The seller asks Salesforce questions in plain words and we read the answers.',
+    done: 'The seller got read-only answers from fixed sample data. Contacts were context, not attendees, and nothing was written to Salesforce.',
+    vdone: ['The overview showed industry and website for the customer, as sample data.', 'Contacts came back with sample job titles and CRM roles. A role does not make anyone an attendee.', 'Open opportunities came back with stage and close date, as a limited sample with no total.', 'The demo opportunity was found and selected for this chat. It is not attached to any Event.'] },
+  { goal: 'An optional extra on what is not available. We turn notes into actions, then ask for a note, a Task and a next-step update.',
+    done: 'The notes were summarised without saving. The note, the Task and the next-step update were each shown back as requested, not carried out.',
+    vdone: ['The notes were summarised into decisions, risks and actions. Missing owners and deadlines say Not provided. Nothing was saved.', 'The note preview showed the linked account. Saving it is future scope, so no note or link exists.', 'The Task request was shown back and marked Requested, not created, because Task creation is paused.', 'No Task exists to read back, and the assistant said so rather than inventing details.', 'The next-step request was shown back and marked Requested, not updated, because the update is paused.', 'The next step, stage and close date were read back unchanged. The update was never saved.'] },
+  { goal: 'An optional extra on the full meeting-proposal journey. We draft two meetings, check their sources, change one, discard one, review the last and ask to save it.',
+    done: 'The journey ended unsaved. The save request was declined and the details a confirmation would show were listed.',
+    vdone: ['Two separate unsaved proposals were drafted from one paragraph, with their sources.', 'Each detail was traced to the seller’s instructions, worked out, or missing. Nothing came from Salesforce.', 'Only the technical scope review changed. The commercial review was untouched.', 'The commercial review was discarded in the conversation only. The technical review was kept.', 'The technical scope review is Reviewed — unsaved, with its final details and sources listed.', 'The save request was declined. No Event, record link or invitation exists. The Save control stays disabled as future scope.'] }
 ];
 const stepShort = n => n <= MAIN_STEPS ? `Step ${n}` : `Appendix ${n - MAIN_STEPS}`;
 const stepGoal = n => STEP_CTX[n - 1].goal;
@@ -216,7 +258,7 @@ function printPages() {
     <tr><td>${rb('signin')}</td><td>Optional customer context is configured, but needs a sign-in before it can be verified.</td></tr>
     <tr><td>${rb('paused')}</td><td>Task creation and the Opportunity Next Step update were shown in earlier demos. Task fixes are pending.</td></tr>
     <tr><td>${rb('future')}</td><td>Not implemented in this phase.</td></tr></tbody></table>
-    <h2>Start and reset the demonstration</h2><ul><li>Open <strong>index.html</strong> in a current desktop or tablet browser. It needs no installation and makes no network calls.</li><li>Use <strong>Presenter view</strong> for the 8 to 10 minute guided demo, <strong>Choose scenario</strong> to replay a case and <strong>Reset demo</strong> to return to the starting sample state.</li></ul>`);
+    <h2>Start and reset the demonstration</h2><ul><li>Open <strong>index.html</strong> in a current desktop or tablet browser. It needs no installation and makes no network calls.</li><li>Use <strong>Presenter view</strong> for the 8 to 10 minute guided demo, <strong>Choose scenario</strong> to replay a case and <strong>Reset demo</strong> to return to the starting sample state.</li><li>On Event proposals, <strong>Demo prompts (16)</strong> sends each of the final sales demo prompts exactly as written.</li></ul>`);
   page('Capability inventory', `<h1>Capability inventory</h1><div class="pcols" style="grid-template-columns:repeat(3,1fr)">${[[INVENTORY[0]], [INVENTORY[1], INVENTORY[2]], [INVENTORY[3], INVENTORY[4]]].map(col => `<div>${col.map(g => `<div style="margin-bottom:8px">${rb(g.badge)}<h2>${esc(g.title)}</h2><ul>${g.items.map(i => `<li>${esc(i)}</li>`).join('')}</ul><p class="small muted" style="margin:3px 0 0">${esc(g.note)}</p></div>`).join('')}</div>`).join('')}</div>`);
   const ev = makeSample(1, 'main');
   page('Sample journey', `<h1>Sample journey: notes to an unsaved proposal</h1><p class="small" style="margin:0 0 6px">${sents('main').map((t, i) => `<strong>S${i + 1}</strong> ${esc(t)}`).join(' ')}</p>
@@ -225,8 +267,9 @@ function printPages() {
   const half = Math.ceil(PROTO_ROWS.length / 2);
   [PROTO_ROWS.slice(0, half), PROTO_ROWS.slice(half)].forEach((rows, i) => page('Prototype versus configured', `<h1>Prototype-only elements versus configured behaviour (${i + 1} of 2)</h1><table class="tbl"><caption class="vh">Wireframe compared with the configured agent</caption><thead><tr><th scope="col" style="width:20%">Element</th><th scope="col" style="width:38%">In this wireframe</th><th scope="col">In the configured agent</th></tr></thead><tbody>${rows.map(r => `<tr><th scope="row" style="text-align:left">${esc(r[0])}</th><td>${esc(r[1])}</td><td>${esc(r[2])}${r[3] ? `<div style="margin-top:3px">${rb(r[3])}</div>` : ''}</td></tr>`).join('')}</tbody></table>`));
   const sc = (arr, off, tl) => `<h1>${tl}</h1><table class="tbl"><caption class="vh">${tl}</caption><thead><tr><th scope="col" style="width:5%">#</th><th scope="col" style="width:18%">Step</th><th scope="col" style="width:40%">On screen</th><th scope="col">Speaker prompt</th></tr></thead><tbody>${arr.map((s, i) => `<tr><td>${off + i + 1 <= MAIN_STEPS ? off + i + 1 : 'A' + (off + i + 1 - MAIN_STEPS)}</td><td><strong>${esc(s.t)}</strong></td><td>${esc(s.cap)}</td><td>${esc(s.key)}</td></tr>`).join('')}</tbody></table>`;
-  page('Presenter script', sc(STEPS.slice(0, 5), 0, 'Presenter script, 8 to 10 minutes (1 of 2)'));
-  page('Presenter script', sc(STEPS.slice(5), 5, 'Presenter script (2 of 2), with optional appendix'));
+  page('Presenter script', sc(STEPS.slice(0, 5), 0, 'Presenter script, 8 to 10 minutes (1 of 3)'));
+  page('Presenter script', sc(STEPS.slice(5, 10), 5, 'Presenter script (2 of 3)'));
+  page('Presenter script', sc(STEPS.slice(10), 10, 'Presenter script (3 of 3): optional appendices A1 to A5'));
   page('Technical inventory', `<h1>Technical inventory</h1><div class="badges">${rb('signin')}${rb('salesPending')}</div><p class="small">Salesforce Developer Edition lab environment, not production. Salesforce Hosted MCP read context is optional and needs a sign-in.</p><h2>Configured read tool inventory</h2><table class="tbl"><caption class="vh">Configured read functions</caption><thead><tr><th scope="col" style="width:26%">Function</th><th scope="col">Business meaning</th></tr></thead><tbody>${TOOLS.map(t => `<tr><th scope="row" style="text-align:left"><code>${t[0]}</code></th><td>${esc(t[1])}</td></tr>`).join('')}</tbody></table>
     <p class="small muted" style="margin:4px 0">This is what is configured. It does not claim every function was independently retested in this Events phase.</p>
     <h2>Removed from the active allowlist</h2><p class="small"><code>createSobjectRecord</code> and <code>updateSobjectRecord</code>. Task and Opportunity save operations are paused.</p>
@@ -261,7 +304,8 @@ const ACTIONS = {
   goContext() { S.route = 'events'; S.panelTab = 'customer'; S.ui.drawer = true; },
   goPaused() { S.route = 'capability'; S.capTab = 'paused'; },
   goArch() { S.ui.help = S.ui.tech = false; S.route = 'capability'; S.capTab = 'architecture'; },
-  sendText(el) { handleUserText(el.dataset.text); announceLast(); },
+  sendText(el) { const d = el.closest('details.plib'); if (d) d.open = false; handleUserText(el.dataset.text); announceLast(); },
+  newChat(el) { const d = el.closest('details.plib'); if (d) d.open = false; resetWorkspace(); S.route = 'events'; toast('New chat started. Events, replies and the customer check were cleared.'); announce('New chat started.'); },
   captureSample() { S.route = 'events'; S.notes = NOTES.main; captureFlow('main', DEFAULT_INSTRUCTION); },
   capture() { const n = $('#notesInput'), i = $('#instrInput'); if (n) S.notes = n.value; if (i) S.instruction = i.value; startCaptureFromUI(); return false; },
   loadSample(el) { S.notes = NOTES[el.dataset.kind]; S.capErr = ''; S.captured = false; S.proc = null; S.notesKind = null; },
@@ -353,10 +397,24 @@ document.addEventListener('change', e => {
   }
 });
 
+/* The demo prompts menu opens as a popover under its button and is kept on screen. */
+function placePlib() {
+  const sm = $('#plibSum'), pn = $('.plib-panel'); if (!sm || !pn) return;
+  const r = sm.getBoundingClientRect(), w = Math.min(560, innerWidth - 16);
+  pn.style.width = w + 'px';
+  pn.style.left = Math.max(8, Math.min(r.right - w, innerWidth - w - 8)) + 'px';
+  pn.style.top = (r.bottom + 6) + 'px';
+  pn.style.maxHeight = Math.max(200, innerHeight - r.bottom - 22) + 'px';
+}
+document.addEventListener('toggle', e => { if (e.target && e.target.id === 'plib' && e.target.open) placePlib(); }, true);
+addEventListener('resize', () => { const d = $('#plib'); if (d && d.open) placePlib(); });
+document.addEventListener('click', e => { const d = $('#plib'); if (d && d.open && !d.contains(e.target)) d.open = false; });
+
 /* keyboard: tabs, dialogs, presenter keys */
 document.addEventListener('keydown', e => {
   const t = e.target;
   if (e.key === 'Escape') {
+    const pl = $('#plib'); if (pl && pl.open) { pl.open = false; const sm = $('#plibSum'); if (sm) sm.focus(); return; }
     if (S.ui.notesPanel) { S.ui.notesPanel = false; render(); const b = $('#pd-notes'); if (b) b.focus(); return; }
     if (S.ui.help || S.ui.tech) { closeDialogs(); return; }
     if (S.ui.print) { showPrint(false); return; }

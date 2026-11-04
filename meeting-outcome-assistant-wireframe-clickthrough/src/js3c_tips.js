@@ -56,6 +56,19 @@ R('[data-act="goPaused"]', 'See why it is paused', 'Opens the page about the ear
 R('[data-act="goMeeting"][data-tab="outcomes"]', 'Review structured outcomes', 'Opens step 2 of Meeting outcomes: source sentences beside the proposed Event.');
 R('[data-act="goMeeting"]', 'Capture meeting outcomes', 'Opens Meeting outcomes, where notes are pasted and captured.', 'Step 2 of the guided demo.');
 
+/* ---------- final demo prompts (menu and quick-reply buttons) ---------- */
+const SF_TAG_TIP = {
+  signin: 'A read-only Salesforce question answered from fixed sample data. If nobody has signed in yet, the assistant asks first, then carries on with the question.',
+  unsaved: 'Nothing is saved. The reply is a summary or a proposal for the seller to review.',
+  paused: 'Paused in this phase, so nothing is created or updated. The assistant says so and shows what was asked for as “requested”, not done.',
+  future: 'Future scope. Saving is not available, so the assistant says so, shows what would be confirmed, and gives no record link.'
+};
+const sfByText = n => act(n, 'sendText') ? SF_PROMPTS.find(p => p.text === n.dataset.text) : null;
+RF(n => !!sfByText(n), n => `Prompt ${sfByText(n).n}: ${sfByText(n).title}`, n => `Goal: ${sfByText(n).goal} ${SF_TAG_TIP[sfByText(n).tag]}`, n => `Sends the prompt exactly as written in the prompt list. Presenter appendix ${sfByText(n).n <= 4 ? 'A3' : sfByText(n).n <= 10 ? 'A4' : 'A5'}.`);
+R('#plibSum', 'Demo prompts (16)', 'Opens the final sales demo prompt list. Each button sends that prompt exactly as written, so nobody has to type or paste it.', 'Prompts 1 to 10 cover Salesforce questions, notes, Task and Next Step. Prompts 11 to 16 are the meeting proposals and start a new chat. Esc closes the list.');
+RF(n => n.matches('.plib-panel h3'), n => txt(n), 'Prompts are numbered as in the prompt list. Run them in order, because later ones refer to earlier ones (“this opportunity”, “the notes above”).');
+R('[data-act="newChat"]', 'Start a new chat', 'Clears the conversation, every Event and the simulated sign-in, so prompts 11 to 16 start from a clean chat. It does not close Presenter view.');
+
 /* ---------- prompts and quick replies ---------- */
 const TEXT_TIPS = {
   'Draft an Event from my notes.': ['Draft from notes', 'Sends this to the assistant as if typed. If the sample notes are loaded it captures them. Otherwise it offers to load them.', 'Capture the sample notes first, then use the other prompts.'],
@@ -201,6 +214,7 @@ const HEAD = [
   [/^Decisions, risks and open questions$/, 'Decisions, risks and open questions', 'Empty when the notes do not support an entry. Nothing is invented.'],
   [/^Suggested agenda/, 'Suggested agenda', 'The assistant’s own wording, labelled AI suggestion. It is not in the notes and is not part of the Event unless the seller adds it.'],
   [/^Event proposals$/, 'Event proposals', 'Chat on the left, Event details on the right. This is where the seller corrects and reviews.'],
+  [/^Event details$/, 'Event details', 'The side panel for the Event proposal: fields, evidence, changes, customer and review. It stays empty until a proposal exists.'],
   [/^Event \d+ · Revision \d+/, 'Event and revision', 'Which Event the panel shows, and how many revisions it has had. It is always Unsaved.'],
   [/^Changed in this revision/, 'Changed in this revision', 'Before and after for what the latest instruction changed. Fields that stayed the same keep their evidence.'],
   [/^Final proposal/, 'Final proposal', 'The proposal as it stands, to check before marking it reviewed.'],
