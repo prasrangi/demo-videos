@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>[hidden]{display:none!important}body{margin:0}</style>
+<meta name="robots" content="noindex,nofollow">
+<title>Sales Agent Click-Through</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: one dark stage showing the recording, a control bar under it, a chapter rail of clickable steps below.
+   At each stop the video zooms to the highlighted box and a card opens on the opposite side of the stage. */
+:root{
+  --bg:#0a1020;
+  --surface:#101a31;
+  --surface-2:#17233f;
+  --line:#26355c;
+  --fg:#e9eef9;
+  --muted:#9aa8c8;
+  --accent:#ffc247;
+  --accent-ink:#1b1400;
+  --dim:rgba(4,8,18,.68);
+  --font-ui:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{
+  background:var(--bg);color:var(--fg);font:15px/1.5 var(--font-ui);
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:20px 32px;
+}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.app{max-width:1240px;margin:0 auto;display:grid;gap:14px}
+
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:8px 24px}
+.top h1{margin:0;font-size:20px;font-weight:600;letter-spacing:-.01em;text-wrap:balance}
+.where{margin:2px 0 0;color:var(--muted);font-size:14px;min-width:0}
+.where b{color:var(--fg);font-weight:500}
+
+.stagewrap{width:100%;max-width:min(100%,calc((100vh - 250px) * 1.7778));min-width:min(100%,320px);margin:0 auto;display:grid;gap:12px}
+.stage{position:relative;width:100%;aspect-ratio:16/9;max-width:100%;background:#000;border-radius:14px;overflow:hidden;border:1px solid var(--line)}
+.world{position:absolute;inset:0;transform-origin:0 0;transition:transform .5s cubic-bezier(.22,.8,.26,1);will-change:transform}
+.world video{position:absolute;inset:0;width:100%;height:100%;display:block;background:#000}
+.hl{position:absolute;border:3px solid var(--accent);border-radius:8px;box-shadow:0 0 0 200vmax var(--dim);pointer-events:none}
+
+.ff{position:absolute;top:12px;right:12px;padding:5px 10px;border-radius:999px;background:rgba(10,16,32,.82);border:1px solid var(--line);font:500 12px/1 var(--font-mono);letter-spacing:.04em;text-transform:uppercase;color:var(--accent)}
+.card{position:absolute;left:50%;transform:translateX(-50%);width:min(780px,calc(100% - 24px));max-height:60%;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 18px 48px rgba(0,0,0,.5);padding:14px 16px 16px;display:grid;gap:10px}
+.card .eyebrow{font:500 12px/1.3 var(--font-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.card .said{margin:0;font-size:17px;line-height:1.5;white-space:pre-line;min-width:0;overflow-wrap:anywhere}
+.card.long .said{font-size:14.5px;line-height:1.45}
+.card.is-reply{padding:10px 14px 12px;display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px}
+.card.is-reply .eyebrow{flex:1 1 100%}
+.card.is-reply .said{font-size:15px;flex:1 1 300px}
+.card.is-reply .hint{display:none}
+.card .row{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px}
+.hint{color:var(--muted);font-size:13px}
+kbd{font:500 12px var(--font-mono);border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 6px;background:var(--surface-2);color:var(--fg)}
+
+.btn{min-height:44px;padding:0 18px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:500}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600;font-size:16px;padding:0 26px;min-height:48px}
+.btn.primary:hover{filter:brightness(1.06)}
+.btn svg{width:14px;height:14px;fill:currentColor}
+
+.overlay{position:absolute;inset:0;display:grid;place-items:center;padding:16px;background:rgba(6,10,22,.9);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);text-align:center}
+.overlay .inner{max-width:560px;display:grid;gap:14px;justify-items:center}
+.overlay h2{margin:0;font-size:28px;line-height:1.15;letter-spacing:-.015em;text-wrap:balance;font-weight:600}
+.overlay p{margin:0;color:var(--muted);text-wrap:pretty}
+.overlay ul{margin:0;padding:0;list-style:none;display:grid;gap:6px;text-align:left;color:var(--fg)}
+.overlay li{padding-left:18px;position:relative}
+.overlay li::before{content:"";position:absolute;left:0;top:.62em;width:8px;height:2px;background:var(--accent)}
+.loading{position:absolute;inset:0;display:grid;place-items:center;background:#000;color:var(--muted);font:500 13px var(--font-mono);letter-spacing:.06em;text-transform:uppercase}
+
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 12px}
+.clock{font:500 13px var(--font-mono);color:var(--muted);font-variant-numeric:tabular-nums;min-width:96px}
+.progress{position:relative;flex:1 1 160px;height:6px;border-radius:3px;background:var(--surface-2);min-width:120px}
+.progress i{position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:var(--accent);width:0}
+.progress s{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--line);text-decoration:none}
+.switch{display:inline-flex;align-items:center;gap:8px;min-height:44px;cursor:pointer;color:var(--fg);user-select:none}
+.switch input{width:18px;height:18px;accent-color:var(--accent);margin:0}
+
+.rail{display:flex;flex-wrap:wrap;gap:14px 28px;padding-top:6px;border-top:1px solid var(--line)}
+.chap{display:grid;gap:6px;min-width:0}
+.chap h3{margin:0;font:500 12px/1.3 var(--font-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.chap .steps{display:flex;flex-wrap:wrap;gap:6px}
+.st{width:44px;height:44px;border-radius:10px;border:1px solid var(--line);background:var(--surface);cursor:pointer;font:500 14px var(--font-mono);color:var(--muted);display:grid;place-items:center;font-variant-numeric:tabular-nums}
+.st:hover{border-color:var(--muted);color:var(--fg)}
+.st.done{color:var(--fg);background:var(--surface-2)}
+.st.click{border-style:dashed}
+.st.active{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.legend{margin:0;color:var(--muted);font-size:13px}
+
+@media (max-width:759px){
+  .card{position:static;transform:none;width:100%;max-height:none;box-shadow:none}
+  .stage .card{display:none}
+  .slot{display:block}
+  .overlay h2{font-size:20px}
+  .overlay p,.overlay li{font-size:13px}
+  .overlay .inner{gap:8px}
+}
+@media (min-width:760px){ .slot{display:none} }
+@media (prefers-reduced-motion:reduce){ .world{transition:none} }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header class="top">
+    <div>
+      <h1>Sales agent, click-through</h1>
+      <p class="where" id="where">Press Start. The video pauses at each prompt and waits for you.</p>
+    </div>
+  </header>
+
+  <div class="stagewrap">
+    <div class="stage" id="stage">
+      <div class="world" id="world">
+        <video id="vid" playsinline muted preload="auto"></video>
+        <div class="hl" id="hl" hidden></div>
+      </div>
+      <div class="ff" id="ff" hidden></div>
+      <div class="card" id="card" role="dialog" aria-live="polite" hidden>
+        <div class="eyebrow" id="eyebrow"></div>
+        <p class="said" id="said"></p>
+        <div class="row">
+          <button class="btn primary" id="resume" type="button"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 1.2v11.6L12.4 7z"/></svg>Resume</button>
+          <span class="hint">or press <kbd>Space</kbd></span>
+        </div>
+      </div>
+      <div class="overlay" id="intro" hidden>
+        <div class="inner">
+          <h2>Watch the Sales agent work through a Salesforce account</h2>
+          <p>This is a recording of the Sales agent in Microsoft Copilot, cut down to about four minutes. It pauses at every prompt and click, zooms in, and waits until you press Resume.</p>
+          <button class="btn primary" id="start" type="button"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 1.2v11.6L12.4 7z"/></svg>Start</button>
+        </div>
+      </div>
+      <div class="overlay" id="end" hidden>
+        <div class="inner">
+          <h2>End of the walkthrough</h2>
+          <ul>
+            <li>The agent found the account and opportunity, saved a note, then created and checked a task.</li>
+            <li>It updated the next step, drafted two meetings and saved one as a Salesforce event after you confirmed.</li>
+            <li>The last answer lists every event detail with its source.</li>
+          </ul>
+          <button class="btn primary" id="again" type="button">Watch again</button>
+        </div>
+      </div>
+      <div class="loading" id="loading">Loading the recording</div>
+    </div>
+    <div class="slot" id="slot"></div>
+
+    <div class="bar">
+      <button class="btn" id="back" type="button">Back</button>
+      <button class="btn" id="restart" type="button">Restart</button>
+      <span class="clock" id="clock">00:00 / 00:00</span>
+      <div class="progress" id="progress" aria-hidden="true"><i id="prog"></i></div>
+      <label class="switch" for="pauseReplies"><input type="checkbox" id="pauseReplies" checked>Pause on replies</label>
+    </div>
+
+    <nav class="rail" id="rail" aria-label="Steps"></nav>
+    <p class="legend">Solid squares are prompts you type. Dashed squares are buttons you click. Select a step to jump to it.</p>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var C={"fps":30,"width":1920,"height":1080,"duration":244.867,"chapters":[{"name":"Research the account","first":1,"last":5},{"name":"Notes into Salesforce","first":6,"last":8},{"name":"Task and next step","first":9,"last":13},{"name":"Draft meetings","first":14,"last":16},{"name":"Save and review","first":17,"last":22}],"steps":[{"kind":"prompt","time":5.6833,"frame":170,"title":"Company overview","text":"Give me a quick overview of Atlas Metals Group, including its industry and website.","rect":[505,360,891,161],"src":638,"id":1,"chapter":0},{"kind":"prompt","time":18.3167,"frame":549,"title":"Contacts","text":"Show me the contacts for Atlas Metals Group and their job titles.","rect":[505,872,891,161],"src":2688,"id":2,"chapter":0},{"kind":"prompt","time":27.3833,"frame":821,"title":"Open opportunities","text":"Show me the open opportunities for Atlas Metals Group, including their stages and close dates.","rect":[505,872,891,161],"src":3868,"id":3,"chapter":0},{"kind":"prompt","time":40.0167,"frame":1200,"title":"Set the goal","text":"What we want to achieve: Establish the correct opportunity for the following Task and NextStep updates.","rect":[505,840,891,193],"src":5418,"id":4,"chapter":0},{"kind":"prompt","time":48.0833,"frame":1442,"title":"Find the opportunity","text":"Find the Salesforce opportunity called \u201cMOA POC TEST - Meeting Outcome 2026-11-03\u201d. Show its current next step. Use this opportunity for the follow-up task and next-step updates in this chat.","rect":[505,809,891,225],"src":6356,"id":5,"chapter":0},{"kind":"prompt","time":66.95,"frame":2008,"title":"Paste meeting notes","text":"Here are my demo meeting notes from 4 November 2026:\nWe met with Elena Schmidt, Mateo Murphy and Anika Wilson from Atlas Metals Group. We agreed to review the updated technical scope with Elena and Mateo by 6 November. I will prepare the updated scope. Anika will confirm the commercial requirements. Plant access is still unconfirmed. No pricing or close-date changes were agreed.\nSummarise the decisions, risks and follow-up actions.","rect":[505,715,891,318],"src":9302,"id":6,"chapter":1},{"kind":"prompt","time":79.7167,"frame":2391,"title":"Draft a Salesforce note","text":"Find the Atlas Metals Group account in Salesforce and prepare a meeting note titled \u201cTechnical Scope Review \u2014 4 November 2026\u201d.\nHere are my meeting notes:\nWe met with Elena Schmidt, Mateo Murphy and Anika Wilson from Atlas Metals Group. We agreed to review the updated technical scope with Elena and Mateo by 6 November 2026. I, Prashant Rangi, will prepare the updated scope. Anika will confirm the commercial requirements. Plant access is still unconfirmed. No pricing or close-date changes were agreed.\nOrganise the note into decisions, risks and follow-up actions. Include owners and deadlines where provided.\nShow me the note and the account it will be linked to before saving. After I confirm, save it as a Salesforce note and give me its link.","rect":[505,632,891,401],"src":10688,"id":7,"chapter":1},{"kind":"prompt","time":94.15,"frame":2824,"title":"Save the note","text":"go ahead and save","rect":[505,903,891,130],"src":12483,"id":8,"chapter":1},{"kind":"prompt","time":110.45,"frame":3313,"title":"Create a task","text":"Create a task for me called \u201cMOA POC TEST - Review updated scope with Elena Schmidt\u201d, due 6 November 2026, linked to this opportunity. The task is to review the updated technical scope with Elena and Mateo and capture any remaining questions.","rect":[505,809,891,225],"src":14998,"id":9,"chapter":2},{"kind":"click","time":118.05,"frame":3541,"title":"Confirm the task","text":"Click Confirm so the agent creates the Salesforce task. The card lists the task fields to review first.","rect":[503,657,94,40],"src":16265,"id":10,"chapter":2},{"kind":"prompt","time":130.5833,"frame":3917,"title":"Check the task","text":"Check Salesforce and show me the task we just created, including its due date, status and related opportunity.","rect":[505,840,891,193],"src":17887,"id":11,"chapter":2},{"kind":"prompt","time":141.6167,"frame":4248,"title":"Update the next step","text":"Update this opportunity\u2019s next step to \u201cReview the updated scope with Elena Schmidt and Mateo Murphy by 6 November 2026, then confirm the commercial requirements with Anika Wilson.\u201d Leave the other opportunity details unchanged.","rect":[505,809,891,225],"src":18894,"id":12,"chapter":2},{"kind":"prompt","time":153.3167,"frame":4599,"title":"Check the next step","text":"Check Salesforce and show this opportunity\u2019s current next step, stage and close date.","rect":[505,872,891,161],"src":20327,"id":13,"chapter":2},{"kind":"prompt","time":163.0167,"frame":4890,"title":"Draft two meetings","text":"Draft two meetings for Atlas Metals Group:\nA technical scope review with Elena Schmidt and Mateo Murphy on 10 November 2026 at 10 am for 30 minutes.\nA commercial review with Anika Wilson on 11 November 2026 at 2 pm for 45 minutes.\nBoth meetings are in India time, on Microsoft Teams, and I, Prashant Rangi, will organise them. Keep both unsaved and don\u2019t send invitations.","rect":[505,746,891,287],"src":21220,"id":14,"chapter":3},{"kind":"prompt","time":174.0833,"frame":5222,"title":"Show the sources","text":"For each meeting, show which details came from my instructions and which, if any, came from Salesforce. Flag anything missing or assumed.","rect":[505,840,891,193],"src":22289,"id":15,"chapter":3},{"kind":"prompt","time":186.4833,"frame":5594,"title":"Move one meeting","text":"Move only the technical scope review to 3 pm, still for 30 minutes. Leave the commercial review unchanged. Keep both unsaved.","rect":[505,840,891,193],"src":23924,"id":16,"chapter":3},{"kind":"prompt","time":194.7167,"frame":5841,"title":"Save the event","text":"Save only the technical scope review in Salesforce using its latest reviewed details. Leave the commercial review unsaved.\nShow me the customer, attendees, date, time and timezone for confirmation before saving. After I confirm, create the Salesforce Event and give me its record link. Do not send invitations.","rect":[505,777,891,256],"src":24696,"id":17,"chapter":4},{"kind":"prompt","time":201.3167,"frame":6039,"title":"Go ahead","text":"Go ahead","rect":[505,903,891,130],"src":25277,"id":18,"chapter":4},{"kind":"click","time":209.0833,"frame":6272,"title":"Confirm the event (1 of 2)","text":"Click Confirm so the agent creates the Salesforce Event. The card shows the event fields before anything is saved.","rect":[503,500,94,40],"src":26589,"id":19,"chapter":4},{"kind":"click","time":215.15,"frame":6454,"title":"Confirm the event (2 of 2)","text":"Click Confirm for the second review card, the event relation, so the event can be completed.","rect":[503,619,94,40],"src":27305,"id":20,"chapter":4},{"kind":"click","time":219.25,"frame":6577,"title":"Sign in to Salesforce","text":"The agent asks you to sign in to Salesforce Demo. Click Sign in to continue.","rect":[501,746,262,40],"src":27636,"id":21,"chapter":4},{"kind":"prompt","time":236.9167,"frame":7107,"title":"Mark as reviewed","text":"The technical scope review looks good. Mark it as reviewed and show the final details with their sources.","rect":[505,840,891,193],"src":30033,"id":22,"chapter":4}],"replies":[{"id":1,"time":13.4833,"frame":404,"rect":[493,279,913,433],"caption":"Company overview: manufacturing, Bilbao, 2,500 employees, 7 open opportunities.","src":2027},{"id":2,"time":24.25,"frame":727,"rect":[493,248,913,427],"caption":"Three contacts with their job titles, tagged as coming from Salesforce.","src":3603},{"id":3,"time":33.6833,"frame":1010,"rect":[493,279,913,582],"caption":"Seven open opportunities with stage and close date.","src":4807},{"id":4,"time":43.6833,"frame":1310,"rect":[493,279,913,350],"caption":"The agent asks for the task and NextStep details before it changes anything.","src":5778},{"id":5,"time":55.0167,"frame":1650,"rect":[493,341,913,519],"caption":"Opportunity found: MOA POC TEST - Meeting Outcome 2026-11-03, in Prospecting.","src":7516},{"id":6,"time":73.05,"frame":2191,"rect":[493,3,913,773],"caption":"The pasted notes come back as risks and follow-up actions with owners and dates.","src":9818},{"id":7,"time":86.5167,"frame":2595,"rect":[493,341,913,519],"caption":"A proposed meeting note linked to the Atlas Metals Group account. Nothing is saved yet.","src":11820},{"id":8,"time":104.45,"frame":3133,"rect":[493,413,913,424],"caption":"Saved and verified: the note is stored and linked to the account.","src":14166},{"id":9,"time":123.4833,"frame":3704,"rect":[493,630,913,230],"caption":"Task created and verified in Salesforce.","src":16970},{"id":10,"time":135.4167,"frame":4062,"rect":[493,102,913,653],"caption":"The check finds the task linked to a different opportunity, and the agent says so.","src":18438},{"id":11,"time":148.75,"frame":4462,"rect":[493,237,913,392],"caption":"Next step updated and verified. Stage and close date are unchanged.","src":19918},{"id":12,"time":157.25,"frame":4717,"rect":[493,279,913,444],"caption":"Current next step, stage (Prospecting) and close date (3 December 2026).","src":20764},{"id":13,"time":168.05,"frame":5041,"rect":[493,3,913,858],"caption":"Two draft meetings. Neither is created or sent.","src":21869},{"id":14,"time":181.65,"frame":5449,"rect":[493,279,913,582],"caption":"Each detail is marked as your instruction or from Salesforce, and gaps are flagged.","src":23572},{"id":15,"time":189.8833,"frame":5696,"rect":[493,279,913,514],"caption":"Only the technical scope review moved, to 15:00 to 15:30 IST. Both stay unsaved.","src":24214},{"id":16,"time":198.5833,"frame":5957,"rect":[493,3,913,858],"caption":"A confirmation table before saving: customer, attendees, date, time and timezone.","src":25097},{"id":17,"time":232.35,"frame":6970,"rect":[493,170,913,521],"caption":"Saved and verified in Salesforce with the event link. Invitations not sent.","src":29767},{"id":18,"time":243.2833,"frame":7298,"rect":[493,3,913,820],"caption":"Final details with their sources. Status is Reviewed, recorded from your confirmation in the chat.","src":30636}],"ff":[{"start":0.0,"end":4.5,"speed":3},{"start":7.0,"end":12.533,"speed":8},{"start":14.8,"end":17.3,"speed":7},{"start":19.633,"end":23.267,"speed":7},{"start":25.567,"end":26.4,"speed":6},{"start":28.7,"end":32.7,"speed":7},{"start":37.133,"end":39.033,"speed":6},{"start":41.333,"end":42.7,"speed":6},{"start":45.0,"end":47.1,"speed":8},{"start":49.4,"end":54.033,"speed":8},{"start":58.4,"end":65.767,"speed":7},{"start":68.267,"end":69.867,"speed":6},{"start":74.367,"end":78.533,"speed":6},{"start":81.033,"end":85.533,"speed":8},{"start":87.833,"end":89.033,"speed":7},{"start":90.767,"end":92.967,"speed":3},{"start":95.467,"end":102.933,"speed":7},{"start":105.767,"end":109.333,"speed":7},{"start":111.767,"end":116.7,"speed":8},{"start":119.733,"end":122.467,"speed":7},{"start":124.8,"end":125.833,"speed":7},{"start":126.6,"end":129.367,"speed":7},{"start":131.9,"end":133.933,"speed":7},{"start":136.733,"end":140.4,"speed":3},{"start":142.933,"end":147.767,"speed":6},{"start":150.067,"end":152.133,"speed":5},{"start":154.633,"end":156.267,"speed":7},{"start":158.567,"end":161.8,"speed":3},{"start":164.333,"end":167.033,"speed":7},{"start":169.367,"end":172.9,"speed":3},{"start":175.4,"end":180.667,"speed":7},{"start":182.967,"end":185.3,"speed":3},{"start":187.8,"end":188.9,"speed":6},{"start":191.2,"end":193.533,"speed":5},{"start":196.033,"end":197.567,"speed":6},{"start":202.633,"end":207.767,"speed":8},{"start":210.767,"end":213.833,"speed":6},{"start":216.833,"end":217.9,"speed":6},{"start":220.933,"end":230.033,"speed":7},{"start":233.867,"end":235.7,"speed":2},{"start":238.233,"end":240.6,"speed":6}]};
+var VIDEO_URL="sales-agent-demo.mp4";
+var $=function(id){return document.getElementById(id)};
+var vid=$("vid"),stage=$("stage"),world=$("world"),hl=$("hl"),card=$("card"),slot=$("slot"),ffEl=$("ff");
+var intro=$("intro"),endEl=$("end"),loading=$("loading"),where=$("where"),clock=$("clock"),prog=$("prog");
+var resumeBtn=$("resume"),sw=$("pauseReplies"),eyebrow=$("eyebrow"),said=$("said");
+var W=C.width,H=C.height,steps=C.steps,replies=C.replies,total=steps.length;
+var wide=window.matchMedia("(min-width: 760px)");
+var state="intro",curStop=null,next=0,stops=[],activeId=0,shownKey="";
+
+function fmt(t){t=Math.max(0,Math.floor(t));var m=Math.floor(t/60),s=t%60;return (m<10?"0":"")+m+":"+(s<10?"0":"")+s}
+
+/* stops */
+var allStops=[],stepStop={};
+steps.forEach(function(s){var o={t:s.time,kind:s.kind,step:s,rect:s.rect};allStops.push(o);stepStop[s.id]=o});
+replies.forEach(function(r){allStops.push({t:r.time,kind:"reply",reply:r,rect:r.rect})});
+allStops.sort(function(a,b){return a.t-b.t});
+function buildStops(){stops=allStops.filter(function(s){return s.kind!=="reply"||sw.checked})}
+function firstAfter(t){for(var i=0;i<stops.length;i++){if(stops[i].t>t+0.001)return i}return stops.length}
+function stepBefore(t){var id=0;for(var i=0;i<steps.length;i++){if(steps[i].time<=t+0.01)id=steps[i].id}return id}
+
+/* rail */
+var rail=$("rail"),btns={};
+C.chapters.forEach(function(ch){
+  var box=document.createElement("div");box.className="chap";
+  var h=document.createElement("h3");h.textContent=ch.name;box.appendChild(h);
+  var row=document.createElement("div");row.className="steps";
+  for(var n=ch.first;n<=ch.last;n++){
+    var st=steps[n-1];var b=document.createElement("button");
+    b.type="button";b.className="st"+(st.kind==="click"?" click":"");b.textContent=n;
+    b.setAttribute("aria-label","Step "+n+": "+st.title+(st.kind==="click"?" (click)":""));b.title=st.title;
+    b.addEventListener("click",(function(id){return function(){jump(stepStop[id])}})(n));
+    btns[n]=b;row.appendChild(b);
+  }
+  box.appendChild(row);rail.appendChild(box);
+});
+steps.forEach(function(s){var t=document.createElement("s");t.style.left=(s.time/C.duration*100)+"%";$("progress").appendChild(t)});
+
+function updateRail(t){
+  var id=stepBefore(t);
+  if(state==="intro")id=0;else if(id===0)id=1;
+  for(var n=1;n<=total;n++){
+    var b=btns[n];b.classList.toggle("done",n<id);b.classList.toggle("active",n===id);
+  }
+  if(id!==activeId||state!==shownKey){
+    activeId=id;shownKey=state;
+    if(state==="intro"||id===0){where.innerHTML="Press Start. The video pauses at each prompt and waits for you."}
+    else{var st=steps[id-1];where.innerHTML="<b>Step "+id+" of "+total+"</b> \u00b7 "+st.title+" \u00b7 "+C.chapters[st.chapter].name}
+  }
+}
+
+/* zoom, highlight, card */
+function placeCard(s,z,tx,ty,k){
+  var r=s.rect,sh=stage.clientHeight;
+  if(wide.matches){
+    if(card.parentNode!==stage)stage.appendChild(card);
+    var top=ty+z*r[1]*k,bot=ty+z*(r[1]+r[3])*k;
+    var lower=(r[1]+r[3]/2)>H*0.5;
+    var tall=r[3]>H*0.55;
+    card.style.top="auto";card.style.bottom="auto";
+    if(tall||!lower){card.style.bottom="12px";card.style.maxHeight=(tall?Math.min(sh*0.34,150):Math.max(130,sh-bot-24))+"px"}
+    else{card.style.top="12px";card.style.maxHeight=Math.max(130,top-24)+"px"}
+  }else{
+    if(card.parentNode!==slot)slot.appendChild(card);
+    card.style.top=card.style.bottom=card.style.maxHeight="";
+  }
+}
+function showStop(s){
+  curStop=s;state="stopped";
+  var r=s.rect,sw_=stage.clientWidth,sh=stage.clientHeight,k=sw_/W;
+  var z=Math.min(W*0.8/r[2],H*0.66/r[3],2.2);if(z<1.12)z=1;
+  var cx=(r[0]+r[2]/2)*k,cy=(r[1]+r[3]/2)*k;
+  var lower=(r[1]+r[3]/2)>H*0.5;
+  var ty0=wide.matches?(lower?sh*0.62:sh*0.4):sh*0.5;
+  var tx=sw_/2-z*cx,ty=ty0-z*cy;
+  tx=Math.min(0,Math.max(sw_*(1-z),tx));ty=Math.min(0,Math.max(sh*(1-z),ty));
+  world.style.transform="translate("+tx+"px,"+ty+"px) scale("+z+")";
+  hl.style.left=(r[0]/W*100)+"%";hl.style.top=(r[1]/H*100)+"%";hl.style.width=(r[2]/W*100)+"%";hl.style.height=(r[3]/H*100)+"%";hl.hidden=false;
+  var text,eb;
+  if(s.kind==="prompt"){eb="Step "+s.step.id+" of "+total+" \u00b7 You type";text=s.step.text}
+  else if(s.kind==="click"){eb="Step "+s.step.id+" of "+total+" \u00b7 You click: "+s.step.title;text=s.step.text}
+  else{eb="Reply to step "+stepBefore(s.t);text=s.reply.caption}
+  eyebrow.textContent=eb;said.textContent=text;
+  card.classList.toggle("is-reply",s.kind==="reply");
+  card.classList.toggle("long",text.length>260);
+  card.hidden=false;ffEl.hidden=true;
+  placeCard(s,z,tx,ty,k);
+  card.scrollTop=0;
+  updateRail(s.t);
+  try{resumeBtn.focus({preventScroll:true})}catch(e){resumeBtn.focus()}
+}
+function hideStop(){card.hidden=true;hl.hidden=true;world.style.transform="translate(0px,0px) scale(1)"}
+
+/* flow */
+function whenSeeked(fn){
+  var done=false;function go(){if(done)return;done=true;fn()}
+  vid.addEventListener("seeked",go,{once:true});setTimeout(go,350);
+}
+function arrive(s){
+  vid.pause();state="stopped";curStop=s;
+  if(Math.abs(vid.currentTime-s.t)>0.0005)vid.currentTime=s.t;
+  whenSeeked(function(){if(curStop===s&&state==="stopped")showStop(s)});
+}
+function jump(s){
+  intro.hidden=true;endEl.hidden=true;hideStop();
+  vid.pause();state="stopped";curStop=s;buildStops();
+  vid.currentTime=s.t;
+  whenSeeked(function(){if(curStop===s&&state==="stopped")showStop(s)});
+}
+function start(){intro.hidden=true;endEl.hidden=true;hideStop();buildStops();next=0;state="playing";vid.currentTime=0;vid.play().catch(function(){})}
+function toIntro(){hideStop();vid.pause();state="intro";curStop=null;next=0;endEl.hidden=true;ffEl.hidden=true;intro.hidden=false;vid.currentTime=0;updateRail(0)}
+function resume(){
+  if(state==="intro"){start();return}
+  if(state==="ended"){start();return}
+  if(state!=="stopped"||!curStop)return;
+  var t=curStop.t;hideStop();buildStops();next=firstAfter(t);state="playing";
+  var p=vid.play();if(p&&p.catch)p.catch(function(){});
+}
+function back(){
+  var t=state==="stopped"&&curStop?curStop.t:vid.currentTime;
+  buildStops();var prev=null;
+  for(var i=stops.length-1;i>=0;i--){if(stops[i].t<t-0.6){prev=stops[i];break}}
+  if(prev)jump(prev);else toIntro();
+}
+
+/* loop */
+var ffSegs=C.ff;
+function ffLabel(t){
+  for(var i=0;i<ffSegs.length;i++){var g=ffSegs[i];if(t>=g.start&&t<g.end){return "Fast forward "+g.speed+"x"}}
+  return "";
+}
+function tick(){
+  var t=vid.currentTime||0;
+  if(state==="playing"){
+    while(next<stops.length&&stops[next].t<t-0.25)next++;
+    if(next<stops.length&&t>=stops[next].t-0.012){arrive(stops[next])}
+    var l=ffLabel(t);if(l){ffEl.textContent=l;ffEl.hidden=false}else ffEl.hidden=true;
+    updateRail(t);
+  }
+  clock.textContent=fmt(t)+" / "+fmt(C.duration);
+  prog.style.width=Math.min(100,t/C.duration*100)+"%";
+  requestAnimationFrame(tick);
+}
+
+/* events */
+resumeBtn.addEventListener("click",resume);
+$("start").addEventListener("click",resume);
+$("again").addEventListener("click",resume);
+$("back").addEventListener("click",back);
+$("restart").addEventListener("click",toIntro);
+sw.addEventListener("change",function(){
+  sw.blur();buildStops();
+  if(state==="playing")next=firstAfter(vid.currentTime);
+  if(state==="stopped"){try{resumeBtn.focus({preventScroll:true})}catch(e){}}
+});
+vid.addEventListener("ended",function(){state="ended";hideStop();ffEl.hidden=true;endEl.hidden=false});
+document.addEventListener("keydown",function(e){
+  var tg=e.target,tag=tg&&tg.tagName;
+  if((e.key===" "||e.key==="Enter")&&(tg===document.body||tg===resumeBtn||tg===stage)){
+    if(state==="stopped"||state==="intro"||state==="ended"){e.preventDefault();resume()}
+  }else if(e.key==="ArrowLeft"&&tag!=="INPUT"){e.preventDefault();back()}
+});
+var rz;window.addEventListener("resize",function(){clearTimeout(rz);rz=setTimeout(function(){if(state==="stopped"&&curStop&&!card.hidden)showStop(curStop)},120)});
+if(wide.addEventListener)wide.addEventListener("change",function(){if(state==="stopped"&&curStop&&!card.hidden)showStop(curStop)});
+
+/* load the video as a blob so seeking works on hosts without byte ranges */
+function ready(){loading.hidden=true;intro.hidden=state!=="intro"}
+vid.addEventListener("loadeddata",ready);
+vid.addEventListener("error",function(){loading.textContent="The video did not load. Reload the page to try again."});
+function load(){
+  fetch(VIDEO_URL).then(function(r){if(!r.ok)throw new Error("http");return r.arrayBuffer()}).then(function(buf){
+    vid.src=URL.createObjectURL(new Blob([buf],{type:"video/mp4"}));
+  }).catch(function(){vid.src=VIDEO_URL});
+}
+buildStops();updateRail(0);load();requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
