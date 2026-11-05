@@ -104,9 +104,9 @@
         <div id="problem-banner"><p class="eyebrow">Proposal Agent problem</p><p id="problem-banner-text"></p></div>
         <div class="chapter-heading"><span id="chapter">Preparing the walkthrough</span><span id="step-count"></span></div>
         <div id="stage">
-          <div id="scene"><video id="video" preload="auto" playsinline></video><div id="focus" hidden></div></div>
+          <div id="scene"><video id="video" preload="metadata" playsinline></video><div id="focus" hidden></div></div>
           <span id="overlay-label" hidden></span><span id="speed-label" hidden></span>
-          <div id="loading"><strong>Loading the Proposal Agent demo</strong><span id="load-status">The first step will pause on the prompt.</span></div>
+          <div id="loading"><strong>Loading the Proposal Agent demo</strong><span id="load-status">Preparing the first prompt. Later steps load as needed.</span></div>
         </div>
         <div class="controls">
           <button id="back" disabled>Back</button>
@@ -162,6 +162,7 @@
     let objectUrl = null;
     let frameHandle = null;
     let initialized = false;
+    let loadTimer = null;
 
     function showError(message) {
       $("error").textContent = message;
@@ -298,6 +299,7 @@
       busy = true;
       video.pause();
       controls();
+      notice("Loading this step...");
       try {
         await seekTo(cues[index].time);
         if (version !== seekVersion) return;
@@ -310,6 +312,7 @@
       } finally {
         if (version === seekVersion) {
           busy = false;
+          $("notice").hidden = true;
           controls();
           $("resume").focus({preventScroll:true});
         }
@@ -361,40 +364,45 @@
     async function initialize() {
       if (initialized) return;
       if (!Number.isFinite(video.duration) || Math.abs(video.duration - CONFIG.duration) > 1) {
+        clearTimeout(loadTimer);
+        $("loading").hidden = true;
         showError("The selected video does not match this walkthrough. Choose the accompanying edited MP4.");
         return;
       }
       initialized = true;
       ready = true;
-      $("loading").hidden = true;
       $("error").hidden = true;
       $("timeline").max = String(video.duration);
       await goStep(0);
+      clearTimeout(loadTimer);
+      $("loading").hidden = true;
     }
     function useVideo(url, isObjectUrl) {
+      video.pause();
+      ++seekVersion;
+      clearTimeout(loadTimer);
       if (objectUrl) URL.revokeObjectURL(objectUrl);
       objectUrl = isObjectUrl ? url : null;
       initialized = false;
       ready = false;
+      busy = false;
+      held = false;
+      nextCue = 0;
+      $("error").hidden = true;
+      $("notice").hidden = true;
+      $("loading").hidden = false;
+      $("load-status").textContent = "Preparing the first prompt. Later steps load as needed.";
+      controls();
+      loadTimer = setTimeout(() => {
+        $("loading").hidden = true;
+        showError("The first prompt is taking longer than expected to load. Check your connection and reload, or use Choose video file.");
+      }, 30000);
       video.src = url;
       video.load();
     }
-    async function load() {
+    function load() {
       display(0);
-      if (location.protocol === "file:") {
-        useVideo(CONFIG.video,false);
-        return;
-      }
-      try {
-        const response = await fetch(CONFIG.video);
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const blob = await response.blob();
-        if (!blob.size) throw new Error("The video file is empty.");
-        useVideo(URL.createObjectURL(blob),true);
-      } catch (error) {
-        notice(`Video download was unavailable (${error.message}). Trying direct playback; choose the MP4 if seeking is unavailable.`);
-        useVideo(CONFIG.video,false);
-      }
+      useVideo(CONFIG.video,false);
     }
 
     for (const problem of CONFIG.problems) {
@@ -459,7 +467,13 @@
     video.addEventListener("play",controls);
     video.addEventListener("pause",controls);
     video.addEventListener("timeupdate",checkCues);
-    video.addEventListener("playing",checkCues);
+    video.addEventListener("playing",() => {
+      $("notice").hidden = true;
+      checkCues();
+    });
+    video.addEventListener("waiting",() => {
+      if (ready && !video.paused) notice("Buffering video. Playback will continue when this section is ready.");
+    });
     video.addEventListener("ended",() => {
       held = false;
       focus();
@@ -468,8 +482,10 @@
       controls();
     });
     video.addEventListener("error",() => {
+      clearTimeout(loadTimer);
       $("loading").hidden = true;
-      showError(`The video could not load. Keep ${CONFIG.video} beside this HTML, or use Choose video file.`);
+      $("notice").hidden = true;
+      showError(`The video could not load. Check your connection and reload, or use Choose video file to select ${CONFIG.video}. For local playback, keep the MP4 beside this HTML.`);
       ready = false;
       controls();
     });
@@ -483,6 +499,7 @@
     new ResizeObserver(focus).observe($("stage"));
     window.addEventListener("pagehide",() => {
       cancelAnimationFrame(frameHandle);
+      clearTimeout(loadTimer);
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     });
     window.demoPlayer = {

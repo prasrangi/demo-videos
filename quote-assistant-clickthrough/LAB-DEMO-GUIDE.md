@@ -43,6 +43,13 @@ recovery, skipped tests and native audit checks are not claimed completed.
 This update improves the demonstration explanation; it does not change the
 Proposal Agent's execution workflows.
 
+### Playback loading update
+
+The shared player uses partial video requests to prepare the first prompt
+without downloading the entire MP4. Later steps load as needed; a short
+buffering message can appear when seeking to a section not yet downloaded.
+Startup and media failures now show explicit recovery guidance.
+
 ## Current status and where to resume
 
 **Testing paused: 1 November 2026, 23:08 IST.**
