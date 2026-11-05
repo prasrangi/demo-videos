@@ -1,50 +1,40 @@
-# Meeting Outcome Assistant — Interactive Customer Wireframe (`v1.1.1`)
+# Meeting Outcome Assistant in Microsoft Copilot for Sales (Sales Copilot) — Interactive Customer Wireframe (`v1.1.1`)
 
 > **Interactive wireframe · Sample data · No live CRM or calendar changes**  
+> **Host Surface:** Microsoft Copilot for Sales (*Sales Copilot*) inside Microsoft 365 Copilot, connected to **Salesforce CRM** (Developer Edition lab via Salesforce Hosted MCP — 6 read tools configured).  
 > **Central Promise:** *"Capture the proposed meeting details, show where they came from, let the seller correct and review them, and keep everything unsaved in this phase."*
 
-## 1. How to Open, Start, and Reset the Demonstration
+## 1. Quick Start & Reset Instructions
 
-1. **Open the Wireframe:** Open `meeting-outcome-assistant-wireframe.html` (or `index.html` in `meeting-outcome-assistant-wireframe-clickthrough/`) in any modern desktop or tablet browser. It is 100% self-contained, works offline, and makes zero network calls.
-2. **Start the Guided 8–10 Minute Walkthrough:**
-   - The **Presenter View** dock at the top is enabled by default on **Step 1 of 10**.
-   - Click **Next Step ▶** (or press the `Right Arrow` / `Page Down` key) to advance through the 10-step seller and stakeholder narrative, plus optional Appendices **A1** (Multiple Event proposals) and **A2** (Trust boundary / embedded command in notes).
-3. **Reset the Demonstration:**
-   - Click **Reset Demo** (top right in the dark Demo Controls bar) at any time to return every scenario, Event revision, CRM lookup branch, and chat transcript to its initial sample state.
-   - Your **Guide Tips: On/Off** preference survives Reset. Switch **Guide Tips: Off** before sharing your screen with a customer if you do not want hover callouts to appear. Note that hover tips do not appear on touch-only devices; use the Speaker Notes drawer (`N`) or Print View (`#print`) on touch screens.
+1. **Open the Wireframe:** Open `meeting-outcome-assistant-wireframe.html` (or `index.html`) in any modern desktop or tablet browser. It is a single self-contained file with zero external dependencies or network calls.
+2. **Drive the Guided 8–10 Minute Walkthrough:**
+   - The **Presenter View** dock at the top opens on **Step 1 of 10**.
+   - Click **Next Step ▶** (or press `Right Arrow` / `Page Down`) to step through the 10-step customer narrative plus optional Appendices **A1** (Multiple Event proposals) and **A2** (Trust boundary / embedded command in notes).
+   - Advancing with **Next** displays the **"Just completed · Step N"** outcome bridge card alongside the current step's **"This step · What we are doing"** goal card.
+3. **Reset at Any Time:**
+   - Click **Reset Demo** (top right in the Demo Controls bar) to restore every scenario, Event revision, CRM lookup branch, and chat transcript to its initial sample state.
+   - Your **Guide Tips: On/Off** setting survives Reset. Switch **Guide Tips: Off** before a live customer screen-share if you do not want hover callouts to appear. (Hover tips do not appear on touch-only devices; use the Speaker Notes drawer `N` or Print View `#print` on touch screens.)
 
-## 2. Role Chapters & Deep Links
+## 2. Role Chapters, Deep Links & Personalisation
 
-You can jump directly to any chapter, step, or view using the top **Chapters** bar or URL hash links:
 - `#start` — **Start Screen & Role Chapters** with the Readiness & Evidence Basis Legend.
-- `#seller` — **Chapter 1: Seller Workspace & Event Review** (Screens 1–10: Sales Home, Capture Notes, Structured Outcomes, Event Fields, Evidence Table, Conversational Revisions, Missing/Conflicting Details A–F, Multi-Event Proposals, Optional CRM Context, and Review Approval & Save Boundary).
-- `#admin` — **Chapter 2: Sales Ops & Governance** (Screen 11: Previously demonstrated Task creation and dedicated demo Opportunity Next Step updates, currently paused pending repairs; plus Screen 12: Trust & source handling rules).
-- `#gate` — **Chapter 3: Capability Overview, Architecture & Readiness Gate** (Screen 13: Scannable capability matrix, open business-process agreement checklist, intended integration architecture, 6 configured Salesforce Hosted MCP read tools, and Prototype vs. Configured behavior table).
-- `#step=1` through `#step=10`, `#step=A1`, `#step=A2` — Jump directly to any presenter walkthrough step.
-- `#print` — **Printable Leave-Behind View** (formatted for landscape PDF export with the full presenter script, capability matrix, and open business-process questions).
-- `?customer=Name` — Optional query parameter to personalise the sample customer name (sanitised to plain text, max 40 characters). Omit `?customer=` when you want the sample notes to show the exact default string `Atlas Metals Group`.
+- `#seller` — **Chapter 1: Seller Workspace & Event Review** (Screens 1–10 inside the **Microsoft Copilot for Sales + Salesforce CRM** 3-pane workspace).
+- `#admin` — **Chapter 2: Sales Ops & Governance** (Screen 11: Paused Task & Opportunity Next Step actions; Screen 12: Trust & source handling rules).
+- `#gate` — **Chapter 3: Capability Overview, Architecture & Readiness Gate** (Screen 13: Capability matrix, open business-process checklist, intended integration architecture, 6 configured Salesforce Hosted MCP read tools, and Prototype vs. Configured behavior table).
+- `#step=1` through `#step=10`, `#step=A1`, `#step=A2` — Open any presenter walkthrough step directly.
+- `#print` — **Printable Leave-Behind View** (also exported as `meeting-outcome-assistant-leave-behind.pdf`).
+- `?customer=Name` — Optional query parameter to personalise the sample customer name (sanitised to plain text, max 40 characters). Omit `?customer=` when verbatim source quotes must match `Atlas Metals Group`.
 
-## 3. Keyboard Shortcuts
+## 3. Readiness Badges & Evidence Labels
 
-- `Right Arrow` / `Page Down` — Next step (shows the **"Just completed · Step N"** outcome bridge card).
-- `Left Arrow` / `Page Up` — Previous step (shows only **"This step · What we are doing"** Goal card).
-- `N` — Toggle in-page Speaker Notes drawer (or click **Pop-out Notes ↗** to open a synchronized second presenter window).
-- `P` — Toggle Auto-play (respects `prefers-reduced-motion`).
-- `F` — Toggle browser fullscreen.
-- `Esc` — Dismiss visible Guide Tip first, then close open modals or Speaker Notes drawer.
-
-## 4. Readiness Badges & Evidence Labels
-
-All readiness facts and labels come directly from the customer project brief (`v1.1.1`, checked 5 November 2026) and use both an icon and explicit text (never colour alone):
-1. `✓ Validated in private agent` — Tested unsaved Event capture, evidence traceability, derivations, and conversational review using synthetic notes.
-2. `⧗ Configured · Sales validation pending` — Organization catalog entry updated and Sales extension refreshed for the lab user; live Microsoft 365 Sales runtime still showed the older tool set, so runtime validation in Sales remains pending.
-3. `🔑 Configured · Sign-in required for verification` — Optional fresh Salesforce grounding via Hosted MCP; existing lab session requires sign-in.
-4. `⏸ Previously demonstrated · Currently paused` / `⏸ Currently paused · Task fixes pending` — Earlier demo versions showed Task creation and dedicated demo Opportunity Next Step updates, which are now paused in `v1.1.1` while duplicate-prevention, repeated-update, record-link, scope, and routing defects are pending repair.
+All readiness facts and labels come from the project brief (`v1.1.1`, checked 5 November 2026) and always pair an icon with explicit text:
+1. `✓ Validated in private agent` — Tested unsaved Event capture, evidence traceability (`S1`–`S3`), derivations, and conversational review using synthetic notes.
+2. `⧗ Configured · Sales validation pending` — Organization catalog entry updated and Sales extension refreshed for the lab user; live Microsoft Copilot for Sales host still showed the older tool set, so runtime validation in Sales remains pending.
+3. `🔑 Configured · Sign-in required for verification` — Optional fresh Salesforce CRM grounding via Hosted MCP; existing lab session requires sign-in.
+4. `⏸ Previously demonstrated · Currently paused` / `⏸ Currently paused · Task fixes pending` — Earlier POC demos showed synthetic Task creation (`MOA POC TEST`) and dedicated demo Opportunity `Next Step` updates, which are paused in `v1.1.1` while duplicate-prevention, repeated-update, record-link, scope, and routing defects are pending repair.
 5. `◌ Future scope` / `◌ Future scope — unavailable in this phase` — Persistent CRM Event write-back, calendar availability/booking, Teams meeting link generation, participant invitations, recording/transcript ingestion and governance, and production bFO field mapping.
 
-## 5. Supplied Demo Prompts Coverage Table (16 Prompts)
-
-All 16 prompts can be sent from the **Demo Prompts (16)** menu, clicked as chips, or typed/pasted (with or without line breaks) into the chat box:
+## 4. Supplied Demo Prompts Coverage Table (16 Prompts)
 
 | # | Supplied Prompt | Wireframe Behavior | Readiness Badge |
 | :--- | :--- | :--- | :--- |
@@ -65,18 +55,26 @@ All 16 prompts can be sent from the **Demo Prompts (16)** menu, clicked as chips
 | **P15** | `"Looks good."` | Marks the proposal `Reviewed — unsaved` with zero CRM/calendar writes or invitations. | `✓ Validated in private agent` |
 | **P16** | `"Book it and send the invites."` | Refuses write/invite: *"This phase supports capture and review only. Your proposal remains unsaved. No meeting has been booked and no invitations have been sent."* | `◌ Future scope — unavailable in this phase` |
 
-## 6. Prototype-Only UI Elements vs. Actual Configured Agent Behavior
+## 5. Prototype-Only UI Elements vs. Actual Configured Agent Behavior
 
 | Capability / Element | Prototype UI Behavior (This Wireframe) | Actual Configured Agent Behavior (`v1.1.1`) |
 | :--- | :--- | :--- |
-| **Event capture, evidence & review** | Interactive 3-pane browser UI with clickable S1–S3 snippets and revision diffing. | Implemented in private declarative agent source (`v1.1.1`) and validated in conversational markdown responses. |
-| **3-step processing banner** | Visual progress pills (`Identify meeting details` → `Separate actions` → `Prepare evidence`). | Prototype-only UI state; M365 Copilot uses its native runtime progress indicator. |
+| **Microsoft Copilot for Sales + Salesforce CRM workspace shell** | Simulated 3-pane Sales Copilot UI with top M365 ribbon, Salesforce CRM connection badge, and sidecar inspector. | Declarative agent (`v1.1.1`) supplying custom tools and knowledge to the first-party Sales agent in Microsoft 365 Copilot. |
+| **Event capture, evidence & review** | Interactive click-to-highlight `S1`–`S3` snippets, field cards, and before/after revision diffing. | Implemented in private source (`v1.1.1`) and validated in conversational Markdown responses. |
+| **3-step processing banner** | Visual progress pills (`Identify meeting details` → `Separate actions` → `Prepare evidence`). | Prototype-only UI illustration; Microsoft 365 Copilot uses its native runtime progress indicator. |
 | **Ambiguous IST/CST rule (Scenario F)** | Interactive scenario branch prompting for exact timezone/offset. | Configured validation rule in the `v1.1.1` instructions (not claimed as an independently validated production scenario). |
-| **Optional Salesforce CRM context** | Simulated 4-branch selector using local synthetic lab data. | Configured via 6 Salesforce Hosted MCP read tools (`find`, `getObjectSchema`, `getRelatedRecords`, `getUserInfo`, `listRecentSobjectRecords`, `soqlQuery`) against a Developer Edition lab; live session currently requires sign-in. |
+| **Optional Salesforce CRM context** | Simulated 4-branch selector using local synthetic lab data. | Configured via 6 Salesforce Hosted MCP read tools (`find`, `getObjectSchema`, `getRelatedRecords`, `getUserInfo`, `listRecentSobjectRecords`, `soqlQuery`) against a Developer Edition lab; live session requires sign-in. |
 | **Paused Task & Opportunity Next Step** | Read-only historical explanation screen with disabled buttons that explain why writes are paused. | Mutation tools (`createSobjectRecord`, `updateSobjectRecord`) are removed from the active `v1.1.1` allowlist while duplicate/routing defects are pending repair. |
 | **CRM Event save, calendar booking, invites, recordings, bFO** | Disabled controls and explicit refusal in chat. | Not implemented in this phase; future scope requiring customer process and field-mapping agreement. |
 
-## 7. Sources, Assumptions & Maintenance
+## 6. Hosting on GitHub Pages, SharePoint Online, or Google Sites
 
-- **Source of Truth:** Customer brief supplied on **5 November 2026** for Meeting Outcome Assistant (`v1.1.1` private source). Readiness labels and architectural facts are taken directly from this brief.
-- **Rebuilding / Editing:** Run `python3 artifacts/file_generation/ttl=63d/intermediate/build_wireframe.py` to regenerate both the single-file HTML deliverable and this README. Re-check capability badges after each product release or quarterly.
+- **GitHub Pages:** Upload the `meeting-outcome-assistant-wireframe-clickthrough/` folder to your repository and enable GitHub Pages on your default branch.
+- **SharePoint Online:** Upload `meeting-outcome-assistant-wireframe.aspx` (included in `meeting-outcome-assistant-sharepoint-package.zip`) to **Site Assets** and share its direct link or embed it via the Modern Page **Embed** (`</>`) web part.
+- **Google Sites:** Create a page using **Full page embed** → **Embed code** and paste the contents of `meeting-outcome-assistant-wireframe.html`.
+
+## 7. Verification Scope & Maintenance Notes
+
+- **Verified automatically:** Checked with `check_web_app.py` (0 errors, 0 warnings) and headless Chromium across desktop (`1280x800`), tablet (`820x1080`), and mobile (`390x844`) viewports, plus rasterised PDF print-view inspection.
+- **Not tested:** Physical mobile hardware, touch-only screen readers, or live Microsoft 365 tenant runtime.
+- **Maintenance:** Re-check capability readiness badges after each product release or quarterly.

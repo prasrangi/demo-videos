@@ -424,6 +424,160 @@
       font-size: 13px;
     }
 
+    /* Microsoft Copilot for Sales (Sales Copilot) + Salesforce CRM Suite Bar & Theme */
+    .m365-suite-bar {
+      background: linear-gradient(90deg, #0f172a 0%, #1e1b4b 55%, #0c4a6e 100%);
+      color: #ffffff;
+      padding: 8px 16px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      border-bottom: 1px solid #334155;
+      font-size: 13px;
+    }
+    .suite-brand-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .waffle-icon {
+      display: inline-grid;
+      grid-template-columns: repeat(3, 4px);
+      gap: 2px;
+      padding: 4px;
+      opacity: 0.9;
+    }
+    .waffle-icon span {
+      width: 4px;
+      height: 4px;
+      background: #ffffff;
+      border-radius: 1px;
+      display: block;
+    }
+    .copilot-sparkle-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: linear-gradient(135deg, #4f46e5 0%, #0f6cbd 50%, #0d9488 100%);
+      color: #ffffff;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 12px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+    }
+    .sf-crm-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #00a1e0;
+      color: #ffffff;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 12px;
+    }
+    .sf-crm-pill-subtle {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: #e0f2fe;
+      color: #0369a1;
+      border: 1px solid #7dd3fc;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 11px;
+    }
+    .copilot-card-accent {
+      border-top: 3px solid transparent;
+      border-image: linear-gradient(90deg, #6366f1 0%, #0f6cbd 50%, #14b8a6 100%) 1;
+    }
+    .sf-connection-card {
+      margin-top: 10px;
+      padding: 10px;
+      background: linear-gradient(180deg, #f0f9ff 0%, #ffffff 100%);
+      border: 1px solid #7dd3fc;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    /* Host Surface Switcher: Microsoft 365 Copilot Chat vs. Microsoft Outlook Application */
+    .surface-switcher-group {
+      display: inline-flex;
+      background: rgba(15, 23, 42, 0.45);
+      border: 1px solid #475569;
+      border-radius: 999px;
+      padding: 2px;
+      gap: 2px;
+    }
+    .surface-switch-btn {
+      background: transparent;
+      color: #cbd5e1;
+      border: none;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: background 0.15s, color 0.15s;
+    }
+    .surface-switch-btn:hover {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.1);
+    }
+    .surface-switch-btn.active {
+      background: #ffffff;
+      color: #0f172a;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    }
+    .m365-suite-bar.outlook-mode {
+      background: linear-gradient(90deg, #005a9e 0%, #0f6cbd 60%, #0369a1 100%);
+      border-bottom: 1px solid #0284c7;
+    }
+    .host-context-strip {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      box-shadow: var(--shadow-sm);
+    }
+    .host-context-strip.copilot-chat-strip {
+      border-left: 4px solid #4f46e5;
+      background: linear-gradient(90deg, #f5f3ff 0%, #ffffff 45%);
+    }
+    .host-context-strip.outlook-strip {
+      border-left: 4px solid #0078d4;
+      background: linear-gradient(90deg, #eff6ff 0%, #ffffff 45%);
+    }
+    .outlook-ribbon-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+      font-size: 12px;
+    }
+    .outlook-pill {
+      padding: 2px 8px;
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      color: #334155;
+      font-weight: 600;
+    }
+
     /* Microsoft 365 Copilot / Sales 3-Pane Workspace Layout */
     .m365-shell {
       display: grid;
@@ -927,6 +1081,7 @@
       padding: 20px;
       background: #ffffff;
     }
+    body.mode-print .m365-suite-bar,
     body.mode-print .m365-shell,
     body.mode-print .start-view,
     body.mode-print .demo-controls-bar,
@@ -1145,16 +1300,38 @@
     </section>
   </main>
 
+  <!-- MICROSOFT COPILOT FOR SALES (SALES COPILOT) + SALESFORCE CRM APP BAR -->
+  <div class="m365-suite-bar" id="copilot-sales-suite-bar" data-tip-id="copilot-sales-suite-bar">
+    <div class="suite-brand-left">
+      <div class="waffle-icon" aria-hidden="true">
+        <span></span><span></span><span></span>
+        <span></span><span></span><span></span>
+        <span></span><span></span><span></span>
+      </div>
+      <strong id="suite-host-app-title" style="font-size:14px; letter-spacing:0.01em;">Microsoft 365 Copilot Chat</strong>
+      <span style="color:#94a3b8;">|</span>
+      <span class="copilot-sparkle-badge">✦ Microsoft Copilot for Sales (Sales Copilot)</span>
+      <div class="surface-switcher-group" role="group" aria-label="Switch seller host application" data-tip-id="surface-switcher-group">
+        <button type="button" class="surface-switch-btn active" id="btn-surface-copilot-chat" data-surface="copilot_chat" aria-pressed="true" data-tip-id="btn-surface-copilot-chat">💬 M365 Copilot Chat</button>
+        <button type="button" class="surface-switch-btn" id="btn-surface-outlook" data-surface="outlook" aria-pressed="false" data-tip-id="btn-surface-outlook">📧 Microsoft Outlook App</button>
+      </div>
+    </div>
+    <div class="suite-brand-left">
+      <span class="sf-crm-pill" title="Connected CRM context in Developer Edition lab">☁ Salesforce CRM Connected (Hosted MCP · 6 Read Tools)</span>
+      <span class="badge badge-signin" style="font-size:11px;">🔑 Lab Session: Sign-in required for live verification</span>
+    </div>
+  </div>
+
   <!-- MAIN 3-PANE SELLER & OPS WORKSPACE -->
   <div class="m365-shell" id="workspace-shell">
     <!-- Left Navigation Pane -->
     <aside class="left-nav-pane" aria-label="Sales workspace navigation" data-tip-id="left-nav-pane">
       <div>
         <div class="m365-brand">
-          <span class="m365-brand-icon" aria-hidden="true">S</span>
+          <span class="m365-brand-icon" style="background:linear-gradient(135deg, #4f46e5 0%, #0f6cbd 55%, #0d9488 100%);" aria-hidden="true">✦</span>
           <div>
-            <span class="m365-brand-text">Microsoft 365 Sales</span>
-            <span class="m365-brand-sub">Copilot + Assistant Extension</span>
+            <span class="m365-brand-text">Copilot for Sales</span>
+            <span class="m365-brand-sub">Sales Copilot · Salesforce CRM</span>
           </div>
         </div>
 
@@ -1192,29 +1369,43 @@
         </ul>
       </div>
 
-      <div class="nav-footer-box" data-tip-id="nav-footer-box">
-        <div style="font-weight:700; color:var(--text-primary); margin-bottom:4px;">Environment Context</div>
-        <div>• Host: Microsoft 365 Copilot / Sales</div>
-        <div>• Extension: Meeting Outcome Assistant (v1.1.1)</div>
-        <div>• CRM Lab: Developer Edition lab via Hosted MCP (6 read tools)</div>
-        <div style="margin-top:6px;">
-          <button type="button" class="btn-secondary" id="btn-open-trust-rules" style="width:100%; justify-content:center; font-size:12px; padding:4px 8px;" data-tip-id="btn-open-trust-rules">
-            🛡 View Trust &amp; Source Rules
-          </button>
+      <div>
+        <div class="sf-connection-card" data-tip-id="sf-connection-card">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+            <strong style="color:#0369a1;">☁ Salesforce CRM</strong>
+            <span class="sf-crm-pill-subtle">Hosted MCP</span>
+          </div>
+          <div>• <strong>Environment:</strong> Developer Edition Lab</div>
+          <div>• <strong>Read tools:</strong> 6 configured</div>
+          <div>• <strong>Write-back:</strong> Disabled (Unsaved mode)</div>
+        </div>
+        <div class="nav-footer-box" data-tip-id="nav-footer-box" style="margin-top:8px;">
+          <div style="font-weight:700; color:var(--text-primary); margin-bottom:4px;">Copilot for Sales Host</div>
+          <div>• Surface: Microsoft Copilot for Sales (Sales Copilot)</div>
+          <div>• Extension: Meeting Outcome Assistant (v1.1.1)</div>
+          <div style="margin-top:6px;">
+            <button type="button" class="btn-secondary" id="btn-open-trust-rules" style="width:100%; justify-content:center; font-size:12px; padding:4px 8px;" data-tip-id="btn-open-trust-rules">
+              🛡 View Trust &amp; Source Rules
+            </button>
+          </div>
         </div>
       </div>
     </aside>
 
     <!-- Center Conversational & Screen Workspace -->
     <main class="center-workspace-pane" id="center-workspace-pane" aria-label="Main workspace content">
+      <!-- Host Surface Context Banner (M365 Copilot Chat vs. Microsoft Outlook Application) -->
+      <div id="host-surface-banner-area"></div>
       <!-- Dynamic Screen Content Rendered Here -->
       <div id="screen-content-area"></div>
 
       <!-- Persistent Conversational Assistant Stream -->
       <section class="chat-container" aria-label="Meeting Outcome Assistant conversation" data-tip-id="chat-container">
-        <div class="chat-header">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <strong style="font-size:14px;">💬 Meeting Outcome Assistant Conversation</strong>
+        <div class="chat-header copilot-card-accent">
+          <div style="display:flex; flex-wrap:wrap; align-items:center; gap:8px;">
+            <span class="copilot-sparkle-badge" style="font-size:11px; padding:2px 8px;">✦ Copilot for Sales</span>
+            <strong style="font-size:14px;">Meeting Outcome Assistant Conversation</strong>
+            <span class="sf-crm-pill-subtle">☁ Salesforce CRM Context</span>
             <span class="badge badge-validated">✓ Validated in private agent</span>
             <span class="badge badge-pending">⧗ Sales host runtime validation pending</span>
           </div>
@@ -1245,9 +1436,15 @@
 
     <!-- Right Contextual Panel (Event Fields, Evidence, Review Questions & CRM Context) -->
     <aside class="right-context-pane" id="right-context-pane" aria-label="Event proposal and evidence inspector" data-tip-id="right-context-pane">
-      <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
-        <h2 style="margin:0; font-size:15px;">Proposal &amp; Evidence Inspector</h2>
-        <span class="badge badge-future" data-tip-id="unsaved-pill">◌ Unsaved · Local only</span>
+      <div style="padding-bottom:8px; border-bottom:2px solid #e0f2fe;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:4px;">
+          <span class="copilot-sparkle-badge" style="font-size:11px; padding:2px 8px;">✦ Sales Copilot Pane</span>
+          <span class="sf-crm-pill-subtle">☁ Connected to Salesforce</span>
+        </div>
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+          <h2 style="margin:0; font-size:15px;">Proposal &amp; Salesforce Inspector</h2>
+          <span class="badge badge-future" data-tip-id="unsaved-pill">◌ Unsaved · Local only</span>
+        </div>
       </div>
 
       <div class="panel-tabs" role="tablist" aria-label="Inspector views">
@@ -1841,6 +2038,7 @@
     // =========================================================================
     var appState = {
       viewMode: 'workspace', // 'start' | 'workspace' | 'print'
+      hostSurface: 'copilot_chat', // 'copilot_chat' | 'outlook'
       activeScreen: 'home',  // 'home' | 'outcomes' | 'proposals' | 'paused' | 'overview'
       activeRightTab: 'fields', // 'fields' | 'evidence' | 'revisions' | 'crm'
       activeScenario: 'main',
@@ -2921,6 +3119,9 @@
         countBadge.textContent = appState.events.length + ' Unsaved';
       }
 
+      // Render Host Surface Mode (Microsoft 365 Copilot Chat vs. Microsoft Outlook Application)
+      renderHostSurfaceMode();
+
       // Render Presenter Bar
       renderPresenterBar();
 
@@ -2932,6 +3133,67 @@
 
       // Render Right Contextual Panel
       renderRightPanel();
+    }
+
+    function renderHostSurfaceMode() {
+      var isOutlook = appState.hostSurface === 'outlook';
+      var suiteBar = document.getElementById('copilot-sales-suite-bar');
+      var suiteTitle = document.getElementById('suite-host-app-title');
+      var btnChat = document.getElementById('btn-surface-copilot-chat');
+      var btnOutlook = document.getElementById('btn-surface-outlook');
+      var bannerArea = document.getElementById('host-surface-banner-area');
+      var custName = getCustomerDisplayName();
+
+      if (suiteBar) {
+        suiteBar.classList.toggle('outlook-mode', isOutlook);
+      }
+      if (suiteTitle) {
+        suiteTitle.textContent = isOutlook ? 'Microsoft Outlook' : 'Microsoft 365 Copilot Chat';
+      }
+      if (btnChat && btnOutlook) {
+        btnChat.classList.toggle('active', !isOutlook);
+        btnChat.setAttribute('aria-pressed', String(!isOutlook));
+        btnOutlook.classList.toggle('active', isOutlook);
+        btnOutlook.setAttribute('aria-pressed', String(isOutlook));
+      }
+
+      if (!bannerArea) return;
+      if (isOutlook) {
+        bannerArea.innerHTML =
+          '<div class="host-context-strip outlook-strip" data-tip-id="outlook-host-strip">' +
+            '<div>' +
+              '<div style="display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:3px;">' +
+                '<span class="badge badge-signin">📧 Microsoft Outlook Application Host</span>' +
+                '<strong style="font-size:13px;">Active Outlook Context: Meeting Follow-Up Notes — ' + escapeHtml(custName) + '</strong>' +
+              '</div>' +
+              '<div style="font-size:12px; color:var(--text-secondary);">' +
+                'Seller is working inside <strong>Microsoft Outlook</strong> with the <strong>Copilot for Sales (Sales Copilot)</strong> side pane connected to <strong>Salesforce CRM</strong>. Proposals remain conversation-only (no Outlook calendar block or email invitation is sent).' +
+              '</div>' +
+            '</div>' +
+            '<div class="outlook-ribbon-pills">' +
+              '<span class="outlook-pill">✉ Mail / Notes Draft</span>' +
+              '<span class="outlook-pill" style="background:#dbeafe; border-color:#93c5fd; color:#1e3a8a;">✦ Copilot for Sales Pane: Pinned</span>' +
+              '<span class="outlook-pill" style="background:#e0f2fe; border-color:#7dd3fc; color:#0369a1;">☁ Salesforce CRM</span>' +
+            '</div>' +
+          '</div>';
+      } else {
+        bannerArea.innerHTML =
+          '<div class="host-context-strip copilot-chat-strip" data-tip-id="copilot-chat-host-strip">' +
+            '<div>' +
+              '<div style="display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:3px;">' +
+                '<span class="copilot-sparkle-badge" style="font-size:11px; padding:2px 8px;">💬 Microsoft 365 Copilot Chat Host</span>' +
+                '<strong style="font-size:13px;">Active Agent: Sales (Copilot for Sales) + Meeting Outcome Assistant Extension (v1.1.1)</strong>' +
+              '</div>' +
+              '<div style="font-size:12px; color:var(--text-secondary);">' +
+                'Seller is accessing <strong>Copilot for Sales</strong> inside <strong>Microsoft 365 Copilot Chat</strong> with read-only <strong>Salesforce Hosted MCP</strong> context. Switch to <strong>📧 Microsoft Outlook App</strong> in the top bar to preview the Outlook side-pane experience.' +
+              '</div>' +
+            '</div>' +
+            '<div class="outlook-ribbon-pills">' +
+              '<span class="outlook-pill" style="background:#ede9fe; border-color:#c4b5fd; color:#5b21b6;">✦ M365 Copilot Chat · Work Tab</span>' +
+              '<span class="outlook-pill" style="background:#e0f2fe; border-color:#7dd3fc; color:#0369a1;">☁ Salesforce CRM</span>' +
+            '</div>' +
+          '</div>';
+      }
     }
 
     function renderPresenterBar() {
@@ -3012,15 +3274,17 @@
       if (appState.activeScreen === 'home') {
         // SCREEN 1: Sales Workspace and Entry Points
         container.innerHTML =
-          '<div class="card" data-tip-id="screen1-hero-card">' +
+          '<div class="card copilot-card-accent" data-tip-id="screen1-hero-card">' +
             '<div class="card-header">' +
-              '<div>' +
+              '<div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center;">' +
+                '<span class="copilot-sparkle-badge">✦ Microsoft Copilot for Sales (Sales Copilot)</span> ' +
+                '<span class="sf-crm-pill-subtle">☁ Salesforce CRM Connected (Read-Only MCP)</span> ' +
                 '<span class="badge badge-validated">✓ Validated in private agent</span> ' +
                 '<span class="badge badge-pending">⧗ Configured · Sales validation pending</span>' +
               '</div>' +
-              '<span style="font-size:12px; color:var(--text-muted); font-weight:600;">Screen 1 · Sales Home &amp; Entry Points</span>' +
+              '<span style="font-size:12px; color:var(--text-muted); font-weight:600;">Screen 1 · Sales Copilot Home &amp; Entry Points</span>' +
             '</div>' +
-            '<h1 class="card-title" style="font-size:20px; margin-bottom:6px;">Meeting Outcome Assistant</h1>' +
+            '<h1 class="card-title" style="font-size:20px; margin-bottom:6px;">Meeting Outcome Assistant in Microsoft Copilot for Sales</h1>' +
             '<p style="margin:0 0 12px; font-size:15px; color:var(--text-secondary);">' +
               'Turn meeting notes into Event proposals, inspect the evidence, and review the details before anything is saved.' +
             '</p>' +
@@ -4192,6 +4456,18 @@
         var target = ev.target;
         if (!target) return;
 
+        // Host surface switcher buttons (Microsoft 365 Copilot Chat vs. Microsoft Outlook Application)
+        if (target.closest('#btn-surface-copilot-chat')) {
+          appState.hostSurface = 'copilot_chat';
+          renderAll();
+          return;
+        }
+        if (target.closest('#btn-surface-outlook')) {
+          appState.hostSurface = 'outlook';
+          renderAll();
+          return;
+        }
+
         // Chapter buttons
         if (target.closest('#btn-chapter-start')) {
           appState.viewMode = 'start';
@@ -4201,6 +4477,7 @@
         }
         if (target.closest('#btn-chapter-seller') || target.closest('#btn-open-chapter-1') || target.closest('#btn-start-guided')) {
           appState.viewMode = 'workspace';
+          appState.hostSurface = 'copilot_chat';
           appState.activeScreen = 'home';
           appState.currentStepIndex = 0;
           appState.lastStepOutcome = null;
