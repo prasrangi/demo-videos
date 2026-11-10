@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>[hidden]{display:none!important}body{margin:0}</style>
+<title>ALM PowerPlatform Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: one column. Wide video stage on top; the prompt card floats over the stage in the corner opposite
+   the highlighted box (it sits under the stage on phones). Transport bar and step rail sit beneath. */
+:root {
+  --bg: #0b1019;
+  --surface: #121a29;
+  --raised: #1a2437;
+  --line: #27324b;
+  --fg: #e8edf7;
+  --muted: #95a3bd;
+  --soft: #c5cfe2;
+  --accent: #ffc233;
+  --accent-ink: #1a1300;
+  --step: #62b8ff;
+  --good: #4cd29a;
+  --dim: rgba(5, 8, 16, 0.68);
+  --font-text: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { background: var(--bg); }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 15px/1.5 var(--font-text);
+  padding-block: 18px 28px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.player {
+  width: min(100%, max(600px, calc((100vh - 190px) * 1.7119)));
+  width: min(100%, max(600px, calc((100dvh - 190px) * 1.7119)));
+  margin-inline: auto;
+  display: grid;
+  gap: 12px;
+}
+@media (max-width: 560px) { .player { width: 100%; } }
+
+.head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 4px 24px; }
+.head h1 { margin: 0; font-size: 22px; line-height: 1.25; font-weight: 600; letter-spacing: -0.01em; text-wrap: balance; }
+.head p { margin: 2px 0 0; color: var(--muted); font-size: 14px; }
+
+.switch { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; cursor: pointer; font-size: 14px; user-select: none; position: relative; }
+.switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.switch .knob { flex: none; width: 38px; height: 22px; border-radius: 11px; background: var(--line); position: relative; transition: background 0.15s; }
+.switch .knob::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--fg); transition: transform 0.15s, background 0.15s; }
+.switch input:checked + .knob { background: var(--accent); }
+.switch input:checked + .knob::after { transform: translateX(16px); background: var(--accent-ink); }
+.switch input:focus-visible + .knob { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+/* stage */
+.stage-wrap { position: relative; }
+.stage { position: relative; aspect-ratio: 1664 / 972; max-width: 100%; overflow: hidden; background: #05070c; border-radius: 10px; border: 1px solid var(--line); }
+.zoom { position: absolute; inset: 0; transform-origin: 0 0; transform: translate(0px, 0px) scale(1); transition: transform 0.55s cubic-bezier(0.22, 0.7, 0.2, 1); will-change: transform; }
+.zoom video { position: absolute; inset: 0; width: 100%; height: 100%; display: block; background: #05070c; }
+.hl {
+  position: absolute; pointer-events: none; opacity: 0; transition: opacity 0.3s 0.2s;
+  border: calc(3px / var(--z, 1)) solid var(--hlc, var(--accent));
+  border-radius: calc(6px / var(--z, 1));
+  box-shadow: 0 0 0 100vmax var(--dim);
+}
+.hl.on { opacity: 1; }
+.hl[data-kind="step"], .card[data-kind="step"] { --hlc: var(--step); }
+.hl[data-kind="reply"], .card[data-kind="reply"] { --hlc: var(--good); }
+
+.ff { position: absolute; left: 12px; top: 12px; z-index: 3; display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px 6px 10px; border-radius: 999px; background: rgba(10, 15, 26, 0.84); border: 1px solid #33405c; font: 500 13px var(--font-mono); color: var(--fg); }
+.ff svg { width: 14px; height: 14px; fill: var(--accent); }
+
+.overlay { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; padding: 20px; background: rgba(7, 10, 17, 0.84); text-align: center; }
+.overlay > div { max-width: 470px; display: grid; gap: 12px; justify-items: center; }
+.overlay h2 { margin: 0; font-size: 22px; line-height: 1.25; font-weight: 600; text-wrap: balance; }
+.overlay p { margin: 0; color: var(--soft); font-size: 15px; }
+.c-change { color: var(--accent); }
+.c-step { color: var(--step); }
+.c-good { color: var(--good); }
+.loadtrack { width: min(280px, 70vw); height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; }
+.loadtrack i { display: block; height: 100%; width: 0; background: var(--accent); transition: width 0.2s; }
+
+/* buttons */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); font-weight: 500; }
+.btn:hover:not(:disabled) { background: var(--raised); }
+.btn:disabled { opacity: 0.4; cursor: default; }
+.btn.main { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; min-width: 96px; }
+.btn.main:hover:not(:disabled) { background: #ffd05e; }
+.resume { min-height: 48px; padding: 0 22px; font-size: 16px; }
+.resume svg { width: 16px; height: 16px; fill: currentColor; }
+kbd { font: 500 12px var(--font-mono); padding: 1px 6px; border-radius: 4px; background: rgba(0, 0, 0, 0.16); border: 1px solid rgba(0, 0, 0, 0.28); }
+
+/* prompt card */
+.card {
+  position: absolute; z-index: 4; width: min(390px, 46%); padding: 16px 18px; border-radius: 10px;
+  background: rgba(15, 22, 36, 0.96); border: 1px solid #33405c; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  display: grid; gap: 8px; justify-items: start;
+  opacity: 0; visibility: hidden; transition: opacity 0.2s, visibility 0s 0.2s;
+}
+.card[data-on="1"] { opacity: 1; visibility: visible; transition: opacity 0.25s 0.3s, visibility 0s 0s; }
+.kicker { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 0; font: 500 12px var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.chip { padding: 1px 9px; border-radius: 999px; border: 1px solid var(--hlc, var(--accent)); color: var(--hlc, var(--accent)); }
+.card h2 { margin: 0; font-size: 18px; line-height: 1.3; font-weight: 600; text-wrap: balance; }
+.card p.body { margin: 0; color: var(--soft); font-size: 14.5px; }
+.next { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; margin: 0; }
+.next span { font: 500 12px var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.next strong { color: var(--hlc, var(--accent)); font-weight: 600; }
+.card .resume { margin-top: 4px; }
+
+@media (max-width: 720px) {
+  .card { position: static; width: auto; min-height: 210px; margin-top: 12px; }
+}
+
+/* transport */
+.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.time { font: 500 13px var(--font-mono); color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.scrub { position: relative; flex: 1 1 200px; min-width: 0; height: 32px; display: flex; align-items: center; }
+.scrub input { -webkit-appearance: none; appearance: none; width: 100%; height: 32px; margin: 0; background: transparent; cursor: pointer; position: relative; z-index: 1; }
+.scrub input::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: linear-gradient(to right, var(--soft) var(--p, 0%), var(--line) var(--p, 0%)); }
+.scrub input::-moz-range-track { height: 6px; border-radius: 3px; background: var(--line); }
+.scrub input::-moz-range-progress { height: 6px; border-radius: 3px; background: var(--soft); }
+.scrub input::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; margin-top: -5px; border-radius: 50%; background: var(--fg); border: 2px solid var(--bg); }
+.scrub input::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: var(--fg); border: 2px solid var(--bg); }
+.ticks { position: absolute; left: 8px; right: 8px; top: 0; bottom: 0; z-index: 2; pointer-events: none; }
+.ticks i { position: absolute; top: 50%; width: 3px; height: 16px; margin: -8px 0 0 -1px; border-radius: 2px; background: var(--accent); }
+.ticks i.tk-step { width: 2px; background: var(--step); height: 12px; margin-top: -6px; }
+.ticks i.tk-reply { width: 2px; background: var(--good); height: 12px; margin-top: -6px; }
+.ticks.off i.tk-step, .ticks.off i.tk-reply { opacity: 0.25; }
+
+.rail { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
+.step { position: relative; overflow: hidden; min-width: 0; min-height: 58px; padding: 9px 12px 13px; text-align: left; display: grid; gap: 1px; align-content: start; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); }
+.step:hover { background: var(--raised); }
+.step .n { font: 500 11px var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.step .name { font-weight: 500; font-size: 14px; line-height: 1.3; }
+.step .fill { position: absolute; left: 0; bottom: 0; height: 3px; width: var(--p, 0%); background: var(--accent); }
+.step[aria-current="step"] { border-color: var(--accent); background: var(--raised); }
+.hint { margin: 0; color: var(--muted); font-size: 13px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .zoom, .hl, .card, .loadtrack i { transition: none !important; }
+}
+</style>
+</head>
+<body>
+
+<div class="player" id="player">
+  <header class="head">
+    <div>
+      <h1>ALM PowerPlatform Demo</h1>
+      <p>AF Pilot Agent deployed from DEV to TEST and PROD with a pipeline</p>
+    </div>
+    <label class="switch" for="allsteps">
+      <input type="checkbox" id="allsteps" checked>
+      <span class="knob" aria-hidden="true"></span>
+      <span>Pause at every step</span>
+    </label>
+  </header>
+
+  <div class="stage-wrap" id="wrap">
+    <div class="stage" id="stage">
+      <div class="zoom" id="zoom">
+        <video id="v" muted playsinline preload="auto" disablepictureinpicture></video>
+        <div class="hl" id="hl" data-kind="prompt"></div>
+      </div>
+      <div class="ff" id="ff" hidden>
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1 2l7 6-7 6zM8 2l7 6-7 6z"/></svg>
+        <span id="ffText">Fast forward 2×</span>
+      </div>
+      <div class="overlay" id="loading">
+        <div>
+          <p id="loadMsg">Loading the video</p>
+          <div class="loadtrack"><i id="loadBar"></i></div>
+        </div>
+      </div>
+      <div class="overlay" id="intro" hidden>
+        <div>
+          <h2>AF Pilot Agent, deployed with a Power Platform pipeline</h2>
+          <p>The video pauses at every step (<span id="nStops">38</span> in all). A <b class="c-change">yellow</b> box marks where something is changed, a <b class="c-step">blue</b> box shows where to look or click, and a <b class="c-good">green</b> box marks a result.</p>
+          <p>Press Next, Space or Enter to carry on. Turn off Pause at every step to stop only at the <span id="nChanges">5</span> changes.</p>
+          <button class="btn main resume" id="start" type="button">Start</button>
+        </div>
+      </div>
+      <div class="overlay" id="endcard" hidden>
+        <div>
+          <h2>End of the walkthrough</h2>
+          <button class="btn main resume" id="replay" type="button">Replay</button>
+        </div>
+      </div>
+    </div>
+
+    <aside class="card" id="card" data-on="0" data-kind="prompt" aria-live="polite">
+      <p class="kicker"><span id="cardStep"></span><span class="chip" id="cardKind"></span></p>
+      <h2 id="cardTitle"></h2>
+      <p class="body" id="cardBody"></p>
+      <p class="next" id="cardNext" hidden><span id="cardNextLabel">Next click</span><strong id="cardAction"></strong></p>
+      <button class="btn main resume" id="resume" type="button">Next <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 2l7 6-7 6z"/></svg> <kbd>Space</kbd></button>
+    </aside>
+  </div>
+
+  <div class="bar">
+    <button class="btn" id="back" type="button" title="Go back one stop (left arrow)" disabled>Back</button>
+    <button class="btn" id="restart" type="button" title="Restart from the beginning" disabled>Restart</button>
+    <button class="btn main" id="toggle" type="button" disabled>Play</button>
+    <span class="time"><span id="curTime">0:00</span> / <span id="durTime">0:00</span></span>
+    <div class="scrub">
+      <input type="range" id="seek" min="0" max="100" step="0.01" value="0" aria-label="Position in the video" disabled>
+      <div class="ticks" id="ticks" aria-hidden="true"></div>
+    </div>
+  </div>
+
+  <nav class="rail" id="rail" aria-label="Steps"></nav>
+
+  <p class="hint">Space or Enter goes to the next step. Left arrow goes back one step. Long waits are fast-forwarded and labelled, and the browser frame is cropped out.</p>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var C = {"video":"base.mp4","bytes":13995878,"width":1664,"height":972,"fps":30,"duration":278.933,"stops":[{"id":"r1","kind":"reply","part":0,"n":1,"frame":83,"t":2.7833,"rect":[863.3,365.3,923.3,390.7],"title":"DEV is on Version 1.0.2.7","text":"In AF-PILOT-DEV the Solutions list shows AF Pilot Agent at Version 1.0.2.7.","next_label":null,"next":null},{"id":"n1","kind":"step","part":0,"n":2,"frame":123,"t":4.1167,"rect":[1230.0,1.3,1470.0,41.3],"title":"Switch environment","text":"The environment menu in the top bar shows AF-PILOT-DEV.","next_label":"Next click","next":"AF-PILOT-DEV menu"},{"id":"n2","kind":"step","part":0,"n":3,"frame":216,"t":7.2167,"rect":[1256.0,424.0,1640.0,468.0],"title":"Choose AF-PILOT-TEST","text":"Select environment lists AF-PILOT-DEV, AF-PILOT-HOST, AF-PILOT-PROD and AF-PILOT-TEST.","next_label":"Next click","next":"AF-PILOT-TEST"},{"id":"r2","kind":"reply","part":0,"n":4,"frame":541,"t":18.05,"rect":[863.3,365.3,923.3,390.7],"title":"TEST is on Version 1.0.2.7","text":"In AF-PILOT-TEST the Solutions list shows AF Pilot Agent at Version 1.0.2.7.","next_label":null,"next":null},{"id":"n3","kind":"step","part":0,"n":5,"frame":646,"t":21.55,"rect":[1256.0,380.0,1640.0,424.0],"title":"Choose AF-PILOT-PROD","text":"The environment list opens again, this time to switch to AF-PILOT-PROD.","next_label":"Next click","next":"AF-PILOT-PROD"},{"id":"r3","kind":"reply","part":0,"n":6,"frame":935,"t":31.1833,"rect":[863.3,320.0,920.0,348.7],"title":"PROD is on Version 1.0.2.7","text":"In AF-PILOT-PROD the Solutions list shows AF Pilot Agent at Version 1.0.2.7.","next_label":null,"next":null},{"id":"n4","kind":"step","part":0,"n":7,"frame":1010,"t":33.6833,"rect":[1256.0,290.7,1640.0,334.7],"title":"Back to AF-PILOT-DEV","text":"The environment list opens once more, this time to return to AF-PILOT-DEV.","next_label":"Next click","next":"AF-PILOT-DEV"},{"id":"n5","kind":"step","part":1,"n":8,"frame":1347,"t":44.9167,"rect":[373.3,52.0,446.7,88.7],"title":"Open AF Pilot Agent in DEV","text":"AF Pilot Agent is selected in the DEV Solutions list at Version 1.0.2.7, and the toolbar has an Edit button.","next_label":"Next click","next":"Edit"},{"id":"n6","kind":"step","part":1,"n":9,"frame":1462,"t":48.75,"rect":[500.0,173.3,581.3,198.7],"title":"Open the solution settings","text":"The solution Overview shows Version 1.0.2.7.","next_label":"Next click","next":"Edit details"},{"id":"m1","kind":"prompt","part":1,"n":10,"frame":1542,"t":51.4167,"rect":[1333.3,386.7,1653.3,446.7],"title":"Change the version number","text":"Solution settings for AF Pilot Agent shows 1.0.2.7 in the Version field.","next_label":"Next","next":"Type 1.0.2.8 in the Version field"},{"id":"k1","kind":"prompt","part":1,"n":11,"frame":1602,"t":53.4167,"rect":[1333.3,386.7,1653.3,446.7],"title":"Set the solution version","text":"The Version field now reads 1.0.2.8 (it was 1.0.2.7).","next_label":"Next click","next":"Update"},{"id":"r4","kind":"reply","part":1,"n":12,"frame":1692,"t":56.4167,"rect":[86.7,402.0,206.7,450.7],"title":"Version saved","text":"The Overview now shows Version 1.0.2.8.","next_label":null,"next":null},{"id":"n7","kind":"step","part":2,"n":13,"frame":1838,"t":61.2833,"rect":[533.3,48.7,606.7,86.7],"title":"Start the deployment","text":"The solution toolbar has a Deploy button.","next_label":"Next click","next":"Deploy"},{"id":"m2","kind":"prompt","part":2,"n":14,"frame":2061,"t":68.7167,"rect":[940.0,272.0,1253.3,395.3],"title":"Choose the pipeline","text":"The Deploying Solution pane offers two pipelines: AF-PILOT-Demo-Governance and AF-PILOT-Standard-Release.","next_label":"Next","next":"Pick AF-PILOT-Standard-Release"},{"id":"n8","kind":"step","part":2,"n":15,"frame":2288,"t":76.2833,"rect":[1023.3,912.0,1113.3,953.3],"title":"Continue to the summary","text":"Pipeline AF-PILOT-Standard-Release is chosen, the stage is Deploy to TEST and the schedule is Now.","next_label":"Next click","next":"Next"},{"id":"m3","kind":"prompt","part":2,"n":16,"frame":2613,"t":87.1167,"rect":[940.7,338.7,1616.7,372.0],"title":"Change the deployment version","text":"The summary proposes Version 1.0.2.9 for the deployment.","next_label":"Next","next":"Type 1.0.2.8 in the Version field"},{"id":"k3","kind":"prompt","part":2,"n":17,"frame":2693,"t":89.7833,"rect":[940.7,338.7,1616.7,372.0],"title":"Set the deployment version","text":"The Version field now reads 1.0.2.8 (it was 1.0.2.9).","next_label":"Next click","next":"Deploy"},{"id":"n9","kind":"step","part":2,"n":18,"frame":2773,"t":92.45,"rect":[1023.3,925.3,1113.3,958.7],"title":"Deploy to TEST","text":"The summary shows Pipeline AF-PILOT-Standard-Release, Stage Deploy to TEST and Version 1.0.2.8.","next_label":"Next click","next":"Deploy"},{"id":"r5","kind":"reply","part":2,"n":19,"frame":2945,"t":98.1833,"rect":[26.7,92.0,466.7,122.0],"title":"Deployment started","text":"A banner reads Currently deploying solution AF_Pilot_Agent.","next_label":null,"next":null},{"id":"n10","kind":"step","part":3,"n":20,"frame":3441,"t":114.7167,"rect":[6.7,295.3,200.0,332.0],"title":"Open Pipelines","text":"The History page of AF Pilot Agent is open; the solution menu on the left also lists Pipelines.","next_label":"Next click","next":"Pipelines"},{"id":"r6","kind":"reply","part":3,"n":21,"frame":3566,"t":118.8833,"rect":[553.3,685.3,1050.0,726.7],"title":"TEST is deploying","text":"The Deploy to TEST card reads Currently deploying version 1.0.2.8.","next_label":null,"next":null},{"id":"r7","kind":"reply","part":3,"n":22,"frame":4421,"t":147.3833,"rect":[553.3,625.3,1050.0,678.7],"title":"TEST is on Version 1.0.2.8","text":"The Deploy to TEST card shows Last successfully installed version 1.0.2.8, deployed Nov 10, 2026 8:06 AM.","next_label":null,"next":null},{"id":"n11","kind":"step","part":4,"n":23,"frame":4568,"t":152.2833,"rect":[1420.0,818.7,1570.0,853.3],"title":"Deploy to PROD","text":"Deploy here is now enabled on the Deploy to PROD card.","next_label":"Next click","next":"Deploy here"},{"id":"n12","kind":"step","part":4,"n":24,"frame":4822,"t":160.75,"rect":[1023.3,912.0,1113.3,953.3],"title":"Continue to the summary","text":"The stage is Deploy to PROD. A note says deployments may be pending until an associated background process succeeds.","next_label":"Next click","next":"Next"},{"id":"n13","kind":"step","part":4,"n":25,"frame":5143,"t":171.45,"rect":[1023.3,925.3,1113.3,958.7],"title":"Request the PROD deployment","text":"The summary shows Stage Deploy to PROD and Version 1.0.2.8.","next_label":"Next click","next":"Deploy"},{"id":"r8","kind":"reply","part":4,"n":26,"frame":5318,"t":177.2833,"rect":[1083.3,688.7,1580.0,755.3],"title":"PROD request is pending","text":"The Deploy to PROD card reads Your request to deploy here is pending, with a Cancel deployment button.","next_label":null,"next":null},{"id":"n14","kind":"step","part":5,"n":27,"frame":5828,"t":194.2833,"rect":[120.0,112.0,206.7,185.3],"title":"Open Outlook","text":"The Microsoft 365 app launcher is open and the cursor is on Outlook.","next_label":"Next click","next":"Outlook"},{"id":"n15","kind":"step","part":5,"n":28,"frame":5967,"t":198.9167,"rect":[256.7,198.7,600.0,275.3],"title":"Open the approval email","text":"The first message in the inbox is from Microsoft Power Automate: PROD - Defender review for every packaged agent.","next_label":"Next click","next":"The approval email"},{"id":"m4","kind":"prompt","part":5,"n":29,"frame":6047,"t":201.5833,"rect":[950.0,717.3,1196.7,753.3],"title":"Approve the request","text":"The email offers Reject and Approve - Defender No Known Risk.","next_label":"Next","next":"Approve - Defender No Known Risk"},{"id":"m5","kind":"prompt","part":5,"n":30,"frame":6220,"t":207.35,"rect":[853.3,815.3,1466.7,882.0],"title":"Add a comment","text":"A Comments box appears under the buttons.","next_label":"Next","next":"Type Approved"},{"id":"k5","kind":"prompt","part":5,"n":31,"frame":6320,"t":210.6833,"rect":[853.3,815.3,1466.7,882.0],"title":"Submit the approval","text":"The Comments box reads Approved.","next_label":"Next click","next":"Submit"},{"id":"r9","kind":"reply","part":5,"n":32,"frame":6471,"t":215.7167,"rect":[840.0,588.7,1476.7,648.7],"title":"Approval sent","text":"A message reads The action completed successfully.","next_label":null,"next":null},{"id":"r10","kind":"reply","part":6,"n":33,"frame":6696,"t":223.2167,"rect":[1083.3,722.0,1580.0,762.0],"title":"PROD is deploying","text":"After the approval the Deploy to PROD card reads Currently deploying version 1.0.2.8.","next_label":null,"next":null},{"id":"n16","kind":"step","part":6,"n":34,"frame":6900,"t":230.0167,"rect":[306.7,457.3,416.7,490.7],"title":"Open Run history","text":"The Pipelines page has two tabs: Details and Run history.","next_label":"Next click","next":"Run history"},{"id":"r11","kind":"reply","part":6,"n":35,"frame":7032,"t":234.4167,"rect":[1323.3,48.7,1664,972],"title":"Run details","text":"The Information pane for the latest run shows Stage Deploy to PROD, Source AF-PILOT-DEV, Target AF-PILOT-PROD and Status Deploying.","next_label":null,"next":null},{"id":"r12","kind":"reply","part":6,"n":36,"frame":7481,"t":249.3833,"rect":[1083.3,612.0,1580.0,705.3],"title":"PROD is on Version 1.0.2.8","text":"The Deploy to PROD card shows Last successfully installed version 1.0.2.8, deployed Nov 10, 2026 8:10 AM.","next_label":null,"next":null},{"id":"r13","kind":"reply","part":6,"n":37,"frame":7647,"t":254.9167,"rect":[666.7,138.7,1266.7,532.0],"title":"Deployment succeeded email","text":"Outlook shows Deployment succeeded: AF_Pilot_Agent 1.0.2.8, saying the solution was installed in the target environment.","next_label":null,"next":null},{"id":"r14","kind":"reply","part":6,"n":38,"frame":8069,"t":268.9833,"rect":[863.3,320.0,920.0,348.7],"title":"The PROD list shows 1.0.2.8","text":"The Solutions list in AF-PILOT-PROD shows AF Pilot Agent at Version 1.0.2.8.","next_label":null,"next":null}],"steps":[{"name":"Check the versions","stop":0,"t0":0},{"name":"Bump the version","stop":7,"t0":44.867},{"name":"Deploy to TEST","stop":12,"t0":61.233},{"name":"Watch the TEST deployment","stop":19,"t0":114.667},{"name":"Request the PROD deployment","stop":22,"t0":152.233},{"name":"Approve in Outlook","stop":26,"t0":194.233},{"name":"Check the result","stop":32,"t0":223.167}],"speed":[{"t0":11.1,"t1":13.933,"x":3},{"t0":24.067,"t1":27.2,"x":6},{"t0":36.4,"t1":39.5,"x":5},{"t0":58.333,"t1":58.833,"x":2},{"t0":78.4,"t1":83.7,"x":8},{"t0":94.567,"t1":95.333,"x":3},{"t0":102.1,"t1":103.967,"x":3},{"t0":121.167,"t1":122.833,"x":7},{"t0":124.633,"t1":127.833,"x":4},{"t0":140.233,"t1":143.333,"x":3},{"t0":144.133,"t1":145.267,"x":3},{"t0":149.467,"t1":150.2,"x":3},{"t0":163.9,"t1":166.667,"x":7},{"t0":168.867,"t1":169.567,"x":2},{"t0":173.533,"t1":174.233,"x":3},{"t0":174.8,"t1":175.4,"x":2},{"t0":179.2,"t1":179.733,"x":2},{"t0":181.133,"t1":182.3,"x":3},{"t0":183.1,"t1":185.767,"x":3},{"t0":187.733,"t1":190.6,"x":4},{"t0":219.233,"t1":219.9,"x":3},{"t0":225.333,"t1":227.967,"x":8},{"t0":237.067,"t1":237.7,"x":3},{"t0":238.967,"t1":241.833,"x":5},{"t0":242.3,"t1":242.833,"x":2},{"t0":242.833,"t1":244.1,"x":3},{"t0":246.667,"t1":247.267,"x":3},{"t0":263.1,"t1":264.133,"x":3},{"t0":272.3,"t1":273.1,"x":3}]};
+  var VW = C.width, VH = C.height, FPS = C.fps, stops = C.stops, steps = C.steps, speeds = C.speed, NS = stops.length;
+  function $(id) { return document.getElementById(id); }
+  var v = $('v'), stage = $('stage'), zoomEl = $('zoom'), hl = $('hl'), card = $('card'), ff = $('ff'), ffText = $('ffText'),
+    intro = $('intro'), loading = $('loading'), loadMsg = $('loadMsg'), loadBar = $('loadBar'), endc = $('endcard'),
+    resumeB = $('resume'), toggle = $('toggle'), backB = $('back'), restartB = $('restart'), seek = $('seek'), ticks = $('ticks'),
+    curTime = $('curTime'), durTime = $('durTime'), allsteps = $('allsteps'), rail = $('rail');
+  var state = 'loading';   // loading | idle | playing | paused | stopped | ended
+  var atIdx = -1, cursor = 0, total = C.duration, dragging = false, lastFF = '';
+  var wide = window.matchMedia('(min-width: 721px)');
+
+  function fmt(t) { t = Math.max(0, t); var m = Math.floor(t / 60), s = Math.floor(t % 60); return m + ':' + (s < 10 ? '0' : '') + s; }
+  function clamp(x, a, b) { return Math.max(a, Math.min(b, x)); }
+  function active(s) { return s.kind === 'prompt' || allsteps.checked; }
+  function nextFrom(t) {
+    for (var i = 0; i < stops.length; i++) { if (active(stops[i]) && stops[i].t > t + 0.004) return i; }
+    return stops.length;
+  }
+
+  /* ---------- build static bits ---------- */
+  $('nStops').textContent = NS;
+  $('nChanges').textContent = stops.filter(function (s) { return s.kind === 'prompt'; }).length;
+  steps.forEach(function (st, i) {
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'step'; b.dataset.i = i;
+    b.innerHTML = '<span class="n">Part ' + (i + 1) + '</span><span class="name"></span><i class="fill"></i>';
+    b.querySelector('.name').textContent = st.name;
+    b.setAttribute('aria-label', 'Part ' + (i + 1) + ': ' + st.name);
+    b.addEventListener('click', function () { jumpToStop(st.stop); });
+    rail.appendChild(b);
+  });
+  function buildTicks() {
+    ticks.innerHTML = '';
+    stops.forEach(function (s) {
+      var i = document.createElement('i');
+      i.className = 'tk-' + s.kind;
+      i.style.left = (s.t / total * 100) + '%';
+      ticks.appendChild(i);
+    });
+    // the scrub input has an 8px thumb inset; the ticks container is inset by the same amount
+  }
+  try { if (localStorage.getItem('almdemo.allsteps') === '0') allsteps.checked = false; } catch (e) {}
+  ticks.classList.toggle('off', !allsteps.checked);
+
+  /* ---------- zoom, highlight, card ---------- */
+  function layout(s) {
+    var Ws = stage.clientWidth, Hs = stage.clientHeight, f = Ws / VW, r = s.rect, pad = 10;
+    var x0 = r[0] - pad, y0 = r[1] - pad, x1 = r[2] + pad, y1 = r[3] + pad;
+    var rw = (x1 - x0) * f, rh = (y1 - y0) * f;
+    var z = clamp(Math.min(Ws * 0.6 / rw, Hs * 0.5 / rh), 1.25, 2.8);
+    var cx = (x0 + x1) / 2 * f, cy = (y0 + y1) / 2 * f;
+    var below = (y0 + y1) / 2 < VH / 2;           // box in the upper half: card goes underneath
+    var tx = clamp(Ws / 2 - z * cx, Ws - z * Ws, 0);
+    var ty = clamp(Hs * (below ? 0.36 : 0.64) - z * cy, Hs - z * Hs, 0);
+    zoomEl.style.setProperty('--z', z);
+    zoomEl.style.transform = 'translate(' + tx + 'px,' + ty + 'px) scale(' + z + ')';
+    hl.style.left = (x0 / VW * 100) + '%';
+    hl.style.top = (y0 / VH * 100) + '%';
+    hl.style.width = ((x1 - x0) / VW * 100) + '%';
+    hl.style.height = ((y1 - y0) / VH * 100) + '%';
+    placeCard({ l: tx + z * x0 * f, t: ty + z * y0 * f, r: tx + z * x1 * f, b: ty + z * y1 * f }, Ws, Hs, below);
+  }
+  function placeCard(sr, Ws, Hs, below) {
+    if (!wide.matches) { card.style.left = ''; card.style.top = ''; return; }
+    var cw = card.offsetWidth, ch = card.offsetHeight, m = 14;
+    var rectLeft = (sr.l + sr.r) / 2 < Ws / 2;
+    var h1 = rectLeft ? 'r' : 'l', h2 = rectLeft ? 'l' : 'r', v1 = below ? 'b' : 't', v2 = below ? 't' : 'b';
+    var cands = [[h1, v1], [h2, v1], [h1, v2], [h2, v2]], best = null;
+    cands.forEach(function (c) {
+      var L = c[0] === 'l' ? m : Ws - cw - m, T = clamp(c[1] === 't' ? m : Hs - ch - m, m, Math.max(m, Hs - ch - m));
+      var ox = Math.max(0, Math.min(L + cw, sr.r + 10) - Math.max(L, sr.l - 10));
+      var oy = Math.max(0, Math.min(T + ch, sr.b + 10) - Math.max(T, sr.t - 10));
+      var a = ox * oy;
+      if (best === null || a < best.a) best = { a: a, L: L, T: T };
+    });
+    card.style.left = best.L + 'px'; card.style.top = best.T + 'px';
+  }
+  function showStop(s) {
+    $('cardStep').textContent = 'Step ' + (s.n) + ' of ' + NS + ' \u00b7 ' + steps[s.part].name;
+    var chip = $('cardKind');
+    chip.textContent = { prompt: 'You change this', step: 'Look here', reply: 'Result' }[s.kind];
+    card.dataset.kind = s.kind; hl.dataset.kind = s.kind;
+    $('cardTitle').textContent = s.title;
+    $('cardBody').textContent = s.text;
+    $('cardNext').hidden = !s.next;
+    if (s.next) { $('cardNextLabel').textContent = s.next_label; $('cardAction').textContent = s.next; }
+    ff.hidden = true; lastFF = '';
+    layout(s);
+    card.dataset.on = '1'; hl.classList.add('on');
+    focusResume();
+  }
+  function focusResume() {
+    function f() { try { resumeB.focus({ preventScroll: true }); } catch (e) { resumeB.focus(); } }
+    f(); requestAnimationFrame(f);
+  }
+  function hideStop() {
+    card.dataset.on = '0'; hl.classList.remove('on');
+    zoomEl.style.setProperty('--z', 1);
+    zoomEl.style.transform = 'translate(0px,0px) scale(1)';
+    atIdx = -1;
+  }
+
+  /* ---------- state changes ---------- */
+  function sync() {
+    var ready = state !== 'loading';
+    toggle.disabled = !ready; restartB.disabled = !ready || state === 'idle'; backB.disabled = !ready || state === 'idle';
+    seek.disabled = !ready;
+    toggle.textContent = { idle: 'Start', playing: 'Pause', paused: 'Play', stopped: 'Next', ended: 'Replay', loading: 'Play' }[state];
+    if (state !== 'playing') { ff.hidden = true; lastFF = ''; }
+  }
+  function arrive(i) {
+    var s = stops[i];
+    v.pause();
+    try { v.currentTime = s.t; } catch (e) {}
+    state = 'stopped'; atIdx = i; showStop(s); sync();
+  }
+  function resumeFromStop() {
+    hideStop(); cursor = nextFrom(v.currentTime); state = 'playing'; play(); sync();
+  }
+  function play() { var p = v.play(); if (p && p.catch) p.catch(function () { state = 'paused'; sync(); }); }
+  function seekPlay(t) {
+    hideStop(); intro.hidden = true; endc.hidden = true;
+    v.currentTime = clamp(t, 0, Math.max(0, total - 0.05)); cursor = nextFrom(t);
+    state = 'playing'; play(); sync();
+  }
+  function restart() { seekPlay(0); }
+  function jumpToStop(i) { intro.hidden = true; endc.hidden = true; hideStop(); arrive(i); }
+  function back() {
+    var t = v.currentTime, idx = -1;
+    for (var i = 0; i < stops.length; i++) { if (active(stops[i]) && stops[i].t < t - 0.6) idx = i; }
+    intro.hidden = true; endc.hidden = true;
+    if (idx < 0) { restart(); return; }
+    hideStop(); arrive(idx);
+  }
+  function primary() {
+    if (state === 'idle') { intro.hidden = true; seekPlay(0); }
+    else if (state === 'stopped') resumeFromStop();
+    else if (state === 'playing') { v.pause(); state = 'paused'; sync(); }
+    else if (state === 'paused') { cursor = nextFrom(v.currentTime); state = 'playing'; play(); sync(); }
+    else if (state === 'ended') restart();
+  }
+
+  /* ---------- frame loop ---------- */
+  function check(t) {
+    if (state !== 'playing' || cursor >= stops.length) return;
+    if (t >= stops[cursor].t - 0.5 / FPS - 1e-4) arrive(cursor);
+  }
+  function paint(t) {
+    curTime.textContent = fmt(t);
+    if (!dragging) { seek.value = t; }
+    seek.style.setProperty('--p', (t / total * 100) + '%');
+    var cur = 0;
+    steps.forEach(function (st, i) { if (t >= st.t0) cur = i; });
+    var btns = rail.children;
+    for (var i = 0; i < btns.length; i++) {
+      var a = steps[i].t0, b = i + 1 < steps.length ? steps[i + 1].t0 : total;
+      btns[i].style.setProperty('--p', (clamp((t - a) / (b - a), 0, 1) * 100) + '%');
+      if (i === cur) btns[i].setAttribute('aria-current', 'step'); else btns[i].removeAttribute('aria-current');
+    }
+    if (state === 'playing') {
+      var x = 0;
+      for (var k = 0; k < speeds.length; k++) { if (t >= speeds[k].t0 && t < speeds[k].t1) { x = speeds[k].x; break; } }
+      var label = x ? 'Fast forward ' + x + '×' : '';
+      if (label !== lastFF) { lastFF = label; ff.hidden = !label; if (label) ffText.textContent = label; }
+    }
+  }
+  function frame() {
+    requestAnimationFrame(frame);
+    var t = v.currentTime || 0;
+    check(t); paint(t);
+  }
+
+  /* ---------- video events ---------- */
+  v.addEventListener('loadedmetadata', function () {
+    if (v.duration && isFinite(v.duration)) total = v.duration;
+    seek.max = total; durTime.textContent = fmt(total); buildTicks();
+  });
+  v.addEventListener('loadeddata', function () {
+    if (state === 'loading') { state = 'idle'; loading.hidden = true; intro.hidden = false; sync(); try { $('start').focus({ preventScroll: true }); } catch (e) {} }
+  });
+  v.addEventListener('timeupdate', function () { check(v.currentTime || 0); });
+  v.addEventListener('ended', function () {
+    if (state === 'playing') { state = 'ended'; endc.hidden = false; sync(); try { $('replay').focus({ preventScroll: true }); } catch (e) {} }
+  });
+  v.addEventListener('error', function () {
+    if (state === 'loading') { loadMsg.textContent = 'The video could not be loaded. Reload the page to try again.'; }
+  });
+
+  /* ---------- controls ---------- */
+  resumeB.addEventListener('click', primary);
+  toggle.addEventListener('click', primary);
+  $('start').addEventListener('click', primary);
+  $('replay').addEventListener('click', function () { endc.hidden = true; restart(); });
+  backB.addEventListener('click', back);
+  restartB.addEventListener('click', restart);
+  seek.addEventListener('pointerdown', function () { dragging = true; });
+  window.addEventListener('pointerup', function () { dragging = false; });
+  seek.addEventListener('input', function () {
+    var t = parseFloat(seek.value), wasPlaying = state === 'playing';
+    hideStop(); intro.hidden = true; endc.hidden = true;
+    v.currentTime = t; cursor = nextFrom(t);
+    if (!wasPlaying) { state = 'paused'; sync(); }
+  });
+  allsteps.addEventListener('change', function () {
+    ticks.classList.toggle('off', !allsteps.checked);
+    if (state === 'playing' || state === 'paused') cursor = nextFrom(v.currentTime);
+    try { localStorage.setItem('almdemo.allsteps', allsteps.checked ? '1' : '0'); } catch (e) {}
+    allsteps.blur();
+    if (state === 'stopped') focusResume();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.metaKey || e.ctrlKey || e.altKey || state === 'loading') return;
+    var tag = e.target && e.target.tagName;
+    var onControl = tag === 'BUTTON' || tag === 'INPUT' || tag === 'A';
+    if (e.key === ' ' || e.key === 'Enter') {
+      if (onControl) return;           // the focused control handles it
+      e.preventDefault(); primary();
+    } else if (e.key === 'ArrowLeft' && tag !== 'INPUT') {
+      e.preventDefault(); back();
+    }
+  });
+  window.addEventListener('resize', function () { if (state === 'stopped' && atIdx >= 0) layout(stops[atIdx]); });
+
+  /* ---------- load the video as a Blob (some hosts do not serve byte ranges) ---------- */
+  function setProgress(got, len) {
+    var mb = function (n) { return (n / 1048576).toFixed(1); };
+    if (len) { loadBar.style.width = (got / len * 100) + '%'; loadMsg.textContent = 'Loading the video, ' + mb(got) + ' of ' + mb(len) + ' MB'; }
+    else { loadMsg.textContent = 'Loading the video, ' + mb(got) + ' MB'; }
+  }
+  function load() {
+    fetch(C.video).then(function (r) {
+      if (!r.ok) throw new Error('http ' + r.status);
+      var len = parseInt(r.headers.get('content-length') || '0', 10) || C.bytes || 0;
+      if (!r.body || !r.body.getReader) return r.blob();
+      var rd = r.body.getReader(), chunks = [], got = 0;
+      return (function pump() {
+        return rd.read().then(function (x) {
+          if (x.done) return new Blob(chunks, { type: 'video/mp4' });
+          chunks.push(x.value); got += x.value.length; setProgress(got, len); return pump();
+        });
+      })();
+    }).then(function (blob) {
+      v.src = URL.createObjectURL(blob); v.load();
+    }).catch(function () {
+      v.src = C.video; v.load();
+    });
+  }
+  sync();
+  requestAnimationFrame(frame);
+  load();
+})();
+</script>
+</body>
+</html>
