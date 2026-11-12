@@ -1,0 +1,900 @@
+{
+  "version": 1,
+  "fictional": false,
+  "asOf": "2026-11-12",
+  "ingestionStatus": "VALIDATED_PREVIEW_ONLY_NOT_IMPORTED_INTO_CUSTOMER_ENVIRONMENT",
+  "sourceVerifiedAsNativeExports": false,
+  "approvalManifestComplete": false,
+  "note": "No original Outlook message URLs or authorization manifest supplied. Contains source data; keep private and outside any Git repository.",
+  "reports": [
+    {
+      "kind": "azure",
+      "file": "azure-ai-usage-2026-11-12.json",
+      "receivedAt": null,
+      "sourceProvenance": "User upload to this chat; original email/message provenance not verified",
+      "period": "Daily metrics; cost query period unspecified in file",
+      "metrics": {
+        "metricResponses": 3,
+        "metricSamples": 0,
+        "aiBilledRows": 1,
+        "azureAiCost": 4.824119178,
+        "excludedCostRows": 54,
+        "mau": null,
+        "pau": null
+      },
+      "warnings": [
+        "All token timeseries empty: token usage unavailable, not zero.",
+        "Azure Monitor top-level cost is API query-processing units, not USD.",
+        "Only matching Cognitive Services account actual-cost rows counted.",
+        "Cost query source lacks explicit matching month or timespan metadata."
+      ],
+      "details": {
+        "metricWindows": [
+          "2026-11-11T04:55:34Z/2026-11-12T04:55:34Z",
+          "2026-11-11T04:55:35Z/2026-11-12T04:55:35Z",
+          "2026-11-11T04:55:36Z/2026-11-12T04:55:36Z"
+        ],
+        "aiCostRows": [
+          {
+            "resourceId": "/subscriptions/1c372e9d-b1e4-4daf-96a7-756f96250e8b/resourcegroups/rg-copilot-foundry-c84e5f62/providers/microsoft.cognitiveservices/accounts/copilot-foundry-c84e5f62",
+            "cost": 4.824119178,
+            "currency": "USD"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "activity",
+      "file": "copilot-activity-2026-11-12.json",
+      "receivedAt": null,
+      "sourceProvenance": "User upload to this chat; original email/message provenance not verified",
+      "period": "rolling 30 days",
+      "metrics": {
+        "environments": 4,
+        "groups": 20,
+        "runs": 329,
+        "testRuns": 321,
+        "otherRuns": 8,
+        "mau": null,
+        "pau": null
+      },
+      "warnings": [
+        "Observed activity is not native MAU or PAU.",
+        "Distinct users and conversations across groups cannot be summed.",
+        "Test and evaluation traffic is separated from other observed traffic.",
+        "No agent-level credit allocation is available from the activity source."
+      ],
+      "details": {
+        "source": "Azure Monitor Logs",
+        "groups": [
+          {
+            "environment": "DEV",
+            "AgentId": "143e7f5f-a6d6-40e1-aa85-22c3c5cdc701",
+            "AgentName": "AF Factory Governance Demo",
+            "Channel": "Copilot Studio Evaluation",
+            "Traffic": "Test or evaluation",
+            "Runs": 81,
+            "Conversations": 81,
+            "ActiveUserIds": 1,
+            "MissingUserIds": 0,
+            "LastSeen": "2026-11-02T09:49:36.174Z"
+          },
+          {
+            "environment": "DEV",
+            "AgentId": "a1d96556-2e23-4b06-8d01-931c4b32cff3",
+            "AgentName": "AF-PILOT-DEV-Assistant",
+            "Channel": "Copilot Studio Test Pane",
+            "Traffic": "Test or evaluation",
+            "Runs": 27,
+            "Conversations": 6,
+            "ActiveUserIds": 1,
+            "MissingUserIds": 0,
+            "LastSeen": "2026-11-10T08:34:14.352Z"
+          },
+          {
+            "environment": "DEV",
+            "AgentId": "488960db-8790-4518-855f-f87a06c5b9ed",
+            "AgentName": "AF-POC-DEV-RiskProbe",
+            "Channel": "Copilot Studio Test Pane",
+            "Traffic": "Test or evaluation",
+            "Runs": 17,
+            "Conversations": 3,
+            "ActiveUserIds": 1,
+            "MissingUserIds": 0,
+            "LastSeen": "2026-10-22T15:13:30.9Z"
+          },
+          {
+            "environment": "DEV",
+            "AgentId": "488960db-8790-4518-855f-f87a06c5b9ed",
+            "AgentName": "AF-POC-DEV-RiskProbe",
+            "Channel": "Microsoft Teams",
+            "Traffic": "Observed channel",
+            "Runs": 8,
+            "Conversations": 1,
+            "ActiveUserIds": 1,
+            "MissingUserIds": 0,
+            "LastSeen": "2026-10-22T15:15:19.755Z"
+          },
+          {
+            "environment": "DEV",
+            "AgentId": "eaa11f08-d1d0-4f3c-914e-b1154645471f",
+            "AgentName": "AF Demo NEGATIVE - DO NOT DEPLOY",
+            "Channel": "Copilot Studio Test Pane",
+            "Traffic": "Test or evaluation",
+            "Runs": 1,
+            "Conversations": 1,
+            "ActiveUserIds": 1,
+            "MissingUserIds": 0,
+            "LastSeen": "2026-11-01T00:48:21.074Z"
+          },
+          {
+            "environment": "DEV",
+            "AgentId": "eaa11f08-d1d0-4f3c-914e-b1154645471f",
+            "AgentName": "AF Demo NEGATIVE - DO NOT DEPLOY",
+            "Channel": "Copilot Studio Evaluation",
+            "Traffic": "Test or evaluation",
+            "Runs": 1,
+            "Conversations": 1,
+            "ActiveUserIds": 1,
+            "MissingUserIds": 0,
+            "LastSeen": "2026-11-01T00:52:58.661Z"
+          },
+          {
+            "environment": "PROD",
+            "AgentId": "81002a6d-a30f-4799-818a-eee0b28075c8",
+            "AgentName": "AF-PILOT-DEV-Assistant",
+            "Channel": "Copilot Studio Test Pane",
+            "Traffic": "Test or evaluation",
+            "Runs": 25,
+            "Conversations": 7,
+            "ActiveUserIds": 1,
+            "MissingUserIds": 0,
+            "LastSeen": "2026-11-08T01:30:34.976Z"
+          },
+          {
+            "environment": "TEST",
+            "AgentId": "5d7453ba-23c2-447f-af4a-a7758588393b",
+            "AgentName": "AF-PILOT-DEV-Assistant",
+            "Channel": "Copilot Studio Test Pane",
+            "Traffic": "Test or evaluation",
+            "Runs": 29,
+            "Conversations": 7,
+            "ActiveUserIds": 1,
+            "MissingUserIds": 0,
+            "LastSeen": "2026-11-07T10:07:25.731Z"
+          },
+          {
+            "environment": "TEST",
+            "AgentId": "999262a4-0f68-4fcc-a377-d0350b381b74",
+            "AgentName": "AF Factory Governance Demo",
+            "Channel": "Copilot Studio Evaluation",
+            "Traffic": "Test or evaluation",
+            "Runs": 20,
+            "Conversations": 20,
+            "ActiveUserIds": 1,
+            "MissingUserIds": 0,
+            "LastSeen": "2026-11-02T09:57:02.495Z"
+          },
+          {
+            "environment": "DEFAULT",
+            "AgentId": "ab367ebb-8508-4711-bfa8-faf299c3b9e2",
+            "AgentName": "Schneider Knowledge Curator",
+            "Channel": "Copilot Studio Test Pane",
+            "Traffic": "Test or evaluation",
+            "Runs": 32,
+            "Conversations": 5,
+            "ActiveUserIds": 1,
+            "MissingUserIds": 0,
+            "LastSeen": "2026-11-03T06:44:49.657Z"
+          },
+          {
+            "environment": "DEFAULT",
+            "AgentId": "69d05a23-770c-4264-bf3d-ae706876af7e",
+            "AgentName": "Meeting Outcome Assistant",
+            "Channel": "Copilot Studio Test Pane",
+            "Traffic": "Test or evaluation",
+            "Runs": 23,
+            "Conversations": 19,
+            "ActiveUserIds": 2,
+            "MissingUserIds": 0,
+            "LastSeen": "2026-11-11T11:19:24.58Z"
+          },
+          {
+            "environment": "DEFAULT",
+            "AgentId": "",
+            "AgentName": "",
+            "Channel": "Copilot Studio Test Pane",
+            "Traffic": "Test or evaluation",
+            "Runs": 13,
+            "Conversations": 3,
+            "ActiveUserIds": 1,
+            "MissingUserIds": 0,
+            "LastSeen": "2026-10-31T09:35:07.351Z"
+          },
+          {
+            "environment": "DEFAULT",
+            "AgentId": "",
+            "AgentName": "Browser Automation Assistant",
+            "Channel": "Copilot Studio Test Pane",
+            "Traffic": "Test or evaluation",
+            "Runs": 10,
+            "Conversations": 3,
+            "ActiveUserIds": 1,
+            "MissingUserIds": 0,
+            "LastSeen": "2026-10-31T09:35:01.276Z"
+          },
+          {
+            "environment": "DEFAULT",
+            "AgentId": "8782d61b-e4af-4c4d-b32c-2d6f01b3a75b",
+            "AgentName": "Schneider Support Insights",
+            "Channel": "Copilot Studio Test Pane",
+            "Traffic": "Test or evaluation",
+            "Runs": 10,
+            "Conversations": 1,
+            "ActiveUserIds": 1,
+            "MissingUserIds": 0,
+            "LastSeen": "2026-11-03T06:32:17.564Z"
+          },
+          {
+            "environment": "DEFAULT",
+            "AgentId": "f871586e-ae16-44ff-a1b2-9bccd6d6c502",
+            "AgentName": "Schneider Customer Support",
+            "Channel": "Copilot Studio Test Pane",
+            "Traffic": "Test or evaluation",
+            "Runs": 7,
+            "Conversations": 1,
+            "ActiveUserIds": 1,
+            "MissingUserIds": 0,
+            "LastSeen": "2026-11-03T06:41:44.47Z"
+          },
+          {
+            "environment": "DEFAULT",
+            "AgentId": "4ee19bec-3271-4155-bc03-efc3cd335213",
+            "AgentName": "Schneider Action Router",
+            "Channel": "Copilot Studio Test Pane",
+            "Traffic": "Test or evaluation",
+            "Runs": 7,
+            "Conversations": 1,
+            "ActiveUserIds": 1,
+            "MissingUserIds": 0,
+            "LastSeen": "2026-11-03T06:49:31.946Z"
+          },
+          {
+            "environment": "DEFAULT",
+            "AgentId": "ed9a8e9c-a4b5-4df8-a5aa-26358f633e05",
+            "AgentName": "Campaign-in-a-Box Copilot",
+            "Channel": "Copilot Studio Test Pane",
+            "Traffic": "Test or evaluation",
+            "Runs": 7,
+            "Conversations": 1,
+            "ActiveUserIds": 1,
+            "MissingUserIds": 0,
+            "LastSeen": "2026-11-03T06:52:24.593Z"
+          },
+          {
+            "environment": "DEFAULT",
+            "AgentId": "38cd13e0-290b-4ece-92c9-c53e6f2e5208",
+            "AgentName": "Schneider Outcome Analyst",
+            "Channel": "Copilot Studio Test Pane",
+            "Traffic": "Test or evaluation",
+            "Runs": 5,
+            "Conversations": 1,
+            "ActiveUserIds": 1,
+            "MissingUserIds": 0,
+            "LastSeen": "2026-11-03T06:36:37.05Z"
+          },
+          {
+            "environment": "DEFAULT",
+            "AgentId": "762a027a-c885-4391-adbc-c21baf58bc78",
+            "AgentName": "Cert & Compliance Verifier",
+            "Channel": "Copilot Studio Test Pane",
+            "Traffic": "Test or evaluation",
+            "Runs": 5,
+            "Conversations": 1,
+            "ActiveUserIds": 1,
+            "MissingUserIds": 0,
+            "LastSeen": "2026-11-03T06:39:20.972Z"
+          },
+          {
+            "environment": "DEFAULT",
+            "AgentId": "a30abace-3905-4ca6-9885-eec7366a6dbe",
+            "AgentName": "MOA Read Probe 2026-11-04",
+            "Channel": "Copilot Studio Test Pane",
+            "Traffic": "Test or evaluation",
+            "Runs": 1,
+            "Conversations": 1,
+            "ActiveUserIds": 1,
+            "MissingUserIds": 0,
+            "LastSeen": "2026-11-03T23:35:39.229Z"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "inventory",
+      "file": "copilot-studio-agents (1).csv",
+      "receivedAt": null,
+      "sourceProvenance": "User upload to this chat; original email/message provenance not verified",
+      "period": "Point-in-time inventory",
+      "metrics": {
+        "agents": 90,
+        "environments": 9,
+        "mau": null,
+        "pau": null
+      },
+      "warnings": [
+        "Inventory is configured agents, not usage, cost or adoption."
+      ],
+      "details": {
+        "records": [
+          {
+            "name": "010510d8-c5f3-4edc-8d6f-218acbdee5c4",
+            "properties_displayName": "Adaptive Card Gallery",
+            "properties_model": "Copilot Studio default",
+            "environmentId": "default-fa6841bf-663a-481e-8939-02a493c2ce8a"
+          },
+          {
+            "name": "03dccb7a-abcb-4714-8d0c-b7a80155d803",
+            "properties_displayName": "AF-PILOT-DEV-Assistant",
+            "properties_model": "Claude Sonnet 4.6",
+            "environmentId": "432590c9-9522-eff8-bef7-e6850bd597f3"
+          },
+          {
+            "name": "07f733fd-4055-40d1-bcd6-b32e220e5322",
+            "properties_displayName": "[Internal]TBSPromptParser",
+            "properties_model": "GPT-5 Chat",
+            "environmentId": "4025ac8b-6cb3-e414-8ede-63774864e5f1"
+          },
+          {
+            "name": "089ec7ff-bbd7-40ef-b935-57beb0d4c982",
+            "properties_displayName": "C2MessageGeneratorAgent",
+            "properties_model": "GPT-5 Chat",
+            "environmentId": "3fbd2681-d3ff-e36c-8991-88e8f8ceba14"
+          },
+          {
+            "name": "0a08bc45-4ed7-f111-b1ea-0022483db460",
+            "properties_displayName": "Credit Validation - Web Test",
+            "properties_model": "Copilot Studio default",
+            "environmentId": "47ec98c5-0401-e55e-8142-25079d39c9f1"
+          },
+          {
+            "name": "0a0e241a-f567-4af5-a34f-345146b40f53",
+            "properties_displayName": "Case Management Agent",
+            "properties_model": "Copilot Studio default",
+            "environmentId": "4025ac8b-6cb3-e414-8ede-63774864e5f1"
+          },
+          {
+            "name": "0f1d51ce-d1cd-f111-a05a-70a8a5abbdf2",
+            "properties_displayName": "AF-POC-DEV-RiskProbe",
+            "properties_model": "Copilot Studio default",
+            "environmentId": "a4638d0d-888a-e392-953f-76a41cc533f4"
+          },
+          {
+            "name": "1041a2f8-6441-4a47-a550-fe316a72a25d",
+            "properties_displayName": "SimulationPromptParsingAgent",
+            "properties_model": "GPT-5 Chat",
+            "environmentId": "4025ac8b-6cb3-e414-8ede-63774864e5f1"
+          },
+          {
+            "name": "105d5bd2-9fd7-f111-b1ea-0022483db460",
+            "properties_displayName": "MOA Superseded Developer Draft",
+            "properties_model": "Microsoft 365 Copilot",
+            "environmentId": "47ec98c5-0401-e55e-8142-25079d39c9f1"
+          },
+          {
+            "name": "1136a8b6-c915-450d-9f63-ae5dadb5f944",
+            "properties_displayName": "CustomerServiceKnowledgeHarvestDedupe",
+            "properties_model": "GPT-5 Chat",
+            "environmentId": "4025ac8b-6cb3-e414-8ede-63774864e5f1"
+          },
+          {
+            "name": "15f0ab24-b625-4558-97e7-dd1ee784f437",
+            "properties_displayName": "SimulationPromptValidatingAgent",
+            "properties_model": "GPT-5 Chat",
+            "environmentId": "4025ac8b-6cb3-e414-8ede-63774864e5f1"
+          },
+          {
+            "name": "1b3d0ed4-0a51-4597-aad1-1fc797aaa0c7",
+            "properties_displayName": "[Internal]TBSPromptParser",
+            "properties_model": "GPT-5 Chat",
+            "environmentId": "3fbd2681-d3ff-e36c-8991-88e8f8ceba14"
+          },
+          {
+            "name": "1d677bef-3a0a-4025-a84b-ec39492964af",
+            "properties_displayName": "CustomerServiceKnowledgeHarvest",
+            "properties_model": "Copilot Studio default",
+            "environmentId": "4025ac8b-6cb3-e414-8ede-63774864e5f1"
+          },
+          {
+            "name": "1ef10786-e67d-4233-a8c8-a79f801e21de",
+            "properties_displayName": "Schneider Support Insights",
+            "properties_model": "Claude Opus 5",
+            "environmentId": "default-fa6841bf-663a-481e-8939-02a493c2ce8a"
+          },
+          {
+            "name": "2282bdcd-199b-4841-a749-624b763e2b86",
+            "properties_displayName": "Customer Service Optimize Agent",
+            "properties_model": "GPT-5.5 Chat",
+            "environmentId": "4025ac8b-6cb3-e414-8ede-63774864e5f1"
+          },
+          {
+            "name": "22993654-b2e0-4630-9435-8d67404f4e5c",
+            "properties_displayName": "Customer Service Email Sentiment Generator",
+            "properties_model": "Copilot Studio default",
+            "environmentId": "3fbd2681-d3ff-e36c-8991-88e8f8ceba14"
+          },
+          {
+            "name": "299b7771-d6d6-4d6b-9a95-653b246abe80",
+            "properties_displayName": "Sales Digest Agent",
+            "properties_model": "Claude Sonnet 4.6",
+            "environmentId": "aa65536e-cb4c-e8c5-92b7-7db35acb24f5"
+          },
+          {
+            "name": "2b451112-53d9-4bb5-b0b6-6786003e9af1",
+            "properties_displayName": "D365 Sales - Data Enrichment",
+            "properties_model": "Copilot Studio default",
+            "environmentId": "3fbd2681-d3ff-e36c-8991-88e8f8ceba14"
+          },
+          {
+            "name": "2e0a2df0-53c9-4186-9b32-ff246657b67c",
+            "properties_displayName": "Quality Evaluation Agent - Incident",
+            "properties_model": "Copilot Studio default",
+            "environmentId": "3fbd2681-d3ff-e36c-8991-88e8f8ceba14"
+          },
+          {
+            "name": "3136abf1-13bf-4570-aa1c-e87687d12c43",
+            "properties_displayName": "Schneider Customer Support",
+            "properties_model": "Claude Sonnet 4.6",
+            "environmentId": "default-fa6841bf-663a-481e-8939-02a493c2ce8a"
+          },
+          {
+            "name": "3520c8c1-d2f0-483d-9eab-bc72bc8bb121",
+            "properties_displayName": "Customer Service Onboarding Agent",
+            "properties_model": "GPT-4.1",
+            "environmentId": "4025ac8b-6cb3-e414-8ede-63774864e5f1"
+          },
+          {
+            "name": "35412cc0-4540-405d-ae4b-d45819002a25",
+            "properties_displayName": "Schneider Outcome Analyst",
+            "properties_model": "Claude Sonnet 4.6",
+            "environmentId": "default-fa6841bf-663a-481e-8939-02a493c2ce8a"
+          },
+          {
+            "name": "37fe73e0-b8d9-4548-aace-8975fa539e7c",
+            "properties_displayName": "Customer Service Operations Agent",
+            "properties_model": "GPT-5 Chat",
+            "environmentId": "3fbd2681-d3ff-e36c-8991-88e8f8ceba14"
+          },
+          {
+            "name": "39fffca0-8dd5-f111-84e8-7ced8ddfbfde",
+            "properties_displayName": "AF Demo NEGATIVE - DO NOT DEPLOY",
+            "properties_model": "Copilot Studio default",
+            "environmentId": "a4638d0d-888a-e392-953f-76a41cc533f4"
+          },
+          {
+            "name": "3a338572-60f8-4861-a766-08511e24a1d5",
+            "properties_displayName": "Customer Service Onboarding Agent",
+            "properties_model": "GPT-4.1",
+            "environmentId": "3fbd2681-d3ff-e36c-8991-88e8f8ceba14"
+          },
+          {
+            "name": "3c9700d2-5cd5-4c96-a326-a98f2caa8eab",
+            "properties_displayName": "ALM Validation Agent",
+            "properties_model": "GPT-5.5 Chat",
+            "environmentId": "default-fa6841bf-663a-481e-8939-02a493c2ce8a"
+          },
+          {
+            "name": "3d14c540-e71f-46ba-a3af-464b847c0c20",
+            "properties_displayName": "D365 Sales - Configuration Agent",
+            "properties_model": "Copilot Studio default",
+            "environmentId": "3fbd2681-d3ff-e36c-8991-88e8f8ceba14"
+          },
+          {
+            "name": "4234b167-7001-4e36-b332-736aafaf11c7",
+            "properties_displayName": "SimulationPromptAgent",
+            "properties_model": "GPT-5 Chat",
+            "environmentId": "3fbd2681-d3ff-e36c-8991-88e8f8ceba14"
+          },
+          {
+            "name": "43feac47-41c1-f111-aaad-000d3a5c3c6a",
+            "properties_displayName": "Schneider Support Analytics",
+            "properties_model": "GPT-5.5 Chat",
+            "environmentId": "default-fa6841bf-663a-481e-8939-02a493c2ce8a"
+          },
+          {
+            "name": "45495452-33a5-f111-b8de-70a8a5af0001",
+            "properties_displayName": "CEL Salesforce Ops DA",
+            "properties_model": "Microsoft 365 Copilot",
+            "environmentId": "default-fa6841bf-663a-481e-8939-02a493c2ce8a"
+          },
+          {
+            "name": "4ac1de42-5b31-417e-82c0-e0cf5e16e968",
+            "properties_displayName": "D365 Sales - Data Enrichment",
+            "properties_model": "Copilot Studio default",
+            "environmentId": "4025ac8b-6cb3-e414-8ede-63774864e5f1"
+          },
+          {
+            "name": "4ce01dc6-04ca-44ad-9b72-0cc6431a3e29",
+            "properties_displayName": "CustomerServiceKnowledgeHarvest",
+            "properties_model": "Copilot Studio default",
+            "environmentId": "3fbd2681-d3ff-e36c-8991-88e8f8ceba14"
+          },
+          {
+            "name": "4cea6084-fdfc-4427-97b4-e994e90b5ea0",
+            "properties_displayName": "Service Operations Agent",
+            "properties_model": "GPT-5 Chat",
+            "environmentId": "4025ac8b-6cb3-e414-8ede-63774864e5f1"
+          },
+          {
+            "name": "4dd1d62a-5d48-4414-993a-633d00fdf824",
+            "properties_displayName": "D365 Knowledge Agent - External Sources",
+            "properties_model": "GPT-5 Chat",
+            "environmentId": "3fbd2681-d3ff-e36c-8991-88e8f8ceba14"
+          },
+          {
+            "name": "4e76b1d0-8fdc-4000-a1b6-edfa3e846e4c",
+            "properties_displayName": "Transformation Agent Chat Bot",
+            "properties_model": "GPT-5 Chat",
+            "environmentId": "4025ac8b-6cb3-e414-8ede-63774864e5f1"
+          },
+          {
+            "name": "4f4c7221-c1f4-4def-9472-af2276c56223",
+            "properties_displayName": "SimulationPromptParsingAgent",
+            "properties_model": "GPT-5 Chat",
+            "environmentId": "3fbd2681-d3ff-e36c-8991-88e8f8ceba14"
+          },
+          {
+            "name": "527dd396-8c96-4168-a921-18fbbf3d3f09",
+            "properties_displayName": "Sales Profiler Agent",
+            "properties_model": "GPT-5 Chat",
+            "environmentId": "3fbd2681-d3ff-e36c-8991-88e8f8ceba14"
+          },
+          {
+            "name": "548fe6e8-1392-4fc7-8441-3663e26f9b62",
+            "properties_displayName": "Case Management Agent",
+            "properties_model": "Copilot Studio default",
+            "environmentId": "3fbd2681-d3ff-e36c-8991-88e8f8ceba14"
+          },
+          {
+            "name": "55c9d1e3-a0ec-4584-8439-8486be12b96e",
+            "properties_displayName": "Quality Evaluation Agent",
+            "properties_model": "Copilot Studio default",
+            "environmentId": "4025ac8b-6cb3-e414-8ede-63774864e5f1"
+          },
+          {
+            "name": "57221b42-a24d-4be0-817a-0b74583a7529",
+            "properties_displayName": "Sales Close Agent",
+            "properties_model": "Copilot Studio default",
+            "environmentId": "3fbd2681-d3ff-e36c-8991-88e8f8ceba14"
+          },
+          {
+            "name": "5b3c0ebd-ded7-f111-a05d-000d3a5c3c6a",
+            "properties_displayName": "MOA Read Probe 2026-11-04",
+            "properties_model": "Microsoft 365 Copilot",
+            "environmentId": "default-fa6841bf-663a-481e-8939-02a493c2ce8a"
+          },
+          {
+            "name": "5b760e81-9aaa-f111-aaab-002248af9330",
+            "properties_displayName": "ALM Validation Agent",
+            "properties_model": "GPT-5.5 Chat",
+            "environmentId": "220e8b45-a963-eb90-85f2-cd0caa141df3"
+          },
+          {
+            "name": "5ceebfb9-f9b4-483b-ae08-7be77584d608",
+            "properties_displayName": "Service Operations Agent",
+            "properties_model": "GPT-5 Chat",
+            "environmentId": "3fbd2681-d3ff-e36c-8991-88e8f8ceba14"
+          },
+          {
+            "name": "5daedf58-2a77-438b-8ee1-4bb50704dbf8",
+            "properties_displayName": "D365 Sales - Configuration Agent",
+            "properties_model": "Copilot Studio default",
+            "environmentId": "4025ac8b-6cb3-e414-8ede-63774864e5f1"
+          },
+          {
+            "name": "627778b5-d269-4ddc-842a-d5f9cdb0b39f",
+            "properties_displayName": "Email Assist Agent",
+            "properties_model": "Copilot Studio default",
+            "environmentId": "3fbd2681-d3ff-e36c-8991-88e8f8ceba14"
+          },
+          {
+            "name": "674a5fa0-d415-492c-9a38-1c9ec158fe13",
+            "properties_displayName": "Quality Evaluation Agent - Incident",
+            "properties_model": "Copilot Studio default",
+            "environmentId": "4025ac8b-6cb3-e414-8ede-63774864e5f1"
+          },
+          {
+            "name": "6bd7541d-8360-4eb5-a883-07fe1860e50e",
+            "properties_displayName": "Salesforce Contact Onboarding",
+            "properties_model": "Microsoft 365 Copilot",
+            "environmentId": "default-fa6841bf-663a-481e-8939-02a493c2ce8a"
+          },
+          {
+            "name": "6cf5f1cb-d40f-49e3-b441-c96f76092e06",
+            "properties_displayName": "QualityEvaluationAgentForConversation",
+            "properties_model": "Copilot Studio default",
+            "environmentId": "4025ac8b-6cb3-e414-8ede-63774864e5f1"
+          },
+          {
+            "name": "7005cefe-d89e-43f2-b5d3-402c4a78d935",
+            "properties_displayName": "SimulationPromptValidatingAgent",
+            "properties_model": "GPT-5 Chat",
+            "environmentId": "3fbd2681-d3ff-e36c-8991-88e8f8ceba14"
+          },
+          {
+            "name": "705803cd-8cf6-4c1e-ab4a-f48afb02773c",
+            "properties_displayName": "Copilot in Dynamics 365 Sales",
+            "properties_model": "GPT-4.1",
+            "environmentId": "4025ac8b-6cb3-e414-8ede-63774864e5f1"
+          },
+          {
+            "name": "70fd0c56-a187-469b-807f-3a3c18bb302a",
+            "properties_displayName": "Project Delta Digest",
+            "properties_model": "Microsoft 365 Copilot",
+            "environmentId": "default-fa6841bf-663a-481e-8939-02a493c2ce8a"
+          },
+          {
+            "name": "72968b3e-5998-42e8-92f0-ff471e2b7210",
+            "properties_displayName": "AF-PILOT-DEV-Assistant",
+            "properties_model": "Claude Sonnet 4.6",
+            "environmentId": "a4638d0d-888a-e392-953f-76a41cc533f4"
+          },
+          {
+            "name": "72dd8bd7-79bc-4428-9294-461a36a8fffc",
+            "properties_displayName": "Customer Service Copilot Bot",
+            "properties_model": "Copilot Studio default",
+            "environmentId": "4025ac8b-6cb3-e414-8ede-63774864e5f1"
+          },
+          {
+            "name": "739befc0-a6d7-f111-a05d-000d3a5c3c6a",
+            "properties_displayName": "Meeting Outcome Assistant",
+            "properties_model": "Microsoft 365 Copilot",
+            "environmentId": "default-fa6841bf-663a-481e-8939-02a493c2ce8a"
+          },
+          {
+            "name": "77b20cb1-9a72-4039-8e7b-cb5fc9f1a8a5",
+            "properties_displayName": "Case Enrichment Onboarding Agent",
+            "properties_model": "Copilot Studio default",
+            "environmentId": "3fbd2681-d3ff-e36c-8991-88e8f8ceba14"
+          },
+          {
+            "name": "7832f044-e1c3-42c5-9c9b-ca09949a7600",
+            "properties_displayName": "SimulationPromptAgent",
+            "properties_model": "GPT-5 Chat",
+            "environmentId": "4025ac8b-6cb3-e414-8ede-63774864e5f1"
+          },
+          {
+            "name": "7b09fb5e-4d66-443b-a0de-09cdebb58859",
+            "properties_displayName": "Cyber Security Researcher",
+            "properties_model": "Microsoft 365 Copilot",
+            "environmentId": "default-fa6841bf-663a-481e-8939-02a493c2ce8a"
+          },
+          {
+            "name": "8612165c-5346-41e4-bc65-7fa9b52bcdf3",
+            "properties_displayName": "AF-PILOT-DEV-Assistant",
+            "properties_model": "Claude Sonnet 4.6",
+            "environmentId": "e91db3df-a2ac-e9e5-84a9-54fc03eadbf4"
+          },
+          {
+            "name": "88d0dac4-6588-4e88-8081-7128a93ca6c9",
+            "properties_displayName": "C2MessageGeneratorAgent",
+            "properties_model": "GPT-5 Chat",
+            "environmentId": "4025ac8b-6cb3-e414-8ede-63774864e5f1"
+          },
+          {
+            "name": "8ad1140f-a95d-44e6-a770-c6203020ab5d",
+            "properties_displayName": "CustomerServiceKnowledgeHarvestDedupe",
+            "properties_model": "GPT-5 Chat",
+            "environmentId": "3fbd2681-d3ff-e36c-8991-88e8f8ceba14"
+          },
+          {
+            "name": "8d507bb8-0bae-4cb8-8115-bf8b18db3c44",
+            "properties_displayName": "Email Assist Agent",
+            "properties_model": "Copilot Studio default",
+            "environmentId": "4025ac8b-6cb3-e414-8ede-63774864e5f1"
+          },
+          {
+            "name": "94a19993-8951-4c0b-9d2a-504c8e6c3fd8",
+            "properties_displayName": " [Internal]TransciptParserAgent",
+            "properties_model": "GPT-5 Chat",
+            "environmentId": "3fbd2681-d3ff-e36c-8991-88e8f8ceba14"
+          },
+          {
+            "name": "9e1e7549-77c7-49b9-8202-34e7e7ae2741",
+            "properties_displayName": "Schneider Electric KM Copilot",
+            "properties_model": "Claude Opus 5",
+            "environmentId": "default-fa6841bf-663a-481e-8939-02a493c2ce8a"
+          },
+          {
+            "name": "9ea4183b-1dec-49d0-8367-ccb5d6744a8b",
+            "properties_displayName": "Customer Service Optimize Agent",
+            "properties_model": "GPT-5.5 Chat",
+            "environmentId": "3fbd2681-d3ff-e36c-8991-88e8f8ceba14"
+          },
+          {
+            "name": "9f465831-6ab9-f111-aaae-7ced8d0647b5",
+            "properties_displayName": "Transformation PreCanned MIA",
+            "properties_model": "Copilot Studio default",
+            "environmentId": "4025ac8b-6cb3-e414-8ede-63774864e5f1"
+          },
+          {
+            "name": "a5127983-1952-482f-b55f-7b77cbdd07f1",
+            "properties_displayName": "CEL Salesforce Operations",
+            "properties_model": "Claude Sonnet 4.6",
+            "environmentId": "default-fa6841bf-663a-481e-8939-02a493c2ce8a"
+          },
+          {
+            "name": "a6621780-c4ad-41b9-a2d1-83ac3d8c0cb8",
+            "properties_displayName": "Sales Close Agent",
+            "properties_model": "Copilot Studio default",
+            "environmentId": "4025ac8b-6cb3-e414-8ede-63774864e5f1"
+          },
+          {
+            "name": "af7fab9f-97f7-484b-8b08-2ae9db6baaf7",
+            "properties_displayName": "Copilot in Dynamics 365 Sales",
+            "properties_model": "Copilot Studio default",
+            "environmentId": "3fbd2681-d3ff-e36c-8991-88e8f8ceba14"
+          },
+          {
+            "name": "b40d1aad-7477-4b5f-b280-95b0cd62972d",
+            "properties_displayName": "Cert & Compliance Verifier",
+            "properties_model": "Claude Sonnet 4.6",
+            "environmentId": "default-fa6841bf-663a-481e-8939-02a493c2ce8a"
+          },
+          {
+            "name": "b82dbca7-c84d-43c5-9842-e1ecc711cdd2",
+            "properties_displayName": "Schneider Action Router",
+            "properties_model": "Claude Opus 5",
+            "environmentId": "default-fa6841bf-663a-481e-8939-02a493c2ce8a"
+          },
+          {
+            "name": "c19a4bcb-d1b3-f111-aaac-000d3a5c3c6a",
+            "properties_displayName": "Campaign Portal Assistant",
+            "properties_model": "Copilot Studio default",
+            "environmentId": "default-fa6841bf-663a-481e-8939-02a493c2ce8a"
+          },
+          {
+            "name": "cb5b12c7-4037-4e83-8788-ffa485a0a7ca",
+            "properties_displayName": "AF Factory Governance Demo",
+            "properties_model": "Copilot Studio default",
+            "environmentId": "a4638d0d-888a-e392-953f-76a41cc533f4"
+          },
+          {
+            "name": "cbcb68d8-432c-4b3b-86d7-a46f586b019b",
+            "properties_displayName": "Sales Digest Agent",
+            "properties_model": "Claude Sonnet 4.6",
+            "environmentId": "default-fa6841bf-663a-481e-8939-02a493c2ce8a"
+          },
+          {
+            "name": "d4eeb434-7a54-4def-ae93-3c21cfc45d0c",
+            "properties_displayName": "Schneider Knowledge Curator",
+            "properties_model": "Claude Opus 5",
+            "environmentId": "default-fa6841bf-663a-481e-8939-02a493c2ce8a"
+          },
+          {
+            "name": "d5da2f45-98b8-48c6-b203-8a8090e268be",
+            "properties_displayName": "Customer Service Operations Agent",
+            "properties_model": "GPT-5 Chat",
+            "environmentId": "4025ac8b-6cb3-e414-8ede-63774864e5f1"
+          },
+          {
+            "name": "d7f06fe1-f382-4d2c-a543-2b3f007f688c",
+            "properties_displayName": " [Internal]TransciptParserAgent",
+            "properties_model": "GPT-5 Chat",
+            "environmentId": "4025ac8b-6cb3-e414-8ede-63774864e5f1"
+          },
+          {
+            "name": "d9cf48c3-181a-4bb7-bea1-1ccd27de3473",
+            "properties_displayName": "Campaign-in-a-Box Copilot",
+            "properties_model": "Claude Sonnet 4.6",
+            "environmentId": "default-fa6841bf-663a-481e-8939-02a493c2ce8a"
+          },
+          {
+            "name": "e16a8bc0-de5b-4228-ad6f-291ff63b578d",
+            "properties_displayName": "Salesforce Data Agent",
+            "properties_model": "Claude Sonnet 5",
+            "environmentId": "default-fa6841bf-663a-481e-8939-02a493c2ce8a"
+          },
+          {
+            "name": "e8e6ce74-bbd1-f111-b616-0022483db460",
+            "properties_displayName": "SE Proposal Agent ",
+            "properties_model": "Copilot Studio default",
+            "environmentId": "47ec98c5-0401-e55e-8142-25079d39c9f1"
+          },
+          {
+            "name": "e96738f5-9e61-4727-9500-99301ee88724",
+            "properties_displayName": "QualityEvaluationAgentForConversation",
+            "properties_model": "Copilot Studio default",
+            "environmentId": "3fbd2681-d3ff-e36c-8991-88e8f8ceba14"
+          },
+          {
+            "name": "ebf792e8-5f98-49d2-a1a5-47875f9ed0a2",
+            "properties_displayName": "AppSheet-Dataverse Migration",
+            "properties_model": "Claude Sonnet 4.6",
+            "environmentId": "default-fa6841bf-663a-481e-8939-02a493c2ce8a"
+          },
+          {
+            "name": "ed9182f3-31c6-4cc1-9139-5a2617e9b084",
+            "properties_displayName": "Quality Evaluation Agent",
+            "properties_model": "Copilot Studio default",
+            "environmentId": "3fbd2681-d3ff-e36c-8991-88e8f8ceba14"
+          },
+          {
+            "name": "f1d1de35-ec03-4c9f-ae01-e6ce6c4e6c64",
+            "properties_displayName": "ServiceNow Support Agent",
+            "properties_model": "Microsoft 365 Copilot",
+            "environmentId": "default-fa6841bf-663a-481e-8939-02a493c2ce8a"
+          },
+          {
+            "name": "f2089ec5-53a5-f111-b8de-70a8a5af0001",
+            "properties_displayName": "CEL Salesforce MCP Agent",
+            "properties_model": "GPT-5.5 Chat",
+            "environmentId": "default-fa6841bf-663a-481e-8939-02a493c2ce8a"
+          },
+          {
+            "name": "f4c622db-4f5e-433e-9715-8bf2ba4bc7cd",
+            "properties_displayName": "Sales Profiler Agent",
+            "properties_model": "GPT-5 Chat",
+            "environmentId": "4025ac8b-6cb3-e414-8ede-63774864e5f1"
+          },
+          {
+            "name": "f504d880-b536-4176-9075-5f4c4937e294",
+            "properties_displayName": "Customer Service Email Sentiment Generator",
+            "properties_model": "Copilot Studio default",
+            "environmentId": "4025ac8b-6cb3-e414-8ede-63774864e5f1"
+          },
+          {
+            "name": "f749fae0-07fe-4619-b928-fbc18365ba58",
+            "properties_displayName": "AF Factory Governance Demo",
+            "properties_model": "Copilot Studio default",
+            "environmentId": "e91db3df-a2ac-e9e5-84a9-54fc03eadbf4"
+          },
+          {
+            "name": "f9ff6116-c7e9-4f21-b660-7439b307e883",
+            "properties_displayName": "Case Enrichment Onboarding Agent",
+            "properties_model": "Copilot Studio default",
+            "environmentId": "4025ac8b-6cb3-e414-8ede-63774864e5f1"
+          },
+          {
+            "name": "fb73b238-61aa-4a98-a80e-ffc08b5c563d",
+            "properties_displayName": "D365 Knowledge Agent - External Sources",
+            "properties_model": "GPT-5 Chat",
+            "environmentId": "4025ac8b-6cb3-e414-8ede-63774864e5f1"
+          },
+          {
+            "name": "fdadc745-7003-4ea0-a287-81a65b3a31ae",
+            "properties_displayName": "Customer Service Copilot Bot",
+            "properties_model": "Copilot Studio default",
+            "environmentId": "3fbd2681-d3ff-e36c-8991-88e8f8ceba14"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "credits",
+      "file": "copilot-tenant-credits-2026-11-12.json",
+      "receivedAt": null,
+      "sourceProvenance": "User upload to this chat; original email/message provenance not verified",
+      "period": "Month to date",
+      "metrics": {
+        "prepaidCredits": 344.79,
+        "payGoCredits": 0.0,
+        "totalCredits": 344.79,
+        "entitledCredits": 57000.0,
+        "lastUpdated": "2026-11-10T00:00:00Z",
+        "mau": null,
+        "pau": null,
+        "copilotCost": null
+      },
+      "warnings": [
+        "Tenant-level credits cannot be allocated to individual agents.",
+        "Credits represent consumption, not money.",
+        "MAU and PAU not provided.",
+        "Pay-as-you-go source last update 2026-11-03T00:00:00Z differs from prepaid source."
+      ],
+      "details": {
+        "entitlementId": "MCSMessages"
+      }
+    }
+  ]
+}
