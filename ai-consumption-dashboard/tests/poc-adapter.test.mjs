@@ -1,33 +1,38 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="AI consumption and business value dashboard with sample, public PoC, and private actual-data views.">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
-  <title>AI Consumption Dashboard</title>
-  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./styles.css">
-  <script type="module" src="./app.js"></script>
-</head>
-<body>
-  <a class="skip" href="#main">Skip to dashboard</a>
-  <aside class="sidebar">
-    <a class="brand" href="#overview"><span class="brand-mark">a<span>i</span></span><span>AI Consumption<small>INTELLIGENCE WORKSPACE</small></span></a>
-    <div class="workspace"><span class="workspace-icon">P</span><span>Portfolio workspace<small id="workspace-subtitle">Fictional sample portfolio</small></span><span class="workspace-dot"></span></div>
-    <p class="nav-label">WORKSPACE</p>
-    <nav aria-label="Dashboard sections" id="navigation"></nav>
-    <div class="sidebar-bottom"><div class="source-status"><span class="status-dot"></span><strong id="sidebar-mode">Sample data active</strong><p id="sidebar-note">Explore the portfolio with fictional data.</p></div><div class="profile"><span>PR</span><div>Portfolio manager<small>AI consumption & value</small></div></div></div>
-  </aside>
-  <div class="main-shell">
-    <header class="topbar"><div class="breadcrumb">Workspace <span>/</span> <strong id="breadcrumb">Overview</strong></div><div class="data-controls"><label class="data-selector" for="data-source">Data source<select id="data-source" aria-label="Data source"><option value="sample">Sample Data</option><option value="poc">CEL</option></select></label><span class="demo-badge" id="mode-badge"><span></span> FICTIONAL SAMPLE DATA</span></div></header>
-    <main id="main" tabindex="-1">
-      <div class="page-heading"><div><p class="eyebrow">YOUR AI PORTFOLIO, IN FOCUS</p><h1 id="page-title">Consumption overview</h1><p id="page-subtitle">Understand adoption, manage spend, and see what AI delivers.</p></div><button id="export-button" class="button button-secondary" type="button"><span id="export-icon"></span><span id="export-label">Export data</span></button></div>
-      <div class="filterbar"><div class="filters"><label><span id="scope-label">Customer</span><select id="customer-filter" aria-label="Customer"></select></label><label><span id="period-label">Reporting period</span><select id="month-filter" aria-label="Reporting period"></select></label></div><div class="asof"><span class="status-dot"></span><span id="asof">Sample snapshot · 31 Oct 2026</span></div></div>
-      <div id="load-status" role="status" aria-live="polite"></div>
-      <div id="content"></div>
-      <footer><span id="footer-label">Fictional portfolio · USD · No customer data</span><a href="#methodology">Metric definitions & methodology <span>↗</span></a></footer>
-    </main>
-  </div>
-</body>
-</html>
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {publicPocDashboard} from '../poc-adapter.mjs';
+import {renderActualSection,actualExportRows} from '../actual-view.mjs';
+
+const load=async()=>JSON.parse(await readFile(new URL('../data/POC-reports.json',import.meta.url),'utf8'));
+const helpers={kpi:(label,value,note)=>`<article>${label}: ${value}<p>${note}</p></article>`,cardHead:(title,subtitle,extra='')=>`<h2>${title}</h2><p>${subtitle}</p>${extra}`,metric:(name,value)=>`<p>${name}: ${value}</p>`,icon:()=>''};
+
+test('public PoC adapter maps the four categories without inventing unsupported measures',async()=>{
+ const data=publicPocDashboard(await load());
+ assert.equal(data.publicPoc,true);assert.equal(data.sourceAssurance.nativeExportsVerified,false);assert.equal(data.sourceAssurance.approvalManifestComplete,false);assert.equal(data.credits.total,344.79);assert.equal(data.activity.runs,329);assert.equal(data.activity.testRuns,321);assert.equal(data.activity.observedRuns,8);assert.equal(data.inventory.agents,90);assert.equal(data.inventory.environments,9);assert.equal(data.costs.azure,4.824119178);assert.equal(data.costs.copilot,null);assert.equal(data.costs.total,null);assert.equal(data.adoption.mau,null);assert.equal(data.adoption.pau,null);assert.equal(data.forecastAvailable,false);
+});
+
+test('public PoC dashboard model removes tenant and detailed source identifiers',async()=>{
+ const source=await load(),data=publicPocDashboard(source),rendered=JSON.stringify(data);
+ const sensitive=[source.reports.find(r=>r.kind==='azure').details.aiCostRows[0].resourceId,source.reports.find(r=>r.kind==='activity').details.groups[0].AgentId,source.reports.find(r=>r.kind==='activity').details.groups[0].AgentName,source.reports.find(r=>r.kind==='inventory').details.records[0].environmentId,source.reports.find(r=>r.kind==='inventory').details.records[0].name];
+ for(const value of sensitive)assert.doesNotMatch(rendered,new RegExp(value.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'i'));
+ assert.ok(data.activity.byEnvironment.every(row=>/^Activity scope \d+$/.test(row.label)));assert.ok(data.inventory.byEnvironment.every(row=>/^Inventory scope \d+$/.test(row.label)));
+});
+
+test('public PoC view labels periods, test traffic, available cost and unavailable measures',async()=>{
+ const data=publicPocDashboard(await load()),view=renderActualSection('usage',data,helpers),methodology=renderActualSection('methodology',data,helpers);
+ assert.match(view,/CEL · validated public aggregate/);assert.match(view,/Preview-only source/);assert.match(view,/rolling 30 days/i);assert.match(view,/Test \/ evaluation/);assert.match(view,/\$4\.82/);assert.match(view,/Daily metrics; cost query period unspecified in file/);assert.match(view,/Monthly active users \(MAU\).*Unavailable/s);assert.match(view,/Token counts.*Unavailable/s);assert.match(view,/Agent-level credit allocation.*Unavailable/s);assert.doesNotMatch(methodology,/subscriptions\//i);assert.doesNotMatch(methodology,/AgentId|environmentId/);
+ const rows=actualExportRows(data);assert.equal(rows.find(row=>row.metric==='MAU').value,'Unavailable');assert.equal(rows.find(row=>row.metric==='token counts').value,'Unavailable');assert.equal(rows.find(row=>row.report==='billed cost'&&row.metric==='azure').period,data.costs.azurePeriod);
+});
+
+test('data source selector exposes Sample Data and CEL only',async()=>{
+ const html=await readFile(new URL('../index.html',import.meta.url),'utf8');
+ assert.match(html,/<option value="sample">Sample Data<\/option><option value="poc">CEL<\/option>/);
+ assert.doesNotMatch(html,/<option value="actual"/);
+});
+
+test('public PoC schema validation fails closed on inconsistent or incomplete input',async()=>{
+ const source=await load();source.reports.find(r=>r.kind==='credits').metrics.totalCredits=999;assert.throws(()=>publicPocDashboard(source),/reconcile/);
+ const duplicate=await load();duplicate.reports[3].kind='activity';assert.throws(()=>publicPocDashboard(duplicate),/coverage/);
+ const leakedUnsupported=await load();leakedUnsupported.reports.find(r=>r.kind==='activity').metrics.mau=1;assert.throws(()=>publicPocDashboard(leakedUnsupported),/must be unavailable/);
+});
