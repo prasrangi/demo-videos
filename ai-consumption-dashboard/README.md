@@ -2,9 +2,23 @@
 
 Public URL: https://prasrangi.github.io/demo-videos/ai-consumption-dashboard/
 
-A dependency-free static dashboard with fictional monthly data, customer/month filters, Copilot Studio Credits, MAU, PAU, Azure AI costs, three-month scenario forecasts, customer ROI scenarios, and CSV export. All public customer names and values are made up. USD is the only supported currency.
+A dependency-free static dashboard with fictional monthly data, a schema-validated public PoC snapshot, customer/month filters, Copilot Studio Credits, MAU, PAU, Azure AI costs, three-month scenario forecasts, customer ROI scenarios, and CSV export. USD is the only supported currency.
 
-The **Data source** selector switches the private dashboard between **Sample Data** and **Actual Data**. Actual Data is loaded only from the loopback server's approved report storage. The public GitHub Pages site keeps Actual Data disabled and makes no requests to private endpoints.
+The **Data source** selector switches among **Sample Data**, **PoC Actual Data**, and private **Actual Data**. PoC Actual Data fetches `data/POC-reports.json`, validates the four report categories, and reduces them to aggregate chart data. It shows the reported 344.79 month-to-date credits, separated test/evaluation activity, inventory, and available Azure AI actual-cost data. Unsupported MAU, PAU, token counts, agent-level credit allocation, complete monthly history, and total billed AI spend remain unavailable. Private Actual Data is loaded only from the loopback server's approved report storage; it remains disabled on GitHub Pages and makes no requests to private endpoints.
+
+The public PoC adapter does not copy tenant IDs, Azure resource paths, agent IDs, agent names, environment IDs, or detailed source rows into the rendered model or CSV export. This protects the dashboard UI, not the committed source file: the raw JSON is still directly downloadable from GitHub Pages.
+
+### PoC source sanitization before further sharing
+
+`data/POC-reports.json` currently contains a subscription GUID and complete Azure resource ID, agent GUIDs and names, inventory record GUIDs and display names, environment GUIDs (including a tenant-derived default environment ID), model assignments, resource-group/account names, exact query timestamps, source filenames, and detailed activity/inventory rows. Before further sharing, replace it with a public aggregate artifact that contains only:
+
+- the top-level schema version and `asOf` date;
+- per-category reporting periods, aggregate metrics, and reviewed warnings;
+- activity totals split into test/evaluation and other observed traffic, using generic scope aliases only;
+- inventory totals and per-scope counts using generic aliases only; and
+- the aggregate Azure AI cost and currency, without resource IDs, subscription/resource-group/account names, or detailed cost rows.
+
+Rotate or replace the public artifact in Git history if organizational policy treats the already-published identifiers as sensitive. Removing them only from the latest commit does not remove them from repository history or caches.
 
 Optional private `measurements.json` enriches the original four reports with native adoption verification and explicitly approved pricing/value benchmarks. It must include `version: 1`, `listPricingApproved: true`, `webBenchmarksApproved: true`, and an `adoption` object with `asOf` in the source snapshot's month, `definition: "identified-credit-active-users-month-to-date"`, integer `identifiedActiveUsers`, `licensedActiveUsers`, `reportedLicensedSeats`, a source description, and `paidLicenseBasis`. PAU is populated only for the explicit user-confirmed paid reseller classification; a license flag alone does not establish payment. Store supporting evidence and user approval privately.
 
@@ -57,7 +71,7 @@ The approach follows Microsoft's [agent business-value guidance](https://learn.m
 
 ## Private ingestion
 
-GitHub Pages **always displays fictional data**. Customer reports, mailbox metadata, approval evidence and normalized data belong outside this public repository and outside cloud-sync folders. The importer rejects a storage directory in any Git checkout, rejects common cloud-sync paths, and on Windows restricts storage ACLs to the current user and SYSTEM. Ingestion is manual; the public website has no mailbox or upload connection.
+GitHub Pages defaults to fictional data and also offers the explicitly labeled public PoC aggregate view. Private Actual Data, customer reports, mailbox metadata, approval evidence and private normalized data belong outside this public repository and outside cloud-sync folders. The importer rejects a storage directory in any Git checkout, rejects common cloud-sync paths, and on Windows restricts storage ACLs to the current user and SYSTEM. Ingestion is manual; the public website has no mailbox or upload connection.
 
 1. Save approved attachments to a private local directory, for example `%LOCALAPPDATA%\AIConsumptionDashboard\private\incoming`.
 2. Confirm source definitions, currency and cost scope. Convert the approved source to a UTF-8 CSV with exactly these columns (one complete monthly snapshot per customer):
