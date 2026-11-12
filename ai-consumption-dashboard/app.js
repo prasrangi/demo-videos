@@ -4,6 +4,7 @@ import {stackedBars,donutChart} from './charts.mjs';
 import {renderActualSection,actualExportRows,updateActualValueScenario} from './actual-view.mjs';
 import {defaultRoiAssumptions,aggregateCustomerRoi,roiExportRows} from './customer-roi.mjs';
 import {renderCustomerRoiPage,renderCustomerRoiResults,selectedRoiResults,readRoiControls} from './roi-view.mjs';
+import {publicPocDashboard} from './poc-adapter.mjs';
 
 const $ = selector => document.querySelector(selector);
 const escape = value => String(value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -19,6 +20,8 @@ let dataset=sampleData,rows=[],customer='all',month='2026-10',section='overview'
 let dataMode='sample',actualData=null,privateAvailable=false;
 let roiAssumptions={...defaultRoiAssumptions};
 const privateRequested = new URLSearchParams(location.search).get('private') === '1';
+const pocRequested = new URLSearchParams(location.search).get('source') === 'poc';
+const actualView = () => dataMode==='actual'||dataMode==='poc';
 const selectedRows = (m=month) => rows.filter(row=> row.month===m && (customer==='all'||row.customer===customer));
 const series = () => [...new Set(rows.map(r=>r.month))].sort().filter(m=>m<=month).slice(-6).map(m=>({...total(selectedRows(m)),month:m}));
 const comparison = () => total(selectedRows(previousMonth(month)));
@@ -76,10 +79,10 @@ function render() {
  section=location.hash.slice(1) in sections?location.hash.slice(1):'overview';
  const [label,title,subtitle]=sections[section];
  $('#breadcrumb').textContent=label;$('#page-title').textContent=title;$('#page-subtitle').textContent=subtitle;
- document.title=`${label} · ${dataMode==='actual'?'Actual Data':'Sample Data'} · AI Consumption Dashboard`;
+ document.title=`${label} · ${{sample:'Sample Data',poc:'PoC Actual Data',actual:'Actual Data'}[dataMode]} · AI Consumption Dashboard`;
  $('#export-label').textContent=dataMode==='sample'&&section==='value'?'Export ROI scenario':'Export data';
  document.querySelectorAll('nav a').forEach(a=>{const active=a.hash===`#${section}`;a.classList.toggle('active',active);if(active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
- if(dataMode==='actual'){
+ if(actualView()){
   $('#content').innerHTML=actualData?renderActualSection(section,actualData,{kpi,cardHead,metric,icon}):'';
   return;
  }
@@ -90,22 +93,22 @@ function render() {
  // Capacity meters avoid inline style so the strict Content Security Policy is respected.
  document.querySelectorAll('.progress span').forEach(el=>{const width=el.dataset.width;el.style.width=`${width||0}%`;});
 }
-function refreshScope() {if(dataMode==='actual')return;customer=$('#customer-filter').value;month=$('#month-filter').value;growth=baselineGrowth(series());render();}
+function refreshScope() {if(actualView())return;customer=$('#customer-filter').value;month=$('#month-filter').value;growth=baselineGrowth(series());render();}
 $('#navigation').innerHTML=Object.entries(sections).map(([id,[label]])=>`<a href="#${id}">${icon(id)}${label}</a>`).join('');
 $('#export-icon').innerHTML=icon('download');
 $('#customer-filter').addEventListener('change',refreshScope);$('#month-filter').addEventListener('change',refreshScope);
 window.addEventListener('hashchange',render);
 $('#content').addEventListener('click',event=>{const button=event.target.closest('[data-customer]');if(button){$('#customer-filter').value=button.dataset.customer;refreshScope();}});
 $('#content').addEventListener('input',event=>{
- if(dataMode==='actual'){if(event.target.id.startsWith('actual-')&&actualData)$('#export-button').disabled=updateActualValueScenario(actualData)===false;return;}
+ if(actualView()){if(event.target.id.startsWith('actual-')&&actualData)$('#export-button').disabled=updateActualValueScenario(actualData)===false;return;}
  if(event.target.hasAttribute('data-roi-assumption')){updateValue();return;}
  if(event.target.id==='growth'){growth=Number(event.target.value)/100;updateForecast();}
 });
 $('#export-button').addEventListener('click',()=>{
- if(dataMode==='actual'){
+ if(actualView()){
   if(!actualData)return;
   const fields=['report','metric','value','unit','period','sourceUpdatedAt','basis'];
-  downloadCSV(actualExportRows(actualData),fields,`ai-consumption-actual-${actualData.asOf}.csv`);
+  downloadCSV(actualExportRows(actualData),fields,`ai-consumption-${dataMode==='poc'?'poc-actual':'actual'}-${actualData.asOf}.csv`);
   $('#load-status').textContent='Actual source measures exported. Unavailable values remain explicit.';
   return;
  }
@@ -136,6 +139,16 @@ async function selectDataMode(mode){
    $('#scope-label').textContent='Scope';$('#period-label').textContent='Reporting snapshot';$('#customer-filter').setAttribute('aria-label','Scope');$('#month-filter').setAttribute('aria-label','Reporting snapshot');
    $('#asof').textContent='Actual reports · '+actualData.asOf;
    $('#mode-badge').textContent='ACTUAL DATA · PRIVATE';$('#sidebar-mode').textContent='Actual Data active';$('#sidebar-note').textContent='Four approved reports, read from private local storage.';$('#workspace-subtitle').textContent='Approved actual reports';$('#footer-label').textContent='Actual Data · private local view · customer-sensitive';
+  }else if(mode==='poc'){
+   $('#load-status').textContent='Loading public PoC Actual Data…';
+   const response=await fetch('./data/POC-reports.json',{cache:'no-store'});if(!response.ok)throw new Error('PoC Actual Data could not be loaded. You can switch to Sample Data.');
+   actualData=publicPocDashboard(await response.json());
+   $('#customer-filter').innerHTML='<option value="all">Public PoC aggregate</option>';
+   $('#month-filter').innerHTML=`<option>${escape(actualData.asOf)} snapshot</option>`;
+   $('#customer-filter').disabled=true;$('#month-filter').disabled=true;
+   $('#scope-label').textContent='Scope';$('#period-label').textContent='Reporting snapshot';$('#customer-filter').setAttribute('aria-label','Scope');$('#month-filter').setAttribute('aria-label','Reporting snapshot');
+   $('#asof').textContent='PoC reports · '+actualData.asOf;
+   $('#mode-badge').textContent='POC ACTUAL DATA · PUBLIC';$('#sidebar-mode').textContent='PoC Actual Data active';$('#sidebar-note').textContent='Validated aggregate view; source identifiers are not rendered.';$('#workspace-subtitle').textContent='Public PoC aggregate';$('#footer-label').textContent='PoC Actual Data · reporting scopes preserved · identifiers hidden in UI';
   }else{
    dataset=sampleData;rows=validateRows(dataset.rows);month=[...new Set(rows.map(r=>r.month))].sort().at(-1);
    $('#customer-filter').innerHTML='<option value="all">All customers</option>'+[...new Set(rows.map(r=>r.customer))].sort().map(name=>`<option value="${escape(name)}">${escape(name)}</option>`).join('');
@@ -146,9 +159,9 @@ async function selectDataMode(mode){
    $('#mode-badge').textContent='FICTIONAL SAMPLE DATA';$('#sidebar-mode').textContent='Sample Data active';$('#sidebar-note').textContent='Explore the portfolio with fictional data.';$('#workspace-subtitle').textContent='Fictional sample portfolio';$('#footer-label').textContent='Fictional portfolio · USD · No customer data';
    growth=baselineGrowth(series());
   }
-  const url=new URL(location.href);if(mode==='actual')url.searchParams.set('private','1');else url.searchParams.delete('private');history.replaceState(null,'',url.pathname+url.search+url.hash);
+  const url=new URL(location.href);if(mode==='actual')url.searchParams.set('private','1');else url.searchParams.delete('private');if(mode==='poc')url.searchParams.set('source','poc');else url.searchParams.delete('source');history.replaceState(null,'',url.pathname+url.search+url.hash);
   $('#load-status').textContent='';$('#export-button').disabled=false;render();
- }catch(error){actualData=null;$('#load-status').className='notice error';$('#load-status').textContent=error.message;$('#mode-badge').textContent='ACTUAL DATA UNAVAILABLE';$('#sidebar-mode').textContent='Actual Data unavailable';$('#sidebar-note').textContent='Select Sample Data to explore fictional data.';$('#workspace-subtitle').textContent='Private source unavailable';$('#footer-label').textContent='Actual source unavailable · no sample values substituted';$('#customer-filter').innerHTML='';$('#month-filter').innerHTML='';$('#customer-filter').disabled=true;$('#month-filter').disabled=true;}
+ }catch(error){actualData=null;$('#load-status').className='notice error';$('#load-status').textContent=error.message;$('#mode-badge').textContent='ACTUAL DATA UNAVAILABLE';$('#sidebar-mode').textContent=`${mode==='poc'?'PoC Actual':'Actual'} Data unavailable`;$('#sidebar-note').textContent='Select Sample Data to explore fictional data.';$('#workspace-subtitle').textContent='Actual source unavailable';$('#footer-label').textContent='Actual source unavailable · no sample values substituted';$('#customer-filter').innerHTML='';$('#month-filter').innerHTML='';$('#customer-filter').disabled=true;$('#month-filter').disabled=true;}
  finally{$('#data-source').disabled=false;}
 }
 $('#data-source').addEventListener('change',event=>selectDataMode(event.target.value));
@@ -157,7 +170,7 @@ async function initialize(){
   try{const response=await fetch('./api/capabilities',{cache:'no-store'});if(response.ok)privateAvailable=(await response.json()).privateMode===true;}catch{}
  }
  $('#data-source option[value="actual"]').disabled=!privateAvailable;
- $('#data-source').title=privateAvailable?'Choose fictional Sample Data or approved private Actual Data.':'Actual Data is available in the private dashboard on this computer.';
- await selectDataMode(privateRequested?'actual':'sample');
+ $('#data-source').title=privateAvailable?'Choose Sample Data, public PoC Actual Data, or approved private Actual Data.':'Choose Sample Data or public PoC Actual Data. Private Actual Data is available only on the local dashboard.';
+ await selectDataMode(privateRequested?'actual':pocRequested?'poc':'sample');
 }
 initialize();
