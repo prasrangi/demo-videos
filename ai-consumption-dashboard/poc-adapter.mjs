@@ -76,7 +76,7 @@ export function publicPocDashboard(source){
  count(azure.metricResponses,'Azure metric responses',{integer:true});count(azure.metricSamples,'Azure metric samples',{integer:true});count(azure.excludedCostRows,'excluded Azure cost rows',{integer:true});
  unavailable(azure.mau,'Azure MAU');unavailable(azure.pau,'Azure PAU');
 
- return {version:1,fictional:false,publicPoc:true,asOf:source.asOf,scope:'Public PoC aggregate',currency:'USD',sourceAssurance:{nativeExportsVerified:source.sourceVerifiedAsNativeExports,approvalManifestComplete:source.approvalManifestComplete},
+ return {version:1,fictional:false,publicPoc:true,asOf:source.asOf,scope:'CEL aggregate',currency:'USD',sourceAssurance:{nativeExportsVerified:source.sourceVerifiedAsNativeExports,approvalManifestComplete:source.approvalManifestComplete},
   credits:{prepaid,payg,total,capacity,remaining:Math.max(0,capacity-prepaid),sourceUpdatedAt:credit.lastUpdated,period:creditReport.period},
   costs:{azure:azureCost,copilot:null,total:null,azurePeriod:azureReport.period},
   adoption:{mau:null,pau:null},value:{hoursSaved:null,benefit:null,net:null,roi:null},
