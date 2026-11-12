@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="AI consumption and business value dashboard with sample data and a private actual-data view.">
+  <meta name="description" content="AI consumption and business value dashboard with sample, public PoC, and private actual-data views.">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
   <title>AI Consumption Dashboard</title>
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
@@ -20,7 +20,7 @@
     <div class="sidebar-bottom"><div class="source-status"><span class="status-dot"></span><strong id="sidebar-mode">Sample data active</strong><p id="sidebar-note">Explore the portfolio with fictional data.</p></div><div class="profile"><span>PR</span><div>Portfolio manager<small>AI consumption & value</small></div></div></div>
   </aside>
   <div class="main-shell">
-    <header class="topbar"><div class="breadcrumb">Workspace <span>/</span> <strong id="breadcrumb">Overview</strong></div><div class="data-controls"><label class="data-selector" for="data-source">Data source<select id="data-source" aria-label="Data source"><option value="sample">Sample Data</option><option value="actual" disabled>Actual Data</option></select></label><span class="demo-badge" id="mode-badge"><span></span> FICTIONAL SAMPLE DATA</span></div></header>
+    <header class="topbar"><div class="breadcrumb">Workspace <span>/</span> <strong id="breadcrumb">Overview</strong></div><div class="data-controls"><label class="data-selector" for="data-source">Data source<select id="data-source" aria-label="Data source"><option value="sample">Sample Data</option><option value="poc">PoC Actual Data</option><option value="actual" disabled>Actual Data (private)</option></select></label><span class="demo-badge" id="mode-badge"><span></span> FICTIONAL SAMPLE DATA</span></div></header>
     <main id="main" tabindex="-1">
       <div class="page-heading"><div><p class="eyebrow">YOUR AI PORTFOLIO, IN FOCUS</p><h1 id="page-title">Consumption overview</h1><p id="page-subtitle">Understand adoption, manage spend, and see what AI delivers.</p></div><button id="export-button" class="button button-secondary" type="button"><span id="export-icon"></span><span id="export-label">Export data</span></button></div>
       <div class="filterbar"><div class="filters"><label><span id="scope-label">Customer</span><select id="customer-filter" aria-label="Customer"></select></label><label><span id="period-label">Reporting period</span><select id="month-filter" aria-label="Reporting period"></select></label></div><div class="asof"><span class="status-dot"></span><span id="asof">Sample snapshot · 31 Oct 2026</span></div></div>
