@@ -166,6 +166,9 @@ h1,h2{font-family:var(--display);font-weight:700;margin:0;text-wrap:balance;line
 .tool{height:36px;padding:0 11px;display:inline-flex;align-items:center;gap:7px;border-radius:9px;border:1px solid var(--line);background:rgba(255,255,255,.04);font-size:13px;white-space:nowrap}
 .tool:hover{background:rgba(255,255,255,.1)}
 .tool[aria-pressed="true"]{border-color:rgba(245,183,89,.6);color:var(--accent)}
+.tool[disabled]{opacity:.42;cursor:default}
+.tool[disabled]:hover{background:rgba(255,255,255,.04)}
+#bPause{height:40px;padding:0 14px;border-radius:10px;font-weight:600;font-size:15px}
 .tool svg{width:16px;height:16px;flex:none}
 #bBack,#bNext{height:40px;padding:0 16px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.05);font-weight:600;white-space:nowrap}
 #bNext{background:var(--accent);border-color:var(--accent);color:#1b1304;min-width:128px}
@@ -303,6 +306,7 @@ kbd{font:600 12px var(--body);padding:2px 7px;border-radius:5px;border:1px solid
       <button class="tool" id="bFs" title="Full screen (F)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg><span>Full screen</span></button>
       <button class="tool" id="bHelp" title="Keys and controls (?)" aria-label="Keys and controls">?</button>
       <button id="bBack">Back</button>
+      <button class="tool" id="bPause" disabled aria-pressed="false" title="Pause or resume the recording (P)"><svg viewBox="0 0 16 16" fill="currentColor"><path id="pzA" d="M4 3h3v10H4zM9 3h3v10H9z"/><path id="pzB" d="M4 3v10l9-5z" style="display:none"/></svg><span id="pzT">Pause</span></button>
       <button id="bNext" disabled>Start</button>
     </div>
   </footer>
@@ -313,6 +317,7 @@ kbd{font:600 12px var(--body);padding:2px 7px;border-radius:5px;border:1px solid
     <h3>Keys and controls</h3>
     <dl>
       <dt><kbd>Space</kbd> <kbd>Enter</kbd> <kbd>&rarr;</kbd></dt><dd>Continue. While the recording plays, skip ahead to the next stop.</dd>
+      <dt><kbd>P</kbd></dt><dd>Pause the recording while it plays, and resume it. While paused, <kbd>Space</kbd> also resumes and <kbd>&rarr;</kbd> skips ahead.</dd>
       <dt><kbd>&larr;</kbd></dt><dd>Back one stop, without playing.</dd>
       <dt><kbd>+</kbd> <kbd>&minus;</kbd> <kbd>0</kbd></dt><dd>Zoom in, zoom out, reset. You can also scroll over the recording, double-click a spot, and drag to move.</dd>
       <dt><kbd>M</kbd></dt><dd>Sound on or off. With sound off, long dictation is fast forwarded.</dd>
@@ -487,14 +492,15 @@ function hashOf(p){var n=N[p];return n.type==='title'?'start':n.type==='agenda'?
 function fromHash(){var h=(location.hash||'').replace('#','');if(!h)return null;for(var p=0;p<N.length;p++)if(hashOf(p)===h)return p;return null}
 function setHash(){var h='#'+hashOf(pos);if(location.hash===h)return;try{history.replaceState(null,'',h)}catch(_){try{location.hash=h}catch(__){}}}
 function stopAuto(){clearTimeout(autoT);autoT=0}
-function armAuto(){stopAuto();if(!auto||mode==='playing')return;var n=N[pos],ms;
+function armAuto(){stopAuto();if(!auto||mode!=='idle')return;var n=N[pos],ms;
   if(n.type==='step'){var st=S[n.sec].steps[n.step];ms=2600+st.caption.length*42}else if(n.type==='card')ms=6000;else return;
   autoT=setTimeout(function(){if(auto)next()},ms)}
 
 function render(){
   var n=N[pos],tag=$('tag'),sec=n.sec!=null?S[n.sec]:null,st=n.type==='step'?sec.steps[n.step]:null;
   tag.className='';
-  if(mode==='playing'&&target){var tn=N[target.pos],ts=S[tn.sec].steps[tn.step];tag.textContent='Playing';$('ttl').textContent='Next: '+ts.label;$('cap').textContent='Press Space or Skip ahead to jump to the next stop.';
+  if(mode!=='idle'&&target){var tn=N[target.pos],ts=S[tn.sec].steps[tn.step],pz=mode==='paused';tag.textContent=pz?'Paused':'Playing';$('ttl').textContent='Next: '+ts.label;
+    $('cap').textContent=pz?'Paused. Press P or Resume to carry on, or Skip ahead to jump to the next stop.':'Press P to pause, or Space to skip ahead to the next stop.';
     $('where').textContent='Section '+(tn.sec+1)+' of '+S.length+' · Step '+(tn.step+1)+' of '+S[tn.sec].steps.length}
   else if(n.type==='title'){tag.textContent='Start';$('ttl').textContent=D.title.title+' click-through';$('cap').textContent=ready?'Press Start. The recording pauses at every prompt and every result.':'Loading the recording.';$('where').textContent=S.length+' sections · '+STEPS+' steps'}
   else if(n.type==='agenda'){tag.textContent='Agenda';$('ttl').textContent='What this demo covers';$('cap').textContent='Pick a section, or continue to section 1.';$('where').textContent=S.length+' sections · '+STEPS+' steps'}
@@ -502,16 +508,18 @@ function render(){
   else if(n.type==='end'){tag.textContent='Recap';$('ttl').textContent='What we covered';$('cap').textContent='Pick a section to replay it.';$('where').textContent=S.length+' sections · '+STEPS+' steps'}
   else{tag.textContent=st.kind==='prompt'?'Prompt':'Result';tag.className=st.kind==='prompt'?'p':'r';$('ttl').textContent=st.label;$('cap').textContent=st.caption;
     $('where').textContent='Section '+sec.n+' of '+S.length+' · Step '+(n.step+1)+' of '+sec.steps.length}
-  $('bNext').textContent=mode==='playing'?'Skip ahead':n.type==='title'?'Start':n.type==='end'?'Replay':'Continue';
+  $('bNext').textContent=mode!=='idle'?'Skip ahead':n.type==='title'?'Start':n.type==='end'?'Replay':'Continue';
   $('bNext').disabled=!ready;$('bBack').disabled=!ready||pos===0;
+  var pb=$('bPause'),pzd=mode==='paused';pb.disabled=mode==='idle';pb.setAttribute('aria-pressed',pzd?'true':'false');
+  $('pzT').textContent=pzd?'Resume':'Pause';$('pzA').style.display=pzd?'none':'';$('pzB').style.display=pzd?'':'none';
   $('rHome').classList.toggle('on',n.type==='title'||n.type==='agenda');$('rEnd').classList.toggle('on',n.type==='end');
-  var cur=mode==='playing'&&target?N[target.pos]:n;
+  var cur=mode!=='idle'&&target?N[target.pos]:n;
   Array.prototype.forEach.call(document.querySelectorAll('#rSecs .sec'),function(el,i){
     var on=cur.sec===i;el.classList.toggle('on',on);el.classList.toggle('done',cur.type==='end'||cur.sec!=null&&i<cur.sec);
-    Array.prototype.forEach.call(el.querySelectorAll('.tick'),function(tk,j){tk.classList.toggle('cur',on&&n.type==='step'&&n.sec===i&&n.step===j&&mode!=='playing');tk.classList.toggle('seen',!!seen[i+'-'+j])});
+    Array.prototype.forEach.call(el.querySelectorAll('.tick'),function(tk,j){tk.classList.toggle('cur',on&&n.type==='step'&&n.sec===i&&n.step===j&&mode==='idle');tk.classList.toggle('seen',!!seen[i+'-'+j])});
     if(on&&el.scrollIntoView&&el.parentNode.scrollWidth>el.parentNode.clientWidth)el.parentNode.scrollLeft=Math.max(0,el.offsetLeft-el.parentNode.offsetLeft-40)});
 }
-function focusNext(){if(!$('help').hidden)return;var b=slide===$('sTitle')?$('bStart'):$('bNext');try{b.focus({preventScroll:true})}catch(_){}}
+function focusNext(){if(!$('help').hidden)return;var b=slide===$('sTitle')?$('bStart'):mode==='paused'?$('bPause'):$('bNext');try{b.focus({preventScroll:true})}catch(_){}}
 
 /* show a node, paused, without playing */
 function go(p,instant){
@@ -527,6 +535,8 @@ function go(p,instant){
   render();setHash();focusNext();armAuto();
 }
 function landed(st,anim){
+  /* keep the presenter's own zoom only if they are still zoomed in; a reset hands control back */
+  if(manual&&Z.z<=1.001)manual=false;
   if(st.kind==='prompt'){if(!manual)zoomRect(st.rect,anim!==false);setHl(st.rect)}
   else{setHl(st.mark||null,true);if(!manual)zoomReset(anim!==false);if(!landed.hinted){landed.hinted=true;$('hint').classList.add('on');setTimeout(function(){$('hint').classList.remove('on')},5200)}}
 }
@@ -551,7 +561,7 @@ function prime(){ /* first click: let the browser know this video may play with 
 }
 function next(){
   if(!ready)return;
-  if(mode==='playing'){if(target){v.pause();arrive()}return}
+  if(mode!=='idle'){if(target){v.pause();arrive()}return}
   var n=N[pos];prime();
   if(n.type==='title'){go(1);return}
   if(n.type==='agenda'){go(S[0].cardPos);return}
@@ -562,7 +572,12 @@ function next(){
   if(n.step+1<sec.steps.length)playTo(sec.steps[n.step+1].pos);
   else go(n.sec+1<S.length?S[n.sec+1].cardPos:END);
 }
-function back(){if(!ready||pos===0)return;if(mode==='playing'){go(pos);return}go(pos-1)}
+function back(){if(!ready||pos===0)return;if(mode!=='idle'){go(pos);return}go(pos-1)}
+/* pause and resume while the recording plays between two stops */
+function togglePause(){
+  if(mode==='playing'){v.pause();v.playbackRate=1;mode='paused';$('ff').classList.remove('on');render();try{$('bPause').focus({preventScroll:true})}catch(_){}}
+  else if(mode==='paused'){mode='playing';render();playV();focusNext()}
+}
 
 /* frame loop: arrival at the stop, zoom while a prompt is entered, fast-forward label */
 function loop(){
@@ -584,6 +599,7 @@ function loop(){
 /* ---------- controls ---------- */
 function click(id,fn){$(id).addEventListener('click',function(e){fn(e);if(id!=='bNext'&&id!=='bStart')focusNext()})}
 click('bNext',next);click('bStart',next);click('bBack',back);
+$('bPause').addEventListener('click',togglePause);
 click('bZi',function(){stepZoom(1.25)});click('bZo',function(){stepZoom(.8)});click('bZr',function(){manual=true;zoomReset(true)});
 function toggleSound(){soundOn=!soundOn;v.muted=!soundOn;sndUI()}
 function toggleAuto(){auto=!auto;$('bAuto').setAttribute('aria-pressed',auto?'true':'false');if(auto)armAuto();else stopAuto()}
@@ -603,7 +619,8 @@ document.addEventListener('keydown',function(e){
   if(e.ctrlKey||e.metaKey||e.altKey)return;
   var k=e.key,onBtn=/^(BUTTON|A|INPUT|SELECT|TEXTAREA)$/.test((e.target&&e.target.tagName)||'');
   if(!$('help').hidden){if(k==='Escape'||k==='?'){e.preventDefault();toggleHelp(false)}return}
-  if(k===' '||k==='Enter'){if(onBtn)return;e.preventDefault();next()}
+  if(k===' '||k==='Enter'){if(onBtn)return;e.preventDefault();if(mode==='paused')togglePause();else next()}
+  else if(k==='p'||k==='P'){e.preventDefault();togglePause()}
   else if(k==='ArrowRight'||k==='PageDown'){e.preventDefault();next()}
   else if(k==='ArrowLeft'||k==='PageUp'){e.preventDefault();back()}
   else if(k==='+'||k==='='){e.preventDefault();stepZoom(1.25)}
@@ -618,10 +635,10 @@ document.addEventListener('keydown',function(e){
   else if(k==='End'){e.preventDefault();go(END)}
   else if(k==='Escape'){if(document.body.classList.contains('bare'))toggleBare(false);else if(Z.z>1.001){manual=true;zoomReset(true)}}
 });
-window.addEventListener('hashchange',function(){var h=fromHash();if(h!=null&&h!==pos&&ready&&mode!=='playing')go(h,true)});
+window.addEventListener('hashchange',function(){var h=fromHash();if(h!=null&&h!==pos&&ready&&mode==='idle')go(h,true)});
 
 sndUI();layout();render();loadVideo();requestAnimationFrame(loop);
-window.__demo={state:function(){return{pos:pos,mode:mode,node:N[pos],t:v.currentTime,zoom:Z.z,cx:Z.cx,cy:Z.cy,ready:ready,sound:soundOn,rate:v.playbackRate,hl:hl.classList.contains('on'),mark:hl.classList.contains('mark'),slide:slide?slide.id:null,total:N.length,hash:location.hash}},nodes:N};
+window.__demo={state:function(){return{pos:pos,mode:mode,node:N[pos],t:v.currentTime,zoom:Z.z,cx:Z.cx,cy:Z.cy,ready:ready,sound:soundOn,rate:v.playbackRate,vpaused:v.paused,hl:hl.classList.contains('on'),mark:hl.classList.contains('mark'),slide:slide?slide.id:null,total:N.length,hash:location.hash}},nodes:N};
 })();
 </script>
 </body>

@@ -39,6 +39,7 @@ Section 5 opens with the seller's access: Account (read-only); Opportunity (read
 |---|---|
 | Space, Enter, Right arrow | Continue. While the recording plays, skip ahead to the next stop |
 | Left arrow | Back one stop, without playing |
+| P | Pause the recording while it plays, and resume it. The Pause button next to Continue does the same |
 | + / - / 0 | Zoom in, zoom out, reset |
 | M | Sound on or off. With sound off, long dictation is fast forwarded |
 | A | Auto-play: moves on by itself after each stop |
