@@ -3,442 +3,608 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>CRM Assist click-through</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%228%22 fill=%22%234c9aff%22/%3E%3Cpath d=%22m12 9 9 7-9 7z%22 fill=%22%230b1426%22/%3E%3C/svg%3E">
+<title>CRM Assist Click-Through Demo</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b1222'/%3E%3Cpath d='M12 9v14l11-7z' fill='%23f5b759'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Sora:wght@600;700&display=swap" rel="stylesheet">
 <style>
-/* VOICE: calm, confident product walkthrough for a sales audience.
-   IDEA: a presenter's control booth: the recording is the stage, everything else frames it.
-   PICTURE: the recording itself, zoomed and spotlit at each step; topic cards between sections.
-   COLOUR and TYPE: deep navy stage, one blue accent, warm amber only for fast-forward; Inter.
-   LAYOUT: top bar (chapter rail), stage centre, caption bar and controls below. */
-:root{color-scheme:dark;--bg:#0b1426;--bg2:#101d36;--panel:#14233f;--line:#2a3d63;--ink:#eef3fb;--mut:#a9b8d2;--acc:#4c9aff;--acc2:#8fc0ff;--ff:#ffb040;--ok:#3ecf8e}
+/* Layout idea: rail on top, the 16:9 recording in the middle at full frame, one control bar below.
+   Slides (title, agenda, section cards, recap) wipe in over the recording. Single dark theme by choice. */
+:root{
+  color-scheme:dark;
+  --ink:#070b14; --navy:#0b1222; --panel:#131d35; --line:rgba(255,255,255,.12);
+  --text:#f1f5fa; --muted:#a6b2c9; --dim:#74819c;
+  --accent:#f5b759; --blue:#6f9cf5; --copper:#c9793f;
+  --display:"Sora","Segoe UI",system-ui,sans-serif;
+  --body:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --wipe:.62s;
+}
+*{box-sizing:border-box}
 [hidden]{display:none!important}
-*{box-sizing:border-box;min-width:0}
-html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:16px/1.5 Inter,"Segoe UI",system-ui,-apple-system,Arial,sans-serif;overflow:hidden}
+html,body{height:100%;margin:0}
+body{background:var(--ink);color:var(--text);font-family:var(--body);font-size:15px;line-height:1.45;overflow:hidden;-webkit-font-smoothing:antialiased}
 button{font:inherit;color:inherit;cursor:pointer}
-:focus-visible{outline:3px solid var(--acc2);outline-offset:2px}
-.app{display:grid;grid-template-rows:auto minmax(0,1fr) auto;height:100%}
-/* top bar */
-.top{display:flex;align-items:center;gap:14px;padding:10px 18px;border-bottom:1px solid var(--line);background:var(--bg2)}
-.brand{font-weight:700;font-size:15px;white-space:nowrap}
-.brand small{display:block;font-weight:500;color:var(--mut);font-size:12.5px}
-.rail{display:flex;gap:6px;overflow-x:auto;flex:1;padding:2px;scrollbar-width:thin}
-.rail button{flex:none;display:flex;align-items:center;gap:7px;min-height:40px;padding:6px 11px;border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--mut);font-size:13.5px}
-.rail button .n{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#1d2f52;color:var(--ink);font-size:12px;font-weight:700}
-.rail button[aria-current="step"]{border-color:var(--acc);color:var(--ink);background:#16294a}
-.rail button[aria-current="step"] .n{background:var(--acc);color:#06132b}
-.rail button.done .n{background:#24416f}
-.rail .chap{flex:none;align-self:center;color:var(--mut);font-size:12px;font-weight:600;padding:0 4px 0 10px;border-left:1px solid var(--line);white-space:nowrap}
-.rail .chap:first-child{border-left:0;padding-left:0}
-.icon{width:20px;height:20px;flex:none}
+button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#app{height:100%;display:flex;flex-direction:column;min-width:0}
+
+/* rail */
+#rail{flex:none;display:flex;align-items:center;gap:6px;padding:6px 12px;background:var(--navy);border-bottom:1px solid var(--line);min-width:0}
+#rSecs{display:flex;gap:6px;flex:1;min-width:0;overflow-x:auto;scrollbar-width:none}
+#rSecs::-webkit-scrollbar{display:none}
+.ico{flex:none;width:36px;height:32px;display:grid;place-items:center;background:transparent;border:1px solid transparent;border-radius:8px;color:var(--muted)}
+.ico:hover,.ico.on{color:var(--accent);border-color:var(--line)}
+.ico svg{width:17px;height:17px}
+.sec{display:flex;align-items:center;flex:none;border:1px solid var(--line);border-radius:9px;background:rgba(255,255,255,.03)}
+.sec.on{border-color:rgba(245,183,89,.6);background:rgba(245,183,89,.08)}
+.sec.done .pill b{color:var(--accent)}
+.pill{display:flex;align-items:center;gap:8px;height:32px;padding:0 11px;background:none;border:0;color:var(--muted);white-space:nowrap;font-size:13px;font-weight:500}
+.pill b{font-family:var(--display);font-weight:700;font-size:13px;color:var(--dim);font-variant-numeric:tabular-nums}
+.sec.on .pill{color:var(--text)} .sec.on .pill b{color:var(--accent)}
+.ticks{display:none;align-items:center;padding-right:6px}
+.sec.on .ticks{display:flex}
+.tick{width:20px;height:32px;display:grid;place-items:center;background:none;border:0;padding:0}
+.tick i{display:block;width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.22)}
+.tick.p i{border-radius:1px;transform:rotate(45deg)}
+.tick.seen i{background:rgba(245,183,89,.55)} .tick.cur i{background:var(--accent);box-shadow:0 0 0 3px rgba(245,183,89,.25)}
+.tick:hover i{background:var(--text)}
+
 /* stage */
-.stagewrap{position:relative;display:grid;place-items:center;padding:14px;overflow:hidden}
-.stage{position:relative;width:min(100%,calc((100vh - 230px) * 1760 / 918));aspect-ratio:1760/918;border-radius:14px;overflow:hidden;background:#0b1426;box-shadow:0 18px 50px rgba(0,0,0,.45),0 0 0 1px rgba(255,255,255,.07)}
-.zoom{position:absolute;inset:0;transform-origin:0 0;transition:transform .9s cubic-bezier(.2,.7,.2,1)}
-.zoom video{position:absolute;inset:0;width:100%;height:100%;display:block}
-.spot{position:absolute;border:3px solid var(--acc2);border-radius:10px;box-shadow:0 0 0 9999px rgba(4,10,22,.55),0 0 24px rgba(76,154,255,.55);pointer-events:none;opacity:0;transition:opacity .45s,left .9s,top .9s,width .9s,height .9s}
-.spot.on{opacity:1}
-.spot.lite{box-shadow:0 0 0 9999px rgba(4,10,22,.18),0 0 24px rgba(76,154,255,.55)}
-.badge{position:absolute;top:12px;right:12px;display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;background:var(--ff);color:#241500;font-weight:700;font-size:14px;opacity:0;transition:opacity .25s;pointer-events:none}
-.badge.on{opacity:1}
-.pausechip{position:absolute;top:12px;left:12px;padding:5px 11px;border-radius:999px;background:rgba(11,20,38,.82);border:1px solid var(--line);color:var(--mut);font-size:13px;pointer-events:none}
-/* cards (title, topic, end) */
-.card{position:absolute;inset:14px;border-radius:14px;overflow:auto;container-type:size;display:grid;place-items:center;padding:3% 5%;box-shadow:0 18px 50px rgba(0,0,0,.45),0 0 0 1px rgba(255,255,255,.07);background:radial-gradient(circle at 85% 10%,rgba(76,154,255,.22),transparent 45%),radial-gradient(circle at 8% 100%,rgba(60,110,210,.18),transparent 40%),linear-gradient(135deg,#0a1325,#13254a);z-index:5}
-.card .inner{width:100%;max-width:1060px}
-.peek{display:none;margin:0}
-.peek img{display:block;width:100%;max-height:62cqh;object-fit:cover;object-position:top;border-radius:12px;box-shadow:0 22px 50px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.12);transform:perspective(1200px) rotateY(-7deg) rotateZ(.6deg)}
-.peek figcaption{margin-top:10px;color:var(--mut);font-size:13px}
-@container (min-width:820px){.inner.split{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:4.5cqw;align-items:center;max-width:none}.peek{display:block}}
-.kick{color:var(--acc2);font-weight:700;font-size:clamp(12px,min(1.6cqw,3cqh),16px);letter-spacing:.04em}
-.card h1,.card h2{margin:.2em 0 .3em;font-size:clamp(20px,min(4.6cqw,8.5cqh),52px);line-height:1.08;text-wrap:balance}
-.card p{margin:0 0 .9em;color:#c8d4ea;font-size:clamp(14px,min(1.9cqw,3.6cqh),20px);max-width:62ch}
-.chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 1.2em;padding:0;list-style:none}
-.chips li{padding:4px 12px;border-radius:999px;border:1px solid #35507f;background:rgba(20,35,63,.8);font-size:clamp(12px,min(1.5cqw,2.8cqh),15px);color:#dbe6f7}
-.secnum{display:flex;align-items:baseline;gap:14px}
-.secnum b{font-size:clamp(34px,min(8cqw,15cqh),96px);line-height:1;color:var(--acc)}
-.secnum span{color:#b6c4dc;font-weight:600;font-size:clamp(12px,min(1.6cqw,3cqh),16px)}
-.dots{display:flex;gap:7px;margin:0 0 1.1em}
-.dots i{width:9px;height:9px;border-radius:50%;background:#2c4470}
-.dots i.d{background:#6f8fc4}.dots i.c{width:24px;border-radius:5px;background:var(--acc)}
-.primary{display:inline-flex;align-items:center;gap:10px;min-height:48px;padding:10px 22px;border:0;border-radius:12px;background:var(--acc);color:#05112a;font-weight:700;font-size:16px}
-.primary[disabled]{opacity:.6;cursor:wait}
-.ghost{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:8px 16px;border:1px solid var(--line);border-radius:12px;background:transparent;font-weight:600}
-.recap{list-style:none;margin:0 0 1em;padding:0;display:grid;gap:min(10px,1.6cqh)}
-.recap li{display:flex;gap:12px;align-items:flex-start;font-size:clamp(14px,min(2cqw,3.7cqh),20px)}
-.recap li svg{flex:none;margin-top:3px}
-.legend{margin-top:1em;font-size:13px;color:var(--mut)}
-.endnav{display:flex;flex-wrap:wrap;gap:6px 14px;margin:0 0 1em;padding:0;list-style:none}
-.endnav button{min-height:32px;border:0;background:none;padding:0;color:var(--acc2);font-size:clamp(12px,min(1.5cqw,2.7cqh),15px);text-decoration:underline;text-underline-offset:3px}
-.cardbtns{display:flex;flex-wrap:wrap;gap:10px}
-/* caption + controls */
-.bottom{border-top:1px solid var(--line);background:var(--bg2);padding:10px 18px 12px;display:grid;gap:10px}
-.capline{display:flex;gap:14px;align-items:flex-start;min-height:52px}
-.where{flex:none;padding:4px 10px;border-radius:8px;background:#1b2d50;color:var(--acc2);font-weight:700;font-size:13px;white-space:nowrap;margin-top:2px}
-.cap{margin:0;font-size:clamp(15px,1.35vw,19px);line-height:1.4;max-width:110ch}
-.ctrls{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
-.ctrls .sp{flex:1}
-.ctrls button{min-height:44px}
-.prog{height:4px;border-radius:2px;background:#22355a;overflow:hidden}
-.prog i{display:block;height:100%;width:0;background:var(--acc)}
-.switch{display:inline-flex;align-items:center;gap:8px;color:var(--mut);font-size:14px;min-height:44px;padding:0 6px;cursor:pointer}
-.switch input{width:18px;height:18px;accent-color:var(--acc)}
-.keys{color:var(--mut);font-size:13px}
-/* notes panel and tips */
-.notes{position:fixed;right:16px;bottom:120px;width:min(420px,calc(100vw - 32px));max-height:60vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;box-shadow:0 18px 40px rgba(0,0,0,.5);z-index:20}
-.notes h3{margin:0 0 6px;font-size:15px}.notes p{margin:0 0 10px;font-size:14px;color:#d5def0}
-.notes .x{float:right;min-height:36px}
-.tip{position:fixed;z-index:30;max-width:320px;padding:10px 12px;border-radius:10px;background:#f4f7fd;color:#0b1426;font-size:13.5px;line-height:1.4;box-shadow:0 10px 30px rgba(0,0,0,.45);pointer-events:auto}
-.tip b{display:block;margin-bottom:2px}
-.rotate{display:none}
-@media (max-height:520px){.keys,.prog{display:none}.capline{min-height:0}.cap{font-size:14px}.bottom{padding:6px 10px;gap:6px}.top{padding:6px 10px}.ctrls{gap:6px}.ctrls button,.ctrls .ghost,.switch{min-height:40px}.stagewrap{padding:8px}.card{inset:8px}}
-@media (max-width:600px){.endnav{display:none}}
-@media (max-width:760px){.brand small,.keys{display:none}.top{padding:8px 10px}.bottom{padding:8px 10px}.where{display:none}}
-@media (max-width:600px) and (orientation:portrait){.rotate{display:block;position:fixed;left:10px;right:10px;bottom:10px;z-index:25;padding:8px 12px;border-radius:10px;background:var(--panel);border:1px solid var(--line);font-size:13px;color:var(--mut)}}
-@media (prefers-reduced-motion:reduce){.zoom,.spot{transition:none!important}}
-@media print{@page{size:A4 landscape;margin:12mm}html,body{overflow:visible!important;height:auto!important;background:#fff}.app,.notes,.tip,.rotate{display:none!important}.print{display:block!important}}
-html.printmode,html.printmode body{overflow:auto;height:auto;background:#fff}html.printmode .app{display:none}html.printmode .print{display:block}
-.print{display:none;color:#0b1426;background:#fff;font-size:13px;padding:12px}
-.print .noprint{display:flex;gap:12px;align-items:center;color:#334}.print .back2{color:#0b1426;border-color:#99a}
-@media print{.print .noprint{display:none!important}}
-a.ghost{text-decoration:none;color:var(--ink)}
-.print section{break-after:page;padding:8px 4px}
-.print h2{margin:0 0 6px;font-size:22px}.print p{margin:0 0 6px;max-width:none}.print .pk{color:#3a5a8c;font-weight:700;font-size:12px}.print .pn{color:#334}
-.print .pg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:8px}
-.print figure{margin:0;break-inside:avoid}.print img{width:100%;border:1px solid #ccd;border-radius:6px;display:block}.print figcaption{font-size:12px;line-height:1.35;margin-top:4px}
+#wrap{flex:1;min-height:0;position:relative;overflow:hidden;background:#04060b}
+#stage{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);overflow:hidden;background:#000;touch-action:none}
+#stage.zoomed{cursor:grab} #stage.drag{cursor:grabbing}
+#zoomer{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0;will-change:transform}
+#zoomer.anim{transition:transform .7s cubic-bezier(.22,.8,.2,1)}
+#v{position:absolute;inset:0;width:1920px;height:1080px;display:block;background:#000}
+#hl{position:absolute;border:calc(3px / var(--s,1)) solid var(--accent);border-radius:14px;box-shadow:0 0 0 4000px rgba(4,7,13,.46);opacity:0;transition:opacity .35s;pointer-events:none}
+#hl.on{opacity:1}
+.badge{position:absolute;right:14px;bottom:14px;display:flex;align-items:center;gap:8px;padding:7px 14px;border-radius:999px;background:rgba(9,14,27,.92);border:1px solid rgba(245,183,89,.6);color:var(--accent);font-weight:600;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none}
+.badge.on{opacity:1} .badge svg{width:18px;height:12px}
+#hint{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);padding:7px 14px;border-radius:999px;background:rgba(9,14,27,.92);border:1px solid var(--line);color:var(--muted);font-size:13px;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
+#hint.on{opacity:1}
+#show{position:absolute;left:10px;bottom:10px;z-index:30;padding:6px 12px;border-radius:999px;background:rgba(9,14,27,.9);border:1px solid var(--line);color:var(--muted);font-size:12px}
+
+/* slides */
+.slide{position:absolute;inset:0;z-index:10;background:var(--navy);overflow:auto;display:flex}
+.slide>canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.slide .in{position:relative;z-index:1;margin:auto;width:min(1180px,100%);padding:clamp(18px,4vh,44px) clamp(18px,4vw,56px)}
+.slide.enter{animation:wipeIn var(--wipe) cubic-bezier(.7,0,.2,1) both}
+.slide.exit{animation:wipeOut var(--wipe) cubic-bezier(.7,0,.2,1) both}
+.slide::after{content:"";position:absolute;top:0;bottom:0;left:0;width:6px;background:var(--accent);opacity:0;z-index:3;pointer-events:none}
+.slide.enter::after{animation:edgeIn var(--wipe) cubic-bezier(.7,0,.2,1) both}
+.slide.exit::after{animation:edgeOut var(--wipe) cubic-bezier(.7,0,.2,1) both}
+@keyframes wipeIn{from{clip-path:inset(0 0 0 100%)}to{clip-path:inset(0 0 0 0)}}
+@keyframes wipeOut{from{clip-path:inset(0 0 0 0)}to{clip-path:inset(0 100% 0 0)}}
+@keyframes edgeIn{0%{left:100%;opacity:1}90%{opacity:1}100%{left:0;opacity:0}}
+@keyframes edgeOut{0%{left:calc(100% - 6px);opacity:0}10%{opacity:1}100%{left:0;opacity:1}}
+.rise{opacity:0;transform:translateY(16px)}
+.slide.live .rise{animation:rise .6s cubic-bezier(.2,.8,.2,1) forwards;animation-delay:calc(var(--d,0) * 90ms + .28s)}
+@keyframes rise{to{opacity:1;transform:none}}
+.w{display:inline-block;opacity:0;transform:translateY(.5em)}
+.slide.live .w{animation:rise .55s cubic-bezier(.2,.8,.2,1) forwards;animation-delay:calc(var(--d,0) * 70ms + .34s)}
+.over{font-weight:600;font-size:13px;letter-spacing:.24em;color:var(--accent);text-transform:uppercase}
+h1,h2{font-family:var(--display);font-weight:700;margin:0;text-wrap:balance;line-height:1.08}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{padding:6px 14px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);font-size:14px;font-weight:500}
+.btn{display:inline-flex;align-items:center;gap:10px;padding:11px 22px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.05);font-weight:600}
+.btn:hover{border-color:rgba(255,255,255,.35)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#1b1304}
+.btn.primary:hover{background:#ffc874}
+.btn[disabled]{opacity:.6;cursor:default}
+.frame{position:relative;border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,.2);box-shadow:0 30px 70px rgba(0,0,0,.55);background:#111;aspect-ratio:16/9}
+.frame img{display:block;width:100%;height:100%;object-fit:cover}
+.float{animation:float 7s ease-in-out infinite}
+@keyframes float{0%,100%{transform:perspective(1400px) rotateY(-9deg) rotateX(3deg) translateY(0)}50%{transform:perspective(1400px) rotateY(-9deg) rotateX(3deg) translateY(-10px)}}
+
+/* title */
+#sTitle .in{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:clamp(20px,4vw,56px);align-items:center}
+#sTitle h1{font-size:clamp(44px,8.2vw,108px);margin:12px 0 10px;letter-spacing:-.02em}
+#sTitle .sub{font-size:clamp(17px,2vw,24px);color:var(--muted);margin:0 0 20px;max-width:28em}
+#sTitle .go{margin-top:26px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+#sTitle .keys{color:var(--dim);font-size:13px}
+.spot{position:absolute;left:23%;top:33.1%;width:53.9%;height:44.3%;border:2px solid var(--accent);border-radius:10px;box-shadow:0 0 0 2000px rgba(4,7,13,.34)}
+.spot span{position:absolute;left:-2px;top:-26px;background:var(--accent);color:#1b1304;font-size:11px;font-weight:600;padding:3px 8px;border-radius:6px 6px 6px 0;white-space:nowrap}
+
+/* agenda and recap */
+.list{display:grid;gap:9px;margin-top:20px}
+.row{display:grid;grid-template-columns:54px minmax(0,1fr) auto;gap:6px 16px;align-items:center;text-align:left;width:100%;padding:11px 18px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.04)}
+.row:hover{border-color:rgba(245,183,89,.6);background:rgba(245,183,89,.07)}
+.row .no{font-family:var(--display);font-weight:700;font-size:28px;color:var(--accent);font-variant-numeric:tabular-nums}
+.row .t{font-weight:600;font-size:clamp(15px,1.7vw,19px)}
+.row .a{color:var(--muted);font-size:14px}
+.row .m{color:var(--dim);font-size:13px;white-space:nowrap}
+#sAgenda h2,#sEnd h2{font-size:clamp(28px,4.4vw,52px);margin-top:8px}
+.tickmark{width:54px;height:54px;flex:none}
+.tickmark circle{fill:rgba(245,183,89,.14);stroke:var(--accent);stroke-width:2.5}
+.tickmark path{fill:none;stroke:var(--accent);stroke-width:4;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:40;stroke-dashoffset:40}
+.slide.live .tickmark path{animation:draw .7s .5s ease-out forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+.endhead{display:flex;align-items:center;gap:16px}
+.foot{margin:16px 0 0;color:var(--accent);font-weight:500;font-size:clamp(15px,1.6vw,18px)}
+.acts{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.row .ck{width:30px;height:30px}
+.row .ck circle{fill:rgba(245,183,89,.14);stroke:var(--accent);stroke-width:2}
+.row .ck path{fill:none;stroke:var(--accent);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+
+/* section card */
+#sCard .in{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:clamp(18px,4vw,52px);align-items:center}
+#sCard .big{position:absolute;right:2%;top:-4%;font-family:var(--display);font-weight:700;font-size:clamp(160px,34vw,440px);line-height:1;color:rgba(255,255,255,.045);pointer-events:none;z-index:0;opacity:0}
+#sCard.live .big{animation:bigIn 1.1s .15s cubic-bezier(.2,.8,.2,1) forwards}
+@keyframes bigIn{from{opacity:0;transform:translateX(60px)}to{opacity:1;transform:none}}
+#sCard h2{font-size:clamp(28px,4.6vw,60px);margin:10px 0 14px}
+#sCard .desc{color:var(--muted);font-size:clamp(15px,1.75vw,21px);margin:0 0 18px;max-width:34em}
+#sCard .note{display:flex;align-items:center;gap:8px;color:var(--accent);font-weight:500;margin-top:14px}
+#sCard .note svg{width:16px;height:18px;flex:none}
+#sCard figure{margin:0}
+#sCard figcaption{color:var(--dim);font-size:13px;margin-top:10px}
+.dots{display:flex;gap:7px;margin-top:22px}
+.dots i{width:14px;height:6px;border-radius:3px;background:rgba(255,255,255,.2)} .dots i.on{width:34px;background:var(--accent)}
+
+/* bar */
+#bar{flex:none;display:flex;gap:14px;align-items:center;padding:9px 14px;background:var(--navy);border-top:1px solid var(--line);min-width:0}
+#info{flex:1;min-width:0}
+#meta{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;font-size:12px;color:var(--dim);font-variant-numeric:tabular-nums}
+#tag{font-weight:600;letter-spacing:.14em;font-size:11px;padding:2px 8px;border-radius:5px;background:rgba(255,255,255,.08);color:var(--muted)}
+#tag.p{background:var(--accent);color:#1b1304} #tag.r{background:rgba(111,156,245,.22);color:#b9cffb}
+#ttl{font-weight:600;font-size:16px;margin-top:3px}
+#cap{color:var(--muted);font-size:14px;max-width:70em}
+#ctl{flex:none;display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.grp{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.grp button{height:36px;min-width:36px;padding:0 9px;background:rgba(255,255,255,.04);border:0;border-right:1px solid var(--line);font-variant-numeric:tabular-nums;font-size:13px}
+.grp button:last-child{border-right:0}
+.grp button:hover{background:rgba(255,255,255,.1)}
+.tool{height:36px;padding:0 11px;display:inline-flex;align-items:center;gap:7px;border-radius:9px;border:1px solid var(--line);background:rgba(255,255,255,.04);font-size:13px;white-space:nowrap}
+.tool:hover{background:rgba(255,255,255,.1)}
+.tool[aria-pressed="true"]{border-color:rgba(245,183,89,.6);color:var(--accent)}
+.tool svg{width:16px;height:16px;flex:none}
+#bBack,#bNext{height:40px;padding:0 16px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.05);font-weight:600;white-space:nowrap}
+#bNext{background:var(--accent);border-color:var(--accent);color:#1b1304;min-width:128px}
+#bNext:hover{background:#ffc874} #bBack:hover{border-color:rgba(255,255,255,.35)}
+#bNext[disabled],#bBack[disabled]{opacity:.5;cursor:default}
+body.bare #rail,body.bare #bar{display:none}
+
+/* help */
+#help{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:rgba(4,7,13,.72);padding:16px}
+#help .box{width:min(560px,100%);max-height:100%;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 24px}
+#help h3{font-family:var(--display);margin:0 0 12px;font-size:20px}
+#help dl{display:grid;grid-template-columns:auto 1fr;gap:7px 16px;margin:0 0 16px}
+#help dt{font-weight:600;white-space:nowrap} #help dd{margin:0;color:var(--muted)}
+kbd{font:600 12px var(--body);padding:2px 7px;border-radius:5px;border:1px solid var(--line);background:rgba(255,255,255,.07)}
+
+@media (max-width:900px){
+  .pill span{display:none} .pill{padding:0 10px}
+  #sTitle .in,#sCard .in{grid-template-columns:1fr}
+  #sTitle .art{order:-1;max-width:420px} #sCard figure{max-width:420px}
+  .tool span{display:none}
+  #bar{flex-direction:column;align-items:stretch;gap:8px} #ctl{justify-content:space-between}
+}
+@media (max-width:560px){
+  .ticks{display:none!important}
+  .row{grid-template-columns:40px minmax(0,1fr)} .row .m{display:none} .row .no{font-size:22px}
+  #bNext{flex:1} .spot span{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  :root{--wipe:.18s}
+  .slide.enter{animation:fadeIn var(--wipe) both} .slide.exit{animation:fadeOut var(--wipe) both}
+  .slide::after{display:none}
+  .rise,.w,#sCard .big{opacity:1;transform:none;animation:none!important}
+  .tickmark path{stroke-dashoffset:0;animation:none!important}
+  .float{animation:none;transform:perspective(1400px) rotateY(-9deg) rotateX(3deg)}
+  #zoomer.anim{transition:none}
+}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}} @keyframes fadeOut{from{opacity:1}to{opacity:0}}
 </style>
 </head>
 <body>
-<div class="app" id="app">
-  <header class="top">
-    <div class="brand">CRM Assist<small>Click-through demo</small></div>
-    <nav class="rail" id="rail" aria-label="Sections"></nav>
-  </header>
-  <main class="stagewrap">
-    <div class="stage" id="stage">
-      <div class="zoom" id="zoom"><video id="vid" playsinline muted preload="auto" aria-label="Demo recording"></video></div>
-      <div class="spot" id="spot"></div>
-      <div class="badge" id="badge"><svg class="icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 4l7 6-7 6zM10 4l7 6-7 6z" fill="currentColor"/></svg><span>Fast-forward</span></div>
-      <div class="pausechip" id="pausechip" hidden>Paused</div>
+<div id="app">
+  <nav id="rail" aria-label="Sections">
+    <button class="ico" id="rHome" title="Title slide" aria-label="Title slide"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3 9.5 10 3l7 6.5V17h-4.5v-5h-5v5H3z"/></svg></button>
+    <div id="rSecs"></div>
+    <button class="ico" id="rEnd" title="Recap" aria-label="Recap"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M5 18V3m0 1h10l-2.5 3.5L15 11H5"/></svg></button>
+  </nav>
+
+  <main id="wrap">
+    <div id="stage">
+      <div id="zoomer">
+        <video id="v" playsinline preload="auto"></video>
+        <div id="hl"></div>
+      </div>
+      <div class="badge" id="ff"><svg viewBox="0 0 30 20" fill="currentColor"><path d="M1 2v16l12-8zM15 2v16l12-8z"/></svg><span id="ffT"></span></div>
+      <div id="hint">Scroll or press + to zoom in, drag to move, 0 to reset</div>
     </div>
-    <div class="card" id="card"></div>
+
+    <section class="slide" id="sTitle">
+      <div class="in">
+        <div>
+          <div class="over rise" id="tOver"></div>
+          <h1 id="tTitle"></h1>
+          <p class="sub rise" style="--d:3" id="tSub"></p>
+          <div class="chips rise" style="--d:4" id="tChips"></div>
+          <div class="go rise" style="--d:5">
+            <button class="btn primary" id="bStart" disabled>Loading the recording</button>
+            <span class="keys">then <kbd>Space</kbd> to continue, <kbd>?</kbd> for all keys</span>
+          </div>
+        </div>
+        <div class="art rise" style="--d:2">
+          <div class="frame float"><img src="poster.jpg" alt="The Sales agent with a dictated meeting debrief in the message box" width="1280" height="720"><div class="spot"><span>First prompt</span></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" id="sAgenda" hidden>
+      <div class="in">
+        <div class="over rise">Agenda</div>
+        <h2 class="rise" style="--d:1">What this demo covers</h2>
+        <div class="list" id="aList"></div>
+      </div>
+    </section>
+
+    <section class="slide" id="sCard" hidden>
+      <div class="big" id="cBig"></div>
+      <div class="in">
+        <div>
+          <div class="over rise" id="cOver"></div>
+          <h2 id="cTitle"></h2>
+          <p class="desc rise" style="--d:5" id="cDesc"></p>
+          <div class="chips rise" style="--d:6" id="cChips"></div>
+          <div class="note rise" style="--d:7" id="cNote" hidden><svg viewBox="0 0 16 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="5.5" y="1" width="5" height="9.5" rx="2.5" fill="currentColor"/><path d="M3 8.5a5 5 0 0 0 10 0M8 13.5V17M5 17h6"/></svg><span id="cNoteT"></span></div>
+          <div class="dots rise" style="--d:8" id="cDots"></div>
+        </div>
+        <figure class="rise" style="--d:4">
+          <div class="frame float"><img id="cImg" alt="" width="640" height="360"></div>
+          <figcaption id="cFig"></figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="slide" id="sEnd" hidden>
+      <div class="in">
+        <div class="endhead rise">
+          <svg class="tickmark" viewBox="0 0 54 54"><circle cx="27" cy="27" r="25"/><path d="M16 28l8 8 15-17"/></svg>
+          <div><div class="over">Recap</div><h2>What we covered</h2></div>
+        </div>
+        <div class="list" id="eList"></div>
+        <p class="foot rise" style="--d:9" id="eFoot"></p>
+        <div class="acts rise" style="--d:10">
+          <button class="btn primary" id="bReplay">Replay from the start</button>
+          <button class="btn" id="bLast">Back to the last step</button>
+        </div>
+      </div>
+    </section>
+    <button id="show" hidden>Show controls</button>
   </main>
-  <footer class="bottom">
-    <div class="capline"><span class="where" id="where">Start</span><p class="cap" id="cap" aria-live="polite"></p></div>
-    <div class="prog" aria-hidden="true"><i id="progbar"></i></div>
-    <div class="ctrls">
-      <button class="ghost" id="back" type="button"><svg class="icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M12.5 4 6.5 10l6 6" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>Back</button>
-      <button class="primary" id="next" type="button">Continue<svg class="icon" viewBox="0 0 20 20" aria-hidden="true"><path d="m7.5 4 6 6-6 6" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round"/></svg></button>
-      <button class="ghost" id="skip" type="button" hidden>Skip ahead</button>
-      <span class="sp"></span>
-      <label class="switch" id="autolbl"><input type="checkbox" id="auto"> Auto-play</label>
-      <button class="ghost" id="notesbtn" type="button" aria-expanded="false">Notes</button>
-      <label class="switch" id="tipslbl"><input type="checkbox" id="tips" checked> Guide tips</label>
-      <button class="ghost" id="restart" type="button">Restart</button>
-      <a class="ghost" id="printlink" href="#print">Print view</a>
-      <span class="keys">Space or → continue · ← back · N notes · P auto-play</span>
+
+  <footer id="bar">
+    <div id="info" aria-live="polite">
+      <div id="meta"><span id="tag"></span><span id="where"></span><span id="clock"></span></div>
+      <div id="ttl"></div>
+      <div id="cap"></div>
+    </div>
+    <div id="ctl">
+      <div class="grp" role="group" aria-label="Zoom">
+        <button id="bZo" title="Zoom out (-)" aria-label="Zoom out">&minus;</button>
+        <button id="bZr" title="Reset zoom (0)" aria-label="Reset zoom">100%</button>
+        <button id="bZi" title="Zoom in (+)" aria-label="Zoom in">+</button>
+      </div>
+      <button class="tool" id="bSnd" aria-pressed="true" title="Sound on or off (M)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6h2.5L8 3v10L4.5 10H2z" fill="currentColor"/><path id="sndW" d="M10.5 5.5a3.5 3.5 0 0 1 0 5M12.5 3.5a6.2 6.2 0 0 1 0 9"/></svg><span>Sound</span></button>
+      <button class="tool" id="bAuto" aria-pressed="false" title="Move on automatically (A)"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 3v10l8-5z"/></svg><span>Auto-play</span></button>
+      <button class="tool" id="bFs" title="Full screen (F)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg><span>Full screen</span></button>
+      <button class="tool" id="bHelp" title="Keys and controls (?)" aria-label="Keys and controls">?</button>
+      <button id="bBack">Back</button>
+      <button id="bNext" disabled>Start</button>
     </div>
   </footer>
 </div>
-<aside class="notes" id="notes" hidden aria-label="Presenter notes"></aside>
-<div class="tip" id="tip" role="tooltip" hidden></div>
-<div class="rotate" id="rotate">Tip: turn your phone sideways for a bigger view.</div>
-<div class="print" id="print"></div>
 
-<script type="application/json" id="cues">{"w":1760,"h":918,"fps":30,"duration":365.967,"title":{"kicker":"CRM Assist \u00b7 Click-through demo","title":"From customer email to verified CRM updates","lede":"Follow one GreenGrid deal across Outlook, Teams, mobile and Salesforce. Click Continue to move through each step.","chips":["Outlook","Copilot Sales agent","Teams","Mobile","Salesforce"]},"chapters":[{"name":"Capture and engage","secs":[0,1,2]},{"name":"Meet and collaborate","secs":[3,4]},{"name":"Debrief on the go","secs":[5,6]},{"name":"Guardrails in action","secs":[7,8,9,10]}],"sections":[{"topic":"Capture the lead in Salesforce","desc":"A customer email lands in Outlook. Without leaving the inbox, the Sales app creates the GreenGrid account and its first opportunity in Salesforce.","chips":["Outlook","Sales app","New account","New opportunity"],"start":0.0,"notes":["The seller never leaves Outlook to get the lead into Salesforce.","Does this create duplicates? The Sales app creates exactly what the seller fills in; check your org's duplicate rules."],"stops":[0,1,2]},{"topic":"Link the email and the contact","desc":"The email is saved against the new opportunity, and the customer contact is linked to the account, so the conversation stays with the deal.","chips":["Save email","Contact record","AI summary"],"start":29.6333,"notes":["The email and contact stay attached to the deal, so anyone on the team sees the context.","Where is the email stored? It is saved to the Salesforce opportunity it is connected to."],"stops":[3,4]},{"topic":"Let Copilot prepare the response","desc":"Copilot's Sales agent reads the email with live CRM context, drafts a reply with a meeting time, and updates the next step only after approval.","chips":["Email summary","Draft reply","Approval before saving"],"start":46.6333,"notes":["Copilot uses live CRM data, and changes nothing without approval.","Can it update fields without asking? In this demo, every change is shown and confirmed first."],"stops":[5,6,7,8,9]},{"topic":"Book the discovery meeting","desc":"Copilot creates a Salesforce event and verifies it. Then the Teams invite is set up in Outlook and saved to Salesforce from the Sales app.","chips":["Salesforce event","Duplicate check","Teams invite"],"start":93.8,"notes":["Copilot checks, creates, then reads back and verifies the event.","What if details change mid-way? It asks for a fresh confirmation, as shown."],"stops":[10,11,12,13]},{"topic":"Collaborate in Teams","desc":"A Teams deal room is set up for the opportunity. During the discovery call, the opportunity is updated and the conversation is transcribed.","chips":["Deal room","In-meeting CRM","Transcript"],"start":153.7333,"notes":["The deal room and the meeting stay connected to the opportunity.","Do customers see CRM data? The deal room's shared channel is optional and set up separately."],"stops":[14,15,16,17]},{"topic":"Debrief a meeting from your phone","desc":"After the call, the seller dictates a debrief to the Sales agent on mobile. Copilot finds the matching opportunity and flags a contact name it cannot match exactly.","chips":["Mobile","Voice dictation","Opportunity match"],"start":209.8333,"notes":["A spoken debrief becomes structured CRM context on a phone.","What about name mismatches? Copilot flags them rather than guessing, as shown here."],"stops":[18,19,20]},{"topic":"Turn the debrief into Salesforce tasks","desc":"Copilot suggests prioritised next tasks. The seller asks for two of them as Salesforce tasks, confirms, and checks they were created.","chips":["Next tasks","Confirm first","Verified in Salesforce"],"start":228.4,"notes":["Suggested tasks become real Salesforce tasks, only after confirmation.","Can we check they exist? Yes, Copilot reads them back with their IDs."],"stops":[21,22,23,24,25,26,27,28]},{"topic":"Check Phase 2 readiness from notes","desc":"A photo of handwritten workshop notes goes to Copilot. It checks readiness for Qualification and refuses to move the stage while data checks are open.","chips":["Handwritten notes","Read-only lookup","Stage held"],"start":273.2333,"notes":["Copilot follows the stated rule: no stage change until data readiness is confirmed.","Does it read handwriting? It read this photo; validate accuracy on your own notes."],"stops":[29,30,31,32,33]},{"topic":"Draft the Phase 2 opportunity safely","desc":"Asked to create the Phase 2 opportunity, Copilot prepares it but saves nothing until the required close date is provided.","chips":["Required field","Nothing saved","Draft kept"],"start":302.8333,"notes":["Required fields are respected: nothing is created until the close date is given.","Is the draft saved anywhere? Only in the conversation, as Copilot states."],"stops":[34,35]},{"topic":"Ask Copilot to change a close date","desc":"On a different deal, the seller dictates one change: move the Harborlight pilot's close date. Copilot finds the record and proposes the change.","chips":["Harborlight","Dictated request","Proposed change"],"start":328.1,"notes":["A single dictated sentence is matched to the right record.","How does it pick the record? It names the opportunity and account it found before proposing."],"stops":[36,37,38]},{"topic":"Confirm, update and verify","desc":"The exact field update is confirmed before it runs. Copilot verifies the result, and the new date appears on the Salesforce record.","chips":["Field-level confirm","Verified update","Stage unchanged"],"start":351.2667,"notes":["Every write is confirmed at field level and verified afterwards.","Can other fields change by accident? Copilot reports that no other values changed."],"stops":[39,40,41]}],"stops":[{"t":0.5167,"frame":15,"sec":0,"rect":[202.1,103.7,918.6,479.1],"phone":false,"cap":"A customer email arrives: GreenGrid wants to cut energy costs and improve uptime at its Chennai plant, and asks about a pilot."},{"t":15.5167,"frame":465,"sec":0,"rect":[841.4,351.7,918.6,479.1],"phone":false,"cap":"From the inbox, the Sales app creates the GreenGrid account in Salesforce, with type Prospect and industry Manufacturing."},{"t":29.35,"frame":880,"sec":0,"rect":[841.4,398.7,918.6,479.1],"phone":false,"cap":"Next, the Phase 1 opportunity is created: stage Prospecting, with a close date, linked to the GreenGrid account."},{"t":36.4167,"frame":1092,"sec":1,"rect":[841.4,388.5,918.6,479.1],"phone":false,"cap":"The email is saved to Salesforce and connected to the new opportunity."},{"t":45.95,"frame":1378,"sec":1,"rect":[657.7,302.9,1102.3,574.9],"phone":false,"cap":"The contact record opens with an AI-generated contact summary, and the contact information is updated."},{"t":60.1167,"frame":1803,"sec":2,"rect":[734.9,186.4,918.6,479.1],"phone":false,"cap":"Copilot summarizes the email with CRM context, flags a contact name difference, and recommends a discovery-led pilot proposal."},{"t":67.85,"frame":2035,"sec":2,"rect":[734.9,315.0,918.6,479.1],"phone":false,"cap":"With one click, Copilot drafts a reply to the customer."},{"t":74.7167,"frame":2241,"sec":2,"rect":[734.9,76.1,918.6,479.1],"phone":false,"cap":"Asked for a meeting time, Copilot proposes a 30-minute discovery call on Thursday, 26 November at 15:00 IST."},{"t":84.4833,"frame":2534,"sec":2,"rect":[734.9,186.4,918.6,479.1],"phone":false,"cap":"Copilot proposes a new next step for the opportunity, and asks before saving anything."},{"t":92.3167,"frame":2769,"sec":2,"rect":[734.9,315.0,918.6,479.1],"phone":false,"cap":"After approval: one field updated, and the stage stays at Prospecting."},{"t":104.8167,"frame":3144,"sec":3,"rect":[652.2,195.6,918.6,479.1],"phone":false,"cap":"Copilot proposes a Salesforce event for the discovery meeting, checks for duplicates, and asks to confirm."},{"t":117.7167,"frame":3531,"sec":3,"rect":[652.2,195.6,918.6,479.1],"phone":false,"cap":"Adding the contact changed the proposal, so Copilot asks for a fresh confirmation."},{"t":126.15,"frame":3784,"sec":3,"rect":[643.0,250.7,918.6,479.1],"phone":false,"cap":"The event is created, then read back and verified: subject, time, opportunity, contact and event ID."},{"t":152.75,"frame":4582,"sec":3,"rect":[933.3,446.7,826.7,431.2],"phone":false,"cap":"In the Teams invite, the Sales app shows the linked contact and opportunity. The meeting is saved to Salesforce."},{"t":163.9167,"frame":4917,"sec":4,"rect":[841.4,186.4,918.6,479.1],"phone":false,"cap":"From the same pane, a Teams team is set up for the opportunity, and it is ready."},{"t":192.3833,"frame":5771,"sec":4,"rect":[749.6,52.2,1010.4,527.0],"phone":false,"cap":"Inside the meeting, the Sales app shows the opportunity connected to the call."},{"t":206.85,"frame":6205,"sec":4,"rect":[565.8,255.0,1194.2,622.9],"phone":false,"cap":"During the call, the opportunity is updated: technical feasibility accepted, qualification criteria captured."},{"t":208.6167,"frame":6258,"sec":4,"rect":[749.6,162.4,1010.4,527.0],"phone":false,"cap":"The transcript captures the conversation: energy dashboards, alerts by production line, weekly insight reports."},{"t":217.4167,"frame":6522,"sec":5,"rect":[490,0,1270,918],"phone":true,"cap":"On mobile, the seller dictates a debrief of today's meeting to the Sales agent."},{"t":224.45,"frame":6733,"sec":5,"rect":[490,0,1270,918],"phone":true,"cap":"Copilot finds the matching opportunity in Salesforce: GreenGrid Smart Energy Optimization, Phase 1."},{"t":227.5833,"frame":6827,"sec":5,"rect":[490,0,1270,918],"phone":true,"cap":"No exact match for the contact name, so Copilot flags the closest match and does not assume they are the same person."},{"t":232.0833,"frame":6962,"sec":6,"rect":[490,0,1270,918],"phone":true,"cap":"Asked for next steps, Copilot prioritises tasks, starting with the data-readiness check."},{"t":236.55,"frame":7096,"sec":6,"rect":[490,0,1270,918],"phone":true,"cap":"It recommends starting with data readiness, because that is what holds up qualification."},{"t":250.25,"frame":7507,"sec":6,"rect":[490,0,1270,918],"phone":true,"cap":"The seller asks Copilot to create the first two points as Salesforce tasks, due 30 November 2026."},{"t":254.5833,"frame":7637,"sec":6,"rect":[490,0,1270,918],"phone":true,"cap":"Copilot proposes both tasks against the opportunity. No duplicates were found, and nothing has been created yet."},{"t":258.45,"frame":7753,"sec":6,"rect":[490,0,1270,918],"phone":true,"cap":"The seller confirms: create both tasks."},{"t":261.15,"frame":7834,"sec":6,"rect":[490,0,1270,918],"phone":true,"cap":"Before writing, the app shows the exact task fields to confirm."},{"t":265.35,"frame":7960,"sec":6,"rect":[490,0,1270,918],"phone":true,"cap":"Asked to confirm, Copilot reports both tasks created in Salesforce, with their task IDs and due dates."},{"t":268.4833,"frame":8054,"sec":6,"rect":[490,0,1270,918],"phone":true,"cap":"The task details: both recorded against the GreenGrid Phase 1 opportunity."},{"t":273.3167,"frame":8199,"sec":7,"rect":[371.4,238.7,1088.7,567.9],"phone":false,"cap":"The seller shares a photo of handwritten workshop notes and asks Copilot to check Phase 2 readiness, without changing the stage."},{"t":279.0167,"frame":8370,"sec":7,"rect":[336.5,203.8,1088.7,567.9],"phone":false,"cap":"Copilot looks up the opportunity in Salesforce as a read-only request."},{"t":292.8833,"frame":8786,"sec":7,"rect":[345.2,123.7,1088.7,567.9],"phone":false,"cap":"Verdict: not ready for Qualification, because data-readiness checks are still open. Copilot also flags the notes' future date."},{"t":296.5833,"frame":8897,"sec":7,"rect":[353.9,186.4,1088.7,567.9],"phone":false,"cap":"There is no Phase 2 opportunity yet, so Copilot lists the proposed update field by field, and nothing is saved."},{"t":301.5833,"frame":9047,"sec":7,"rect":[353.9,0.0,1001.6,522.4],"phone":false,"cap":"As a next step, Copilot asks for the Phase 2 opportunity to be created first."},{"t":316.65,"frame":9499,"sec":8,"rect":[353.9,154.2,1088.7,567.9],"phone":false,"cap":"Salesforce requires a close date, so Copilot creates nothing yet and asks which date to use."},{"t":326.3833,"frame":9791,"sec":8,"rect":[353.9,80.1,1088.7,567.9],"phone":false,"cap":"Asked to save a draft, Copilot keeps it in the conversation only, with the stage safeguard in place."},{"t":328.7833,"frame":9863,"sec":9,"rect":[14.0,85.0,1003.8,523.6],"phone":false,"cap":"In Salesforce, the Harborlight Energy Monitoring Pilot is at Qualification, with a close date of 30 November 2026."},{"t":334.3833,"frame":10031,"sec":9,"rect":[543.3,103.2,1003.8,523.6],"phone":false,"cap":"In Copilot, the seller dictates the request: change the close date to 30 December 2026."},{"t":349.8833,"frame":10496,"sec":9,"rect":[324.3,232.0,1076.8,561.6],"phone":false,"cap":"Copilot shows the proposed change: the close date moves to 30 December, and the stage stays at Qualification."},{"t":357.45,"frame":10723,"sec":10,"rect":[301.5,127.8,1049.4,547.4],"phone":false,"cap":"After a yes, Copilot shows the exact update, the close date field only, and waits for one more confirmation."},{"t":359.0833,"frame":10772,"sec":10,"rect":[328.8,129.7,1049.4,547.4],"phone":false,"cap":"Update complete and verified: the new close date is saved, and no other values changed."},{"t":365.75,"frame":10972,"sec":10,"rect":[14.0,85.0,1003.8,523.6],"phone":false,"cap":"Back in Salesforce, the record shows the new close date: 30 December 2026."}],"ff":[[2.033,6.167],[6.367,8.033],[9.1,10.2],[13.033,15.233],[15.767,18.2],[23.0,27.667],[30.033,32.5],[33.9,35.6],[37.0,38.4],[40.133,41.167],[41.433,43.0],[44.367,45.667],[47.033,48.867],[52.933,54.367],[63.067,64.767],[65.533,66.767],[79.367,82.733],[86.4,91.0],[94.067,100.1],[100.967,102.867],[105.333,106.367],[106.733,108.767],[110.6,115.7],[120.133,123.933],[127.467,130.467],[131.333,134.4],[135.367,137.4],[138.633,142.067],[145.0,150.733],[154.733,155.9],[157.1,163.667],[171.667,174.633],[181.967,183.533],[185.533,187.467],[187.967,191.067],[194.133,204.667],[211.067,216.467],[217.6,223.533],[225.167,226.6],[228.6,230.567],[243.833,244.933],[245.167,249.233],[251.2,252.4],[274.2,276.267],[279.3,285.533],[285.933,290.1],[307.833,313.133],[321.133,322.4],[330.6,334.1],[337.0,342.767],[343.3,347.733],[354.1,357.233],[362.033,363.133]],"end":{"title":"What we covered","points":["Email to account, opportunity, meeting and Teams deal room","Meeting debrief on mobile turned into Salesforce tasks","Copilot holds the stage until data readiness is confirmed","Every Copilot change to Salesforce is shown and confirmed first"]}}</script>
+<div id="help" hidden>
+  <div class="box" role="dialog" aria-label="Keys and controls">
+    <h3>Keys and controls</h3>
+    <dl>
+      <dt><kbd>Space</kbd> <kbd>Enter</kbd> <kbd>&rarr;</kbd></dt><dd>Continue. While the recording plays, skip ahead to the next stop.</dd>
+      <dt><kbd>&larr;</kbd></dt><dd>Back one stop, without playing.</dd>
+      <dt><kbd>+</kbd> <kbd>&minus;</kbd> <kbd>0</kbd></dt><dd>Zoom in, zoom out, reset. You can also scroll over the recording, double-click a spot, and drag to move.</dd>
+      <dt><kbd>M</kbd></dt><dd>Sound on or off. With sound off, long dictation is fast forwarded.</dd>
+      <dt><kbd>A</kbd></dt><dd>Auto-play: move on by itself after each stop.</dd>
+      <dt><kbd>F</kbd> <kbd>H</kbd></dt><dd>Full screen. Hide or show the controls.</dd>
+      <dt><kbd>Home</kbd> <kbd>End</kbd></dt><dd>Title slide, recap slide.</dd>
+    </dl>
+    <p style="color:var(--muted);margin:0 0 16px">The view zooms in by itself only while a prompt is entered. Results are always shown at full frame.</p>
+    <button class="btn" id="bHelpX">Close</button>
+  </div>
+</div>
+
+<script id="cues" type="application/json">{"fps":30,"duration":506.1,"title":{"overline":"CLICK-THROUGH DEMO","title":"CRM Assist","subtitle":"The Sales agent in Copilot, working with Salesforce","chips":["6 sections","Desktop and phone","Adventure Works and GreenGrid"]},"footer":"Seen throughout: proposed first, saved on confirmation, verified after.","sections":[{"key":"s1","n":1,"title":"Debrief a meeting by voice","short":"Debrief by voice","agenda":"Dictated notes become a CRM match, a follow-up email draft and a proposed update","desc":"We dictate notes from a customer meeting to the Sales agent. It matches them to the Salesforce records, drafts the follow-up email and proposes the opportunity changes. Nothing is saved yet.","chips":["Voice dictation","CRM match","Follow-up email draft","Update proposal"],"note":"Sound on: the prompts in this section are spoken","recap":"Dictated notes matched to Salesforce, follow-up email drafted, changes proposed but not saved","thumb":"thumbs/s1.jpg","phone":false,"start":0.0167,"end":108.3667,"steps":[{"kind":"prompt","t":70.0833,"label":"Dictate the meeting notes","caption":"The notes are dictated by voice and transcribed into the message box.","rect":[442,358,1476,836],"zoomFrom":0.6833},{"kind":"result","t":78.1833,"label":"CRM match","caption":"The opportunity and both contacts are matched and the name spellings resolved. Nothing has been written yet."},{"kind":"result","t":87.85,"label":"One detail needed","caption":"The agent asks for the meeting times before it prepares the exact save proposal."},{"kind":"prompt","t":97.55,"label":"Add context by voice","caption":"A spoken follow-up, shown as the app transcribed it.","rect":[722,108,1472,277]},{"kind":"result","t":100.6833,"label":"Update proposal, not saved","caption":"Next step and close date are shown as current and proposed values, marked not saved."},{"kind":"result","t":108.2833,"label":"Asks before saving","caption":"The agent names the fields it will not change, then asks whether to save the two changes."}]},{"key":"s2","n":2,"title":"Confirm, save and verify","short":"Confirm, save, verify","agenda":"Close dates and a next step are saved only after Confirm, then read back","desc":"Next we ask for the same close-date change on the other Adventure Works deal, then save. Each write shows the exact change, waits for Confirm, and is read back to verify it.","chips":["Close-date proposal","Confirm before saving","Saved and verified","Open deals summary"],"note":"Sound on: the prompts in this section are spoken","recap":"Two close dates and a next step saved after Confirm, then read back and verified","thumb":"thumbs/s2.jpg","phone":false,"start":108.3833,"end":179.5667,"steps":[{"kind":"prompt","t":116.7167,"label":"Ask for the other deal","caption":"Spoken prompt, shown as transcribed.","rect":[751,108,1472,240]},{"kind":"result","t":119.25,"label":"Close-date proposal, not saved","caption":"For the EV Charging Sites deal, January 31 would become February 28, 2027. No records have been changed yet."},{"kind":"prompt","t":131.35,"label":"Ask to save the solar deal","caption":"Spoken prompt, shown as transcribed.","rect":[722,108,1472,277]},{"kind":"result","t":133.3833,"label":"The exact write, before Confirm","caption":"The update is shown field by field with Confirm and Cancel. Nothing is written until Confirm."},{"kind":"result","t":138.95,"label":"Saved and verified","caption":"Next step and close date were saved and read back. No other fields, tasks or meetings changed."},{"kind":"prompt","t":148.9833,"label":"Check the other deal","caption":"Spoken prompt, shown as transcribed.","rect":[722,108,1472,277]},{"kind":"result","t":153.25,"label":"Not updated yet","caption":"The EV Charging Sites close date is still January 31, 2027. The agent offers to save it."},{"kind":"prompt","t":158.9833,"label":"Approve the change","caption":"Spoken prompt, shown as transcribed.","rect":[1040,108,1472,240]},{"kind":"result","t":168.3833,"label":"Saved and verified","caption":"The close date moved from January 31 to February 28, 2027 and was read back."},{"kind":"prompt","t":169.8833,"label":"Pick a suggested prompt","caption":"A suggested follow-up is chosen instead of typing.","rect":[1066,856,1480,914]},{"kind":"result","t":179.3833,"label":"Open deals summary","caption":"Both open Adventure Works deals with a suggested priority for each. No records were changed."}]},{"key":"s3","n":3,"title":"Recap a Teams meeting and set up follow-ups","short":"Recap a Teams meeting","agenda":"Recap, follow-up tasks with a duplicate check, and a stage change Salesforce rejects","desc":"The agent recaps a Teams meeting from its transcript and proposes a Salesforce event, follow-up tasks and an opportunity update. Watch the duplicate check, and how a stage change that Salesforce rejects is reported.","chips":["Meeting recap","Follow-up tasks","Duplicate check","Rejected stage change","Meeting saved"],"note":null,"recap":"Recap saved as a Salesforce meeting, two tasks created, one duplicate avoided, rejected stage change explained","thumb":"thumbs/s3.jpg","phone":false,"start":179.5833,"end":256.5667,"steps":[{"kind":"prompt","t":184.55,"label":"Ask for a recap and follow-ups","caption":"One request covers the recap, the follow-ups, a stage change and the amount.","rect":[535,301,1420,523],"zoomFrom":180.05},{"kind":"result","t":188.1833,"label":"Meeting recap","caption":"The recap comes from the Teams transcript, with a reminder about recording consent."},{"kind":"result","t":203.2167,"label":"Proposed follow-ups","caption":"Three follow-up tasks and the stage change to Proposal/Price Quote, all still proposals."},{"kind":"result","t":209.4833,"label":"Asks before saving","caption":"The agent asks for consent, currency and approval in one line. Nothing has been saved or updated yet."},{"kind":"prompt","t":213.1833,"label":"Ask to create the tasks","caption":"Typed as recorded.","rect":[535,934,1420,1062],"zoomFrom":210.2833},{"kind":"result","t":219.0167,"label":"Duplicate found","caption":"The first task already exists, so the batch stopped and no new tasks were created."},{"kind":"result","t":223.2833,"label":"A revised proposal","caption":"The agent offers to keep the existing task and create only tasks 2 and 3."},{"kind":"prompt","t":225.9833,"label":"Create only the new tasks","caption":"A suggested reply is chosen and sent.","rect":[535,934,1420,1062],"zoomFrom":224.6833},{"kind":"result","t":233.95,"label":"Completed and verified","caption":"Both approved tasks were created and verified. The existing task was left unchanged."},{"kind":"prompt","t":238.85,"label":"Ask for the stage change","caption":"A suggested prompt is chosen and sent.","rect":[535,934,1420,1062],"zoomFrom":236.45},{"kind":"result","t":240.95,"label":"Stage change not saved","caption":"Salesforce rejected the update. The agent lists what the opportunity still needs."},{"kind":"prompt","t":247.6167,"label":"Save the recap as a meeting","caption":"Typed as recorded.","rect":[535,934,1420,1062],"zoomFrom":242.35},{"kind":"result","t":256.4167,"label":"Meeting created and verified","caption":"The recap is saved in the meeting description. No tasks were created and the opportunity was not updated."}]},{"key":"s4","n":4,"title":"Update the deal from handwritten notes","short":"Handwritten notes","agenda":"A photo of notes becomes a call summary, a saved next step and a reminder email","desc":"We upload a photo of handwritten call notes. The agent summarises the call, proposes the Salesforce changes, saves the approved next-step update and drafts a reminder email.","chips":["Photo of notes","Call summary","Next step updated","Reminder email"],"note":null,"recap":"Photo of notes summarised, next step updated and verified, reminder email drafted","thumb":"thumbs/s4.jpg","phone":false,"start":256.5833,"end":301.1667,"steps":[{"kind":"prompt","t":264.8167,"label":"Upload the notes and ask","caption":"A photo of handwritten notes is attached with a short request.","rect":[543,371,1440,688],"zoomFrom":259.85},{"kind":"result","t":267.25,"label":"Call summary","caption":"The call is summarised from the photo, including the proposed follow-up on 3 December."},{"kind":"result","t":272.75,"label":"Proposed changes, not saved yet","caption":"The Salesforce changes are listed field by field and marked not saved yet."},{"kind":"result","t":277.5833,"label":"A limitation, then a question","caption":"One change is excluded because the workflow does not allow it. The agent asks before saving."},{"kind":"prompt","t":282.35,"label":"Approve item 1 only","caption":"Typed as recorded.","rect":[543,1013,1440,1080],"zoomFrom":278.05},{"kind":"result","t":288.5167,"label":"Update completed","caption":"Only the next step changed, and it was verified. The follow-up event was not created."},{"kind":"prompt","t":292.8833,"label":"Ask for a reminder email","caption":"Typed as recorded.","rect":[543,1013,1440,1080],"zoomFrom":290.1167},{"kind":"result","t":301.0167,"label":"Reminder email draft","caption":"A draft with the date, time and topic of the follow-up call."}]},{"key":"s5","n":5,"title":"Cover an account: could and couldn’t do","short":"Cover an account","agenda":"Account and deal lookup, with a clear list of what it could and couldn’t do","desc":"A seller covering Adventure Works asks for the account, the solar deal and its campaign, plus two updates. The agent returns the details and says plainly which updates it could not make, and why.","chips":["Account and deal lookup","Campaign source","Could do / Couldn’t do"],"note":null,"recap":"Account and deal details returned, two requested updates not made, with the reasons","thumb":"thumbs/s5.jpg","phone":false,"start":301.1833,"end":337.7,"steps":[{"kind":"prompt","t":306.05,"label":"One request: look up, update, report","caption":"A single message asks for two lookups, two updates and an honest report.","rect":[462,445,1497,705],"zoomFrom":301.1833},{"kind":"result","t":320.1167,"label":"Account details","caption":"The account record is returned. Phone, website and billing location are not populated."},{"kind":"result","t":324.85,"label":"Solar deal details","caption":"Stage, close date and owner are returned. No campaign source or estimated revenue is recorded."},{"kind":"result","t":337.6167,"label":"Could do and couldn’t do","caption":"The lookups worked. The phone and revenue updates were not made, and the agent says why."}]},{"key":"s6","n":6,"title":"Debrief on your phone and create tasks","short":"On your phone","agenda":"The same agent on a phone: dictate a debrief, get next tasks, create two of them","desc":"Last, the same Sales agent on a phone, with a different customer, GreenGrid. We dictate a meeting debrief, ask for next tasks, and have two of them created in Salesforce after confirming.","chips":["Mobile app","Voice dictation","Suggested next tasks","Tasks created after Confirm"],"note":"Sound on: the prompts in this section are spoken","recap":"Debrief dictated on a phone, next tasks suggested, two tasks created after Confirm and checked","thumb":"thumbs/s6.jpg","phone":true,"start":337.7167,"end":506.1,"steps":[{"kind":"prompt","t":401.1833,"label":"Dictate the debrief","caption":"The debrief is dictated by voice. The box shows the start of the transcript.","rect":[724,628,1198,954],"zoomFrom":338.5833},{"kind":"result","t":405.55,"label":"Opportunity matched","caption":"The opportunity is matched. For the contact there is no exact match, and the agent will not assume the closest name is the same person."},{"kind":"prompt","t":416.35,"label":"Ask for next tasks","caption":"Dictated by voice, shown as transcribed.","rect":[724,787,1198,954],"zoomFrom":406.4167},{"kind":"result","t":420.55,"label":"Prioritised next tasks","caption":"A prioritised list of next tasks, starting with the data-readiness check."},{"kind":"result","t":434.2167,"label":"Recommended priority","caption":"The recommended priority, followed by suggested next prompts."},{"kind":"prompt","t":467.9833,"label":"Ask to create the first two tasks","caption":"Dictated by voice, shown as transcribed.","rect":[724,726,1198,954],"zoomFrom":440.2167},{"kind":"result","t":474.55,"label":"Proposed Salesforce tasks","caption":"The two tasks are proposed against the GreenGrid opportunity with due date, description and status."},{"kind":"result","t":482.2167,"label":"Waits for Confirm","caption":"No duplicates were found and nothing has been created yet. The agent waits for Confirm."},{"kind":"prompt","t":484.05,"label":"Confirm both tasks","caption":"A suggested reply is tapped and sent.","rect":[724,468,1198,608],"zoomFrom":483.5833},{"kind":"result","t":487.8833,"label":"The exact write, before Confirm","caption":"The task to be written is shown with Confirm and Cancel."},{"kind":"result","t":494.2167,"label":"Tasks confirmed in Salesforce","caption":"Asked to confirm, the agent reports both tasks present in Salesforce with their task IDs. No duplicates were created."},{"kind":"prompt","t":497.05,"label":"Ask for the task details","caption":"A suggested prompt is tapped and sent.","rect":[724,468,1198,608],"zoomFrom":496.25},{"kind":"result","t":499.5167,"label":"Salesforce task details","caption":"The details are shown as a table: task ID, due date, status, priority and description."},{"kind":"result","t":505.95,"label":"What was not available","caption":"The agent names the fields it could not read and says it has not inferred them."}]}],"ff":[[72.833,74.633,2],[97.667,99.1,3],[116.833,118.533,4],[131.467,132.767,2],[135.5,137.267,2],[149.1,150.233,2],[159.133,160.5,3],[210.2,212.6,2],[242.3,246.067,3],[259.833,261.033,2],[278.0,281.667,4],[290.067,292.233,3],[307.5,317.3,5],[402.2,404.033,4],[417.167,419.633,6],[472.833,473.8,2],[485.033,486.367,3]],"voice":[[1.0,69.333],[343.033,399.7],[442.367,466.867]]}</script>
 <script>
-{
-'use strict';
-const C = JSON.parse(document.getElementById('cues').textContent);
-const VIDEO_SRC = 'crm-assist-demo.mp4';
-const $ = id => document.getElementById(id);
-const vid = $('vid'), zoom = $('zoom'), spot = $('spot'), card = $('card'), cap = $('cap'), where = $('where');
-const S = C.sections, ST = C.stops, N = S.length;
-const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+(function(){
+"use strict";
+var D=JSON.parse(document.getElementById('cues').textContent);
+var VIDEO='crm-assist-demo.mp4', PARTS=["crm-assist-demo.mp4"], VIDEO_BYTES=25513291, VW=1920, VH=1080, FR=1/D.fps;
+var $=function(id){return document.getElementById(id)};
+var v=$('v'),wrap=$('wrap'),stage=$('stage'),zoomer=$('zoomer'),hl=$('hl');
+var reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+var WIPE=reduce?180:620;
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function words(s,d0){return s.split(' ').map(function(w,i){return '<span class="w" style="--d:'+(d0+i)+'">'+esc(w)+'</span>'}).join(' ')}
+function fmt(t){t=Math.max(0,Math.round(t));return Math.floor(t/60)+':'+('0'+t%60).slice(-2)}
+function clamp(x,a,b){return Math.min(b,Math.max(a,x))}
 
-// States: {k:'title'} | {k:'topic', s} | {k:'stop', i} | {k:'end'}
-const states = [{k:'title'}];
-S.forEach((sec, si) => { states.push({k:'topic', s:si}); sec.stops.forEach(i => states.push({k:'stop', i, s:si})); });
-states.push({k:'end'});
-let cur = 0, playing = false, target = null, loaded = false, raf = 0;
+/* ---------- nodes: title, agenda, then a card and its steps per section, then the recap ---------- */
+var S=D.sections, N=[{type:'title'},{type:'agenda'}];
+S.forEach(function(s,i){s.cardPos=N.length;N.push({type:'card',sec:i});s.steps.forEach(function(st,j){st.pos=N.length;N.push({type:'step',sec:i,step:j})})});
+var END=N.length;N.push({type:'end'});
+var STEPS=S.reduce(function(n,s){return n+s.steps.length},0);
+var pos=0,mode='idle',target=null,ready=false,soundOn=true,auto=false,autoT=0,manual=false,typed=false,seen={};
 
-// ---------- video loading (Blob first: some hosts do not support seeking by range)
-async function load() {
-  const btn = document.querySelector('#card .primary');
-  try {
-    if (location.protocol === 'file:') throw new Error('local file');
-    const r = await fetch(VIDEO_SRC);
-    if (!r.ok) throw new Error('fetch ' + r.status);
-    const total = +r.headers.get('content-length') || 0;
-    const rd = r.body.getReader(); const parts = []; let got = 0;
-    for (;;) { const {done, value} = await rd.read(); if (done) break; parts.push(value); got += value.length;
-      if (total && btn) btn.textContent = 'Loading video… ' + Math.round(got * 100 / total) + '%'; }
-    vid.src = URL.createObjectURL(new Blob(parts, {type: 'video/mp4'}));
-  } catch (e) { vid.src = VIDEO_SRC; }
-  await new Promise(res => { if (vid.readyState >= 2) res(); else vid.addEventListener('loadeddata', res, {once: true}); });
-  loaded = true; render();
+/* ---------- static content ---------- */
+$('tOver').textContent=D.title.overline;
+$('tTitle').innerHTML=words(D.title.title,1);
+$('tSub').textContent=D.title.subtitle;
+$('tChips').innerHTML=D.title.chips.map(function(c){return '<span class="chip">'+esc(c)+'</span>'}).join('');
+$('aList').innerHTML=S.map(function(s,i){return '<button class="row rise" style="--d:'+(i+2)+'" data-sec="'+i+'"><span class="no">'+('0'+s.n).slice(-2)+'</span><span><span class="t">'+esc(s.title)+'</span><br><span class="a">'+esc(s.agenda)+'</span></span><span class="m">'+s.steps.length+' steps</span></button>'}).join('');
+$('eList').innerHTML=S.map(function(s,i){return '<button class="row rise" style="--d:'+(i+2)+'" data-sec="'+i+'"><svg class="ck" viewBox="0 0 30 30"><circle cx="15" cy="15" r="13"/><path d="M9 15.5l4.2 4.2L21 11"/></svg><span><span class="t">'+esc(s.title)+'</span><br><span class="a">'+esc(s.recap)+'</span></span><span class="m">Replay</span></button>'}).join('');
+$('eFoot').textContent=D.footer;
+$('rSecs').innerHTML=S.map(function(s,i){return '<div class="sec" data-sec="'+i+'"><button class="pill" title="'+esc(s.title)+'"><b>'+s.n+'</b><span>'+esc(s.short)+'</span></button><span class="ticks">'+s.steps.map(function(st,j){return '<button class="tick '+(st.kind==='prompt'?'p':'r')+'" data-step="'+j+'" title="Step '+(j+1)+': '+esc(st.label)+'" aria-label="Step '+(j+1)+': '+esc(st.label)+'"><i></i></button>'}).join('')+'</span></div>'}).join('');
+
+/* ---------- animated background, shared by the slides ---------- */
+var cv=document.createElement('canvas'),cx=cv.getContext('2d'),bgOn=false,bgT=0,nodes=[];
+for(var i=0;i<26;i++)nodes.push({x:Math.random(),y:Math.random(),vx:(Math.random()-.5)*.00016,vy:(Math.random()-.5)*.00016});
+function bgDraw(ts){
+  var el=cv.parentNode;if(!el)return;
+  var w=el.clientWidth,h=el.clientHeight,dpr=Math.min(1.5,window.devicePixelRatio||1);
+  if(cv.width!==Math.round(w*dpr)||cv.height!==Math.round(h*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr)}
+  cx.setTransform(dpr,0,0,dpr,0,0);
+  var t=ts/1000,g=cx.createLinearGradient(0,0,w,h);g.addColorStop(0,'#070b14');g.addColorStop(1,'#101a31');cx.fillStyle=g;cx.fillRect(0,0,w,h);
+  [[.80+.05*Math.sin(t*.21),.16+.06*Math.cos(t*.17),.62,'58,92,170',.42],[.14+.05*Math.cos(t*.13),.92+.05*Math.sin(t*.19),.52,'201,121,63',.20],[.50+.10*Math.sin(t*.11),.55+.08*Math.cos(t*.09),.44,'70,110,200',.16]].forEach(function(b){
+    var r=b[2]*Math.max(w,h),rg=cx.createRadialGradient(b[0]*w,b[1]*h,0,b[0]*w,b[1]*h,r);rg.addColorStop(0,'rgba('+b[3]+','+b[4]+')');rg.addColorStop(1,'rgba('+b[3]+',0)');cx.fillStyle=rg;cx.fillRect(0,0,w,h)});
+  var step=64,off=(t*7)%step;cx.strokeStyle='rgba(255,255,255,.035)';cx.lineWidth=1;cx.beginPath();
+  for(var x=-step+off;x<w;x+=step){cx.moveTo(x,0);cx.lineTo(x,h)}for(var y=-step+off;y<h;y+=step){cx.moveTo(0,y);cx.lineTo(w,y)}cx.stroke();
+  nodes.forEach(function(n){if(!reduce){n.x+=n.vx*16;n.y+=n.vy*16;if(n.x<0||n.x>1)n.vx*=-1;if(n.y<0||n.y>1)n.vy*=-1}});
+  for(var a=0;a<nodes.length;a++){for(var b=a+1;b<nodes.length;b++){var dx=(nodes[a].x-nodes[b].x)*w,dy=(nodes[a].y-nodes[b].y)*h,d=Math.sqrt(dx*dx+dy*dy);if(d<170){cx.strokeStyle='rgba(140,170,235,'+(.16*(1-d/170)).toFixed(3)+')';cx.beginPath();cx.moveTo(nodes[a].x*w,nodes[a].y*h);cx.lineTo(nodes[b].x*w,nodes[b].y*h);cx.stroke()}}
+    cx.fillStyle='rgba(170,195,245,.35)';cx.beginPath();cx.arc(nodes[a].x*w,nodes[a].y*h,1.6,0,6.3);cx.fill()}
+}
+function bgLoop(ts){if(!bgOn)return;if(ts-bgT>32){bgT=ts;bgDraw(ts)}requestAnimationFrame(bgLoop)}
+function bgAttach(el){el.insertBefore(cv,el.firstChild);bgDraw(performance.now());if(!reduce&&!bgOn){bgOn=true;requestAnimationFrame(bgLoop)}}
+
+/* ---------- slides ---------- */
+var slide=$('sTitle'),slideTok=0;
+bgAttach(slide);slide.classList.add('live');
+function setSlide(el,instant){
+  var old=slide,tok=++slideTok;slide=el;
+  if(old===el){if(el){el.classList.remove('live');void el.offsetWidth;el.classList.add('live');el.scrollTop=0}return Promise.resolve()}
+  [$('sTitle'),$('sAgenda'),$('sCard'),$('sEnd')].forEach(function(s){if(s!==old&&s!==el){s.hidden=true;s.classList.remove('enter','exit','live')}});
+  if(el){el.hidden=false;el.style.zIndex=12;el.classList.remove('exit','live');void el.offsetWidth;el.classList.add('live');if(!instant)el.classList.add('enter');bgAttach(el);el.scrollTop=0;if(old)old.style.zIndex=10}
+  else if(old){if(instant){old.hidden=true}else{old.classList.remove('enter');old.classList.add('exit')}bgOn=false}
+  return new Promise(function(res){setTimeout(function(){
+    if(tok===slideTok){if(old&&old!==slide){old.hidden=true;old.classList.remove('enter','exit','live')}if(slide)slide.classList.remove('enter')}
+    res()},instant?0:WIPE)});
+}
+function fillCard(i){
+  var s=S[i];
+  $('cBig').textContent=('0'+s.n).slice(-2);
+  $('cOver').textContent='Up next · Section '+s.n+' of '+S.length;
+  $('cTitle').innerHTML=words(s.title,1);
+  $('cDesc').textContent=s.desc;
+  $('cChips').innerHTML=s.chips.map(function(c){return '<span class="chip">'+esc(c)+'</span>'}).join('');
+  $('cNote').hidden=!s.note;$('cNoteT').textContent=s.note||'';
+  $('cDots').innerHTML=S.map(function(_,k){return '<i'+(k===i?' class="on"':'')+'></i>'}).join('');
+  $('cImg').src=s.thumb;$('cImg').alt='A screen from section '+s.n+': '+s.title;
+  $('cFig').textContent='A look ahead · '+s.steps.length+' steps'+(s.phone?' · recorded on a phone':'');
 }
 
-// ---------- zoom / spotlight
-function frameRect() { return $('stage').getBoundingClientRect(); }
-function setZoom(r, phone) {
-  const sw = frameRect().width, k = sw / C.w;
-  if (!r) { zoom.style.transform = 'none'; spot.classList.remove('on'); return; }
-  let [x, y, w, h] = r;
-  if (phone) { zoom.style.transform = 'none'; spot.classList.add('lite'); placeSpot(x, y, w, h, k); return; }
-  spot.classList.remove('lite');
-  const pad = 0.10; x -= w * pad; y -= h * pad; w *= 1 + 2 * pad; h *= 1 + 2 * pad;
-  const z = Math.max(1, Math.min(C.w / w, C.h / h, 2.2));
-  let tx = -x * z + (C.w - w * z) / 2, ty = -y * z + (C.h - h * z) / 2;
-  tx = Math.min(0, Math.max(C.w - C.w * z, tx)); ty = Math.min(0, Math.max(C.h - C.h * z, ty));
-  zoom.style.transform = `translate(${tx * k}px,${ty * k}px) scale(${z})`;
-  const sx = (r[0] * z + tx), sy = (r[1] * z + ty);
-  placeSpot(sx, sy, r[2] * z, r[3] * z, k);
+/* ---------- zoom ---------- */
+var base=1,sw=0,sh=0,Z={z:1,cx:VW/2,cy:VH/2};
+function applyZoom(anim){
+  var s=base*Z.z,tx=sw/2-Z.cx*s,ty=sh/2-Z.cy*s;
+  tx=clamp(tx,sw-VW*s,0);ty=clamp(ty,sh-VH*s,0);Z.cx=(sw/2-tx)/s;Z.cy=(sh/2-ty)/s;
+  zoomer.classList.toggle('anim',!!anim&&!reduce);
+  zoomer.style.setProperty('--s',s);zoomer.style.transform='translate('+tx.toFixed(2)+'px,'+ty.toFixed(2)+'px) scale('+s.toFixed(5)+')';
+  $('bZr').textContent=Math.round(Z.z*100)+'%';stage.classList.toggle('zoomed',Z.z>1.001);
 }
-function placeSpot(x, y, w, h, k) {
-  const m = 6;
-  Object.assign(spot.style, {left: (x * k - m) + 'px', top: (y * k - m) + 'px', width: (w * k + 2 * m) + 'px', height: (h * k + 2 * m) + 'px'});
-  spot.classList.add('on');
+function layout(){
+  var w=wrap.clientWidth,h=wrap.clientHeight;sw=Math.max(80,Math.min(w,h*16/9));sh=sw*9/16;
+  stage.style.width=sw+'px';stage.style.height=sh+'px';base=sw/VW;applyZoom(false);
 }
+function zoomAt(px,py,nz,anim){
+  var s=base*Z.z,tx=sw/2-Z.cx*s,ty=sh/2-Z.cy*s,vx=(px-tx)/s,vy=(py-ty)/s;nz=clamp(nz,1,4);var ns=base*nz;
+  Z.z=nz;Z.cx=(sw/2-(px-vx*ns))/ns;Z.cy=(sh/2-(py-vy*ns))/ns;applyZoom(anim);
+}
+function userZoom(px,py,nz,anim){manual=true;$('hint').classList.remove('on');zoomAt(px,py,nz,anim)}
+function zoomReset(anim){Z={z:1,cx:VW/2,cy:VH/2};applyZoom(anim)}
+function zoomRect(r,anim){
+  var rw=r[2]-r[0],rh=r[3]-r[1];
+  Z={z:clamp(Math.min(.9*VW/rw,.78*VH/rh),1.25,2.2),cx:(r[0]+r[2])/2,cy:(r[1]+r[3])/2};applyZoom(anim);
+}
+function setHl(r){
+  if(!r){hl.classList.remove('on');return}
+  hl.style.left=(r[0]-6)+'px';hl.style.top=(r[1]-6)+'px';hl.style.width=(r[2]-r[0]+12)+'px';hl.style.height=(r[3]-r[1]+12)+'px';hl.classList.add('on');
+}
+window.addEventListener('resize',layout);
+if(window.ResizeObserver)new ResizeObserver(layout).observe(wrap);
+stage.addEventListener('wheel',function(e){e.preventDefault();var r=stage.getBoundingClientRect();userZoom(e.clientX-r.left,e.clientY-r.top,Z.z*Math.exp(-e.deltaY*.0016),false)},{passive:false});
+stage.addEventListener('dblclick',function(e){var r=stage.getBoundingClientRect();if(Z.z>1.01){manual=true;zoomReset(true)}else userZoom(e.clientX-r.left,e.clientY-r.top,2,true)});
+var ptr={},pinch=0;
+stage.addEventListener('pointerdown',function(e){ptr[e.pointerId]={x:e.clientX,y:e.clientY};var ids=Object.keys(ptr);
+  if(ids.length===2){pinch=Math.hypot(ptr[ids[0]].x-ptr[ids[1]].x,ptr[ids[0]].y-ptr[ids[1]].y)||1}
+  if(Z.z>1.001||ids.length===2){try{stage.setPointerCapture(e.pointerId)}catch(_){}stage.classList.add('drag')}});
+stage.addEventListener('pointermove',function(e){var p=ptr[e.pointerId];if(!p)return;var ids=Object.keys(ptr),dx=e.clientX-p.x,dy=e.clientY-p.y;p.x=e.clientX;p.y=e.clientY;
+  if(ids.length===2){var a=ptr[ids[0]],b=ptr[ids[1]],d=Math.hypot(a.x-b.x,a.y-b.y)||1,r=stage.getBoundingClientRect();userZoom((a.x+b.x)/2-r.left,(a.y+b.y)/2-r.top,Z.z*d/pinch,false);pinch=d}
+  else if(Z.z>1.001&&(dx||dy)){manual=true;var s=base*Z.z;Z.cx-=dx/s;Z.cy-=dy/s;applyZoom(false)}});
+function ptrEnd(e){delete ptr[e.pointerId];if(!Object.keys(ptr).length)stage.classList.remove('drag')}
+stage.addEventListener('pointerup',ptrEnd);stage.addEventListener('pointercancel',ptrEnd);
+function stepZoom(f){userZoom(sw/2,sh/2,Z.z*f,true)}
 
-// ---------- rendering of the current state
-function stopOf(i) { return ST[i]; }
-function secLabel(si) { return `Section ${si + 1} of ${N}`; }
-function render() {
-  const st = states[cur];
-  document.querySelectorAll('#rail button[data-s]').forEach(b => {
-    const si = +b.dataset.s, on = (st.s === si);
-    b.setAttribute('aria-current', on ? 'step' : 'false');
-    b.classList.toggle('done', st.s !== undefined ? si < st.s : st.k === 'end');
-  });
-  $('railhome').setAttribute('aria-current', st.k === 'title' ? 'step' : 'false');
-  const curB = document.querySelector('#rail [aria-current="step"]'); if (curB) curB.scrollIntoView({block: 'nearest', inline: 'nearest', behavior: RM ? 'auto' : 'smooth'});
-  hideTip();
-  $('railend').setAttribute('aria-current', st.k === 'end' ? 'step' : 'false');
-  $('back').disabled = cur === 0;
-  $('progbar').style.width = (cur / (states.length - 1) * 100) + '%';
-  $('pausechip').hidden = !(st.k === 'stop' && !playing);
-  if (st.k === 'title') return showTitle();
-  if (st.k === 'topic') return showTopic(st.s);
-  if (st.k === 'end') return showEnd();
-  card.hidden = true;
-  const s = stopOf(st.i), secStops = S[st.s].stops, n = secStops.indexOf(st.i) + 1;
-  where.textContent = `${st.s + 1}.${n}`;
-  cap.textContent = s.cap;
-  $('next').lastChild.previousSibling && null;
-  if (!playing) { vid.pause(); snap(s.t); setZoom(s.rect, s.phone); }
-  syncNotes();
-}
-function snap(t) { if (Math.abs(vid.currentTime - t) > 0.02) vid.currentTime = t; }
-function showTitle() {
-  setZoom(null); vid.pause();
-  card.hidden = false;
-  card.innerHTML = `<div class="inner split"><div><div class="kick">${esc(C.title.kicker)}</div><h1>${esc(C.title.title)}</h1>
-    <p>${esc(C.title.lede)}</p><ul class="chips">${C.title.chips.map(c => `<li>${esc(c)}</li>`).join('')}</ul>
-    <button class="primary" type="button" ${loaded ? '' : 'disabled'} data-act="start">${loaded ? 'Start the demo' : 'Loading video…'}</button>
-    <p class="legend">${N} sections · about 8 minutes at a steady pace · Recorded in a demo environment.</p></div>
-    ${peek(5, 'First stop: Copilot summarizes the customer email with CRM context')}</div>`;
-  where.textContent = 'Start'; cap.textContent = 'Press Start, Continue or the right arrow to begin.';
-  if (loaded) setTimeout(() => card.querySelector('.primary')?.focus({preventScroll: true}), 30);
-  syncNotes();
-}
-function showTopic(si) {
-  const sec = S[si]; setZoom(null); vid.pause(); snap(sec.start + 0.02);
-  card.hidden = false;
-  card.innerHTML = `<div class="inner split"><div><div class="secnum"><b>${String(si + 1).padStart(2, '0')}</b><span>${secLabel(si)} · ${esc(chapterOf(si))}</span></div>
-    <h2>${esc(sec.topic)}</h2><p>${esc(sec.desc)}</p><ul class="chips">${sec.chips.map(c => `<li>${esc(c)}</li>`).join('')}</ul>
-    <div class="dots" aria-hidden="true">${S.map((_, k) => `<i class="${k === si ? 'c' : k < si ? 'd' : ''}"></i>`).join('')}</div>
-    <button class="primary" type="button" data-act="next">Show me</button></div>
-    ${peek(sec.stops[sec.stops.length - 1], 'Where this section ends up')}</div>`;
-  where.textContent = 'Up next';
-  cap.textContent = `${secLabel(si)}: ${sec.topic}. ${sec.stops.length} steps.`;
-  syncNotes();
-}
-function showEnd() {
-  setZoom(null); vid.pause(); card.hidden = false;
-  const tick = '<svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="10" fill="none" stroke="#4c9aff" stroke-width="2"/><path d="m6.5 11.5 3 3 6-6.5" fill="none" stroke="#4c9aff" stroke-width="2.4" stroke-linecap="round"/></svg>';
-  card.innerHTML = `<div class="inner"><div class="kick">Recap</div><h2>${esc(C.end.title)}</h2>
-    <ul class="recap">${C.end.points.map(p => `<li>${tick}<span>${esc(p)}</span></li>`).join('')}</ul>
-    <ul class="endnav" aria-label="Revisit a section">${S.map((s, k) => `<li><button type="button" data-go="${k}">${k + 1}. ${esc(s.topic)}</button></li>`).join('')}</ul>
-    <div class="cardbtns"><button class="primary" type="button" data-act="replay">Replay from the start</button><button class="ghost" type="button" data-act="last">Back to the last step</button></div></div>`;
-  where.textContent = 'End'; cap.textContent = 'That is the end of the walkthrough. Pick any section to revisit it.';
-  syncNotes();
-}
-function peek(i, label) { return `<figure class="peek"><img src="thumbs/${String(i + 1).padStart(2, '0')}.jpg" alt="Preview: ${esc(ST[i].cap)}" loading="lazy"><figcaption>${esc(label)}</figcaption></figure>`; }
-function chapterOf(si) { return (C.chapters.find(c => c.secs.includes(si)) || {}).name || ''; }
-
-// ---------- navigation
-function go(i, fromNext) {
-  i = Math.max(0, Math.min(states.length - 1, i));
-  const st = states[i], prev = states[cur];
-  stopPlay();
-  // forward from a stop (or topic) to the next stop plays the recording
-  if (fromNext && st.k === 'stop' && loaded) {
-    const from = prev.k === 'stop' ? stopOf(prev.i).t : prev.k === 'topic' ? S[prev.s].start : null;
-    const to = stopOf(st.i).t;
-    if (from !== null && to > from) { cur = i; playTo(from, to); render(); setHash(); return; }
+/* ---------- video ---------- */
+function loadVideo(){
+  /* The recording is fetched whole (in one file, or in parts that are joined here) and played from memory,
+     so every jump lands at once. Opened from disk, the browser plays the file directly. */
+  function direct(){v.src=VIDEO;v.load()}
+  if(!window.fetch||location.protocol==='file:'){direct();return}
+  var got=0,bufs=[];
+  function part(i){
+    if(i>=PARTS.length)return Promise.resolve();
+    return fetch(PARTS[i]).then(function(r){
+      if(!r.ok||!r.body)throw new Error('no body');
+      var rd=r.body.getReader();
+      return (function pump(){return rd.read().then(function(x){
+        if(x.done)return part(i+1);
+        bufs.push(x.value);got+=x.value.length;if(VIDEO_BYTES)setLoad(Math.min(99,Math.round(got/VIDEO_BYTES*100)));return pump()})})();
+    });
   }
-  cur = i; render(); setHash();
+  part(0).then(function(){v.src=URL.createObjectURL(new Blob(bufs,{type:'video/mp4'}))}).catch(direct);
 }
-function next() { if (states[cur].k === 'title' && !loaded) return; go(cur + 1, true); }
-function back() { go(cur - 1, false); }
-function playTo(from, to) {
-  playing = true; target = to; card.hidden = true;
-  setZoom(null); snap(from); $('skip').hidden = false;
-  cap.textContent = cap.textContent; // keep caption of the step we are moving to
-  const s = stopOf(states[cur].i); cap.textContent = s.cap;
-  vid.playbackRate = 1;
-  const p = vid.play(); if (p && p.catch) p.catch(() => {});
-  cancelAnimationFrame(raf); raf = requestAnimationFrame(tick);
+function setLoad(p){$('bStart').textContent='Loading the recording '+p+'%'}
+v.addEventListener('loadeddata',function(){if(ready)return;ready=true;$('bStart').disabled=false;$('bStart').textContent='Start';$('bNext').disabled=false;render();var h=fromHash();if(h!=null&&h!==0)go(h,true)});
+v.addEventListener('error',function(){if(!ready){$('bStart').textContent='The recording could not be loaded';$('cap').textContent='The recording file is missing or blocked. Keep it next to this page.'}});
+function seek(t){return new Promise(function(res){
+  if(Math.abs(v.currentTime-t)<.004&&!v.seeking){res();return}
+  var done=false,fin=function(){if(done)return;done=true;v.removeEventListener('seeked',fin);res()};
+  v.addEventListener('seeked',fin);setTimeout(fin,1500);try{v.currentTime=t}catch(_){fin()}})}
+function playV(){
+  v.muted=!soundOn;var p=v.play();
+  if(p&&p.catch)p.catch(function(){if(!v.muted){soundOn=false;v.muted=true;sndUI();var q=v.play();if(q&&q.catch)q.catch(function(){})}});
 }
-function tick() {
-  if (!playing) return;
-  const t = vid.currentTime;
-  const ff = C.ff.some(([a, b]) => t >= a && t < b);
-  $('badge').classList.toggle('on', ff);
-  if (t >= target - 0.5 / C.fps || vid.ended) return arrive();
-  raf = requestAnimationFrame(tick);
-}
-function arrive() {
-  stopPlay(); const s = stopOf(states[cur].i); vid.pause(); snap(s.t);
-  setZoom(s.rect, s.phone); $('pausechip').hidden = false;
-  if (autoOn) scheduleAuto();
-  focusNext();
-}
-function stopPlay() { playing = false; cancelAnimationFrame(raf); $('badge').classList.remove('on'); $('skip').hidden = true; clearTimeout(autoT); }
-function focusNext() { if (document.activeElement === document.body || document.activeElement?.id === 'skip') $('next').focus({preventScroll: true}); }
+function sndUI(){$('bSnd').setAttribute('aria-pressed',soundOn?'true':'false');$('sndW').style.display=soundOn?'':'none';$('bSnd').title=(soundOn?'Sound is on':'Sound is off')+' (M)'}
 
-// auto-play
-let autoOn = false, autoT = 0;
-function scheduleAuto() { clearTimeout(autoT); if (!autoOn) return; const st = states[cur];
-  const wait = st.k === 'stop' ? 4000 + stopOf(st.i).cap.length * 35 : 4500;
-  if (cur < states.length - 1) autoT = setTimeout(next, RM ? wait + 1000 : wait); }
+/* ---------- navigation ---------- */
+function hashOf(p){var n=N[p];return n.type==='title'?'start':n.type==='agenda'?'agenda':n.type==='end'?'end':n.type==='card'?'s'+(n.sec+1):'s'+(n.sec+1)+'-'+(n.step+1)}
+function fromHash(){var h=(location.hash||'').replace('#','');if(!h)return null;for(var p=0;p<N.length;p++)if(hashOf(p)===h)return p;return null}
+function setHash(){var h='#'+hashOf(pos);if(location.hash===h)return;try{history.replaceState(null,'',h)}catch(_){try{location.hash=h}catch(__){}}}
+function stopAuto(){clearTimeout(autoT);autoT=0}
+function armAuto(){stopAuto();if(!auto||mode==='playing')return;var n=N[pos],ms;
+  if(n.type==='step'){var st=S[n.sec].steps[n.step];ms=2600+st.caption.length*42}else if(n.type==='card')ms=6000;else return;
+  autoT=setTimeout(function(){if(auto)next()},ms)}
 
-// ---------- hash deep links: #start, #s3, #s3-2, #end
-function setHash() { const st = states[cur]; let h = 'start';
-  if (st.k === 'topic') h = 's' + (st.s + 1); else if (st.k === 'stop') h = `s${st.s + 1}-${S[st.s].stops.indexOf(st.i) + 1}`; else if (st.k === 'end') h = 'end';
-  if (location.hash.slice(1) !== h) history.replaceState(null, '', '#' + h); }
-function buildPrint() {
-  const el = $('print'); if (el.dataset.done) return; el.dataset.done = '1';
-  let h = `<p class="noprint"><a class="ghost back2" href="#start">Back to the demo</a> Use your browser's Print command to save this as a PDF.</p><section><h2>${esc(C.title.title)}</h2><p>${esc(C.title.lede)}</p><p>${S.map((s, k) => `${k + 1}. ${esc(s.topic)}`).join(' · ')}</p></section>`;
-  S.forEach((sec, si) => { h += `<section><p class="pk">Section ${si + 1} of ${N} · ${esc(chapterOf(si))}</p><h2>${esc(sec.topic)}</h2><p>${esc(sec.desc)}</p><p class="pn"><b>Key message:</b> ${esc(sec.notes[0])} <b>Likely question:</b> ${esc(sec.notes[1])}</p><div class="pg">${sec.stops.map((i, n) => `<figure><img src="thumbs/${String(i + 1).padStart(2, '0')}.jpg" alt=""><figcaption><b>${si + 1}.${n + 1}</b> ${esc(ST[i].cap)}</figcaption></figure>`).join('')}</div></section>`; });
-  h += `<section><h2>${esc(C.end.title)}</h2><ul>${C.end.points.map(p => `<li>${esc(p)}</li>`).join('')}</ul></section>`;
-  el.innerHTML = h;
+function render(){
+  var n=N[pos],tag=$('tag'),sec=n.sec!=null?S[n.sec]:null,st=n.type==='step'?sec.steps[n.step]:null;
+  tag.className='';
+  if(mode==='playing'&&target){var tn=N[target.pos],ts=S[tn.sec].steps[tn.step];tag.textContent='Playing';$('ttl').textContent='Next: '+ts.label;$('cap').textContent='Press Space or Skip ahead to jump to the next stop.';
+    $('where').textContent='Section '+(tn.sec+1)+' of '+S.length+' · Step '+(tn.step+1)+' of '+S[tn.sec].steps.length}
+  else if(n.type==='title'){tag.textContent='Start';$('ttl').textContent=D.title.title+' click-through';$('cap').textContent=ready?'Press Start. The recording pauses at every prompt and every result.':'Loading the recording.';$('where').textContent=S.length+' sections · '+STEPS+' steps'}
+  else if(n.type==='agenda'){tag.textContent='Agenda';$('ttl').textContent='What this demo covers';$('cap').textContent='Pick a section, or continue to section 1.';$('where').textContent=S.length+' sections · '+STEPS+' steps'}
+  else if(n.type==='card'){tag.textContent='Up next';$('ttl').textContent=sec.title;$('cap').textContent='Continue to play the first step.';$('where').textContent='Section '+sec.n+' of '+S.length+' · '+sec.steps.length+' steps'}
+  else if(n.type==='end'){tag.textContent='Recap';$('ttl').textContent='What we covered';$('cap').textContent='Pick a section to replay it.';$('where').textContent=S.length+' sections · '+STEPS+' steps'}
+  else{tag.textContent=st.kind==='prompt'?'Prompt':'Result';tag.className=st.kind==='prompt'?'p':'r';$('ttl').textContent=st.label;$('cap').textContent=st.caption;
+    $('where').textContent='Section '+sec.n+' of '+S.length+' · Step '+(n.step+1)+' of '+sec.steps.length}
+  $('bNext').textContent=mode==='playing'?'Skip ahead':n.type==='title'?'Start':n.type==='end'?'Replay':'Continue';
+  $('bNext').disabled=!ready;$('bBack').disabled=!ready||pos===0;
+  $('rHome').classList.toggle('on',n.type==='title'||n.type==='agenda');$('rEnd').classList.toggle('on',n.type==='end');
+  var cur=mode==='playing'&&target?N[target.pos]:n;
+  Array.prototype.forEach.call(document.querySelectorAll('#rSecs .sec'),function(el,i){
+    var on=cur.sec===i;el.classList.toggle('on',on);el.classList.toggle('done',cur.type==='end'||cur.sec!=null&&i<cur.sec);
+    Array.prototype.forEach.call(el.querySelectorAll('.tick'),function(tk,j){tk.classList.toggle('cur',on&&n.type==='step'&&n.sec===i&&n.step===j&&mode!=='playing');tk.classList.toggle('seen',!!seen[i+'-'+j])});
+    if(on&&el.scrollIntoView&&el.parentNode.scrollWidth>el.parentNode.clientWidth)el.parentNode.scrollLeft=Math.max(0,el.offsetLeft-el.parentNode.offsetLeft-40)});
 }
-function setPrintMode(on) { document.documentElement.classList.toggle('printmode', on); if (on) buildPrint(); }
-function fromHash() { const h = location.hash.slice(1); let i = 0; setPrintMode(h === 'print'); if (h === 'print') return cur;
-  const m = /^s(\d+)(?:-(\d+))?$/.exec(h);
-  if (h === 'end') i = states.length - 1;
-  else if (m) { const si = +m[1] - 1; if (si >= 0 && si < N) { i = states.findIndex(x => x.k === 'topic' && x.s === si);
-    if (m[2]) { const j = S[si].stops[+m[2] - 1]; if (j !== undefined) i = states.findIndex(x => x.k === 'stop' && x.i === j); } } }
-  return i; }
+function focusNext(){if(!$('help').hidden)return;var b=slide===$('sTitle')?$('bStart'):$('bNext');try{b.focus({preventScroll:true})}catch(_){}}
 
-// ---------- rail
-function buildRail() {
-  const home = '<svg class="icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 9.5 10 3.5l7 6V17h-4.5v-4.5h-5V17H3z" fill="currentColor"/></svg>';
-  const flag = '<svg class="icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 17V3.5M5 4h10l-2.5 3.5L15 11H5" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/></svg>';
-  let h = `<button type="button" id="railhome" aria-label="Title">${home}</button>`;
-  C.chapters.forEach(ch => { h += `<span class="chap">${esc(ch.name)}</span>`;
-    ch.secs.forEach(si => { h += `<button type="button" data-s="${si}" aria-label="Section ${si + 1}: ${esc(S[si].topic)}"><span class="n">${si + 1}</span><span class="t">${esc(shortT(S[si].topic))}</span></button>`; }); });
-  h += `<button type="button" id="railend" aria-label="Recap">${flag}</button>`;
-  $('rail').innerHTML = h;
+/* show a node, paused, without playing */
+function go(p,instant){
+  if(!ready&&p!==0)return;
+  stopAuto();v.pause();v.playbackRate=1;mode='idle';target=null;manual=false;typed=false;pos=clamp(p,0,END);
+  $('ff').classList.remove('on');$('hint').classList.remove('on');
+  var n=N[pos];
+  if(n.type==='title'){setHl(null);setSlide($('sTitle'),instant)}
+  else if(n.type==='agenda'){setHl(null);setSlide($('sAgenda'),instant)}
+  else if(n.type==='end'){setHl(null);setSlide($('sEnd'),instant)}
+  else if(n.type==='card'){fillCard(n.sec);setHl(null);var s=S[n.sec];setSlide($('sCard'),instant).then(function(){if(pos===p){zoomReset(false);seek(s.start)}})}
+  else{var st=S[n.sec].steps[n.step];seen[n.sec+'-'+n.step]=1;setSlide(null,instant);seek(st.t).then(function(){if(pos===p)landed(st,false)})}
+  render();setHash();focusNext();armAuto();
 }
-function shortT(t) { return t.length > 26 ? t.split(' ').slice(0, 3).join(' ') + '…' : t; }
-
-// ---------- notes (in-page panel)
-function syncNotes() {
-  const p = $('notes'); if (p.hidden) return; const st = states[cur];
-  let h = '<button class="ghost x" type="button" id="notesx">Close</button>';
-  if (st.s !== undefined) { const sec = S[st.s];
-    h += `<h3>${secLabel(st.s)} · ${esc(sec.topic)}</h3><p><b>Key message:</b> ${esc(sec.notes[0])}</p><p><b>Likely question:</b> ${esc(sec.notes[1])}</p>`;
-    if (st.k === 'stop') h += `<p><b>On screen now:</b> ${esc(stopOf(st.i).cap)}</p>`;
-    const nx = states[cur + 1]; if (nx) h += `<p><b>Say next:</b> ${esc(nx.k === 'topic' ? 'Next up, ' + S[nx.s].topic.toLowerCase() + '.' : nx.k === 'end' ? 'Let us recap.' : stopOf(nx.i).cap)}</p>`;
-  } else if (st.k === 'title') h += `<h3>Opening</h3><p>One GreenGrid deal, from the first email to verified Salesforce updates, across Outlook, Teams and mobile. The last two sections show a second deal.</p><p><b>Say next:</b> We start with a customer email in Outlook.</p>`;
-  else h += `<h3>Close</h3><p>Every change Copilot made to Salesforce was shown and confirmed first, then verified.</p><p><b>Next step to suggest:</b> run the same flow on your own Salesforce sandbox.</p>`;
-  p.innerHTML = h; $('notesx').onclick = toggleNotes;
+function landed(st,anim){
+  if(st.kind==='prompt'){if(!manual)zoomRect(st.rect,anim!==false);setHl(st.rect)}
+  else{setHl(null);if(!manual)zoomReset(anim!==false);if(!landed.hinted){landed.hinted=true;$('hint').classList.add('on');setTimeout(function(){$('hint').classList.remove('on')},5200)}}
 }
-function toggleNotes() { const p = $('notes'); p.hidden = !p.hidden; $('notesbtn').setAttribute('aria-expanded', String(!p.hidden)); if (!p.hidden) syncNotes(); else $('notesbtn').focus(); }
+/* play the recording up to a step */
+function playTo(p,fromT){
+  var n=N[p],st=S[n.sec].steps[n.step];
+  stopAuto();setHl(null);manual=false;typed=false;if(Z.z>1.001)zoomReset(true);
+  target={pos:p,t:st.t,st:st};mode='playing';render();
+  var start=function(){if(mode==='playing'&&target&&target.pos===p)playV()};
+  if(fromT!=null)seek(fromT).then(start);else start();
+}
+function arrive(){
+  var tg=target;v.pause();v.playbackRate=1;mode='idle';target=null;pos=tg.pos;$('ff').classList.remove('on');
+  var n=N[pos];seen[n.sec+'-'+n.step]=1;
+  seek(tg.t).then(function(){if(pos===tg.pos&&mode==='idle')landed(tg.st,true)});
+  render();setHash();focusNext();armAuto();
+}
+var primed=false;
+function prime(){ /* first click: let the browser know this video may play with sound later */
+  if(primed)return;primed=true;
+  try{v.muted=!soundOn;var p=v.play();if(p&&p.then)p.then(function(){if(mode!=='playing')v.pause()}).catch(function(){})}catch(_){}
+}
+function next(){
+  if(!ready)return;
+  if(mode==='playing'){if(target){v.pause();arrive()}return}
+  var n=N[pos];prime();
+  if(n.type==='title'){go(1);return}
+  if(n.type==='agenda'){go(S[0].cardPos);return}
+  if(n.type==='end'){go(0);return}
+  if(n.type==='card'){var s=S[n.sec],p=s.steps[0].pos;stopAuto();mode='playing';target={pos:p,t:s.steps[0].t,st:s.steps[0]};manual=false;typed=false;render();
+    seek(s.start).then(function(){return setSlide(null)}).then(function(){if(mode==='playing'&&target&&target.pos===p)playV()});return}
+  var sec=S[n.sec];
+  if(n.step+1<sec.steps.length)playTo(sec.steps[n.step+1].pos);
+  else go(n.sec+1<S.length?S[n.sec+1].cardPos:END);
+}
+function back(){if(!ready||pos===0)return;if(mode==='playing'){go(pos);return}go(pos-1)}
 
-// ---------- guide tips (one rule table)
-const TIPS = [
-  ['#next', 'Continue', 'Plays the recording to the next step and pauses there. Space, Enter or the right arrow do the same.'],
-  ['#back', 'Back', 'Returns to the previous step or card without playing. Left arrow does the same.'],
-  ['#skip', 'Skip ahead', 'Jumps straight to the next pause point if you do not want to wait for the recording.'],
-  ['#restart', 'Restart', 'Goes back to the title card.'],
-  ['#printlink', 'Print view', 'Opens a printable script: each section with its topic, description and a picture of every step. Use the browser\'s Print to save a PDF.'],
-  ['#notesbtn', 'Presenter notes', 'Opens the key message, the likely customer question and what to say next. Shortcut: N.'],
-  ['#autolbl', 'Auto-play', 'Moves through the steps on its own, pausing long enough to read each caption. Shortcut: P.'],
-  ['#tipslbl', 'Guide tips', 'Turns these hover explanations on or off. Switch them off before a customer session.'],
-  ['#railhome', 'Title', 'Back to the opening card.'],
-  ['#railend', 'Recap', 'Jumps to the recap card at the end.'],
-  ['[data-s]', el => `Section ${+el.dataset.s + 1}`, el => `Opens the topic card for “${S[+el.dataset.s].topic}”.`],
-  ['.chap', 'Chapter', 'Sections are grouped into four chapters. Click a numbered section to jump.'],
-  ['.cap', 'Step caption', 'What is on screen at this pause, in one sentence. Screen readers announce it.'],
-  ['.where', 'Position', 'Section and step number, for example 3.2 is the second step of section 3.'],
-  ['#spot', 'Highlight', 'The highlighted area is what this step is about.'],
-  ['#stage', 'Recording', 'The real demo recording. It plays between steps and pauses on each result.'],
-  ['[data-act="start"]', 'Start', 'Begins the walkthrough with the first section card.'],
-  ['[data-act="next"]', 'Show me', 'Plays the first part of this section and stops on its first result.'],
-  ['[data-act="replay"]', 'Replay', 'Starts again from the title card.'],
-  ['[data-act="last"]', 'Back to the last step', 'Returns to the final step of the last section.'],
-  ['[data-go]', 'Revisit a section', 'Jumps to that section\'s topic card.'],
-  ['.chips li', 'Topic tag', 'What this section touches, at a glance.'],
-  ['.card h1', 'Demo title', 'What this walkthrough shows, end to end.'],
-  ['.card h2', el => states[cur].k === 'end' ? 'Recap' : 'Section topic', el => states[cur].k === 'end' ? 'The four things to remember from this demo.' : 'The topic of the section that follows. Read the short description under it, then click Show me.'],
-  ['#notes h3', 'Notes heading', 'Which section these notes belong to.'],
-  ['.peek', 'Preview', 'A still from the recording: where this section ends up. Click Show me to play it.'],
-  ['.secnum', 'Section number', 'Position in the walkthrough and the chapter this section belongs to.'],
-  ['#notes', 'Presenter notes', 'Only you see these while presenting. Press N or Close to hide them.'],
-  ['#notesx', 'Close notes', 'Hides the presenter notes. Esc or N does the same.'],
-];
-let tipsOn = true, tipT = 0, tipEl = null, suppress = false, kbd = false;
-document.addEventListener('pointerdown', () => { kbd = false; suppress = true; hideTip(); }, true);
-function ruleFor(el) { for (let e = el; e && e !== document.body; e = e.parentElement) for (const [sel, t, d] of TIPS) if (e.matches && e.matches(sel)) return {e, t: typeof t === 'function' ? t(e) : t, d: typeof d === 'function' ? d(e) : d}; return null; }
-function showTip(r) { const tip = $('tip'); tip.innerHTML = `<b>${esc(r.t)}</b>${esc(r.d)}`; tip.hidden = false;
-  const b = r.e.getBoundingClientRect(), tw = tip.offsetWidth, th = tip.offsetHeight;
-  let x = Math.min(innerWidth - tw - 8, Math.max(8, b.left + b.width / 2 - tw / 2)), y = b.top - th - 10;
-  if (y < 8) y = Math.min(innerHeight - th - 8, b.bottom + 10);
-  tip.style.left = x + 'px'; tip.style.top = y + 'px'; tipEl = r.e; }
-window.__rule = e => { for (const [sel] of TIPS) if (e.matches && e.matches(sel)) return true; return false; };
-function hideTip() { clearTimeout(tipT); $('tip').hidden = true; tipEl = null; }
-document.addEventListener('pointerover', e => { if (!tipsOn || suppress || e.pointerType === 'touch') return; if ($('tip').contains(e.target)) { clearTimeout(tipT); return; }
-  const r = ruleFor(e.target); clearTimeout(tipT); if (!r) { tipT = setTimeout(hideTip, 150); return; } if (r.e === tipEl) return; tipT = setTimeout(() => showTip(r), 500); });
-document.addEventListener('pointermove', () => { suppress = false; }, {passive: true});
-document.addEventListener('focusin', e => { if (!tipsOn || !kbd) return; const r = ruleFor(e.target); if (r) showTip(r); else hideTip(); });
-document.addEventListener('scroll', hideTip, true);
-$('tips').addEventListener('change', e => { tipsOn = e.target.checked; hideTip(); e.target.blur(); });
+/* frame loop: arrival at the stop, zoom while a prompt is entered, fast-forward label */
+function loop(){
+  requestAnimationFrame(loop);
+  var t=v.currentTime;
+  $('clock').textContent=slide?'':fmt(t)+' / '+fmt(D.duration);
+  if(mode!=='playing'||!target||v.paused&&!v.seeking&&v.readyState<2)return;
+  var st=target.st;
+  if(st.kind==='prompt'&&st.zoomFrom!=null&&!typed&&!manual&&!slide&&t>=st.zoomFrom&&t<st.t){typed=true;zoomRect(st.rect,true)}
+  var fast=0,k;
+  for(k=0;k<D.ff.length;k++){var f=D.ff[k];if(t>=f[0]&&t<f[1]&&f[1]-f[0]>=1){fast=f[2];break}}
+  var rate=1;
+  if(!soundOn){for(k=0;k<D.voice.length;k++){if(t>=D.voice[k][0]&&t<D.voice[k][1]-.4){rate=3;fast=3;break}}}
+  if(v.playbackRate!==rate)v.playbackRate=rate;
+  $('ff').classList.toggle('on',!!fast);if(fast)$('ffT').textContent='Fast forward '+fast+'×';
+  if(t>=target.t-FR*.6||v.ended)arrive();
+}
 
-// ---------- events
-$('next').onclick = next; $('back').onclick = back; $('restart').onclick = () => go(0);
-$('skip').onclick = () => { if (playing) { vid.currentTime = target; arrive(); } };
-$('notesbtn').onclick = toggleNotes;
-$('auto').addEventListener('change', e => { autoOn = e.target.checked; e.target.blur(); if (autoOn && !playing) scheduleAuto(); else clearTimeout(autoT); });
-card.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return;
-  const a = b.dataset.act; if (a === 'start' || a === 'next') next(); else if (a === 'replay') go(0); else if (a === 'last') go(states.length - 2);
-  else if (b.dataset.go) go(states.findIndex(x => x.k === 'topic' && x.s === +b.dataset.go)); });
-$('rail').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return;
-  if (b.id === 'railhome') go(0); else if (b.id === 'railend') go(states.length - 1);
-  else go(states.findIndex(x => x.k === 'topic' && x.s === +b.dataset.s)); });
-document.addEventListener('keydown', e => {
-  if (e.key === 'Tab') { kbd = true; return; }
-  suppress = true; kbd = false; hideTip();
-  if (e.key === 'Escape') { if (!$('tip').hidden) { hideTip(); return; } if (!$('notes').hidden) toggleNotes(); return; }
-  const t = e.target; if (t && (t.tagName === 'INPUT' && t.type !== 'checkbox')) return;
-  const onBtn = t && t.tagName === 'BUTTON' && t !== $('next');
-  if (e.key === 'ArrowRight' || e.key === 'PageDown' || ((e.key === ' ' || e.key === 'Enter') && !onBtn)) { e.preventDefault(); if (playing) $('skip').click(); else next(); }
-  else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); back(); }
-  else if (e.key === 'n' || e.key === 'N') toggleNotes();
-  else if (e.key === 'p' || e.key === 'P') { $('auto').checked = !$('auto').checked; $('auto').dispatchEvent(new Event('change')); }
+/* ---------- controls ---------- */
+function click(id,fn){$(id).addEventListener('click',function(e){fn(e);if(id!=='bNext'&&id!=='bStart')focusNext()})}
+click('bNext',next);click('bStart',next);click('bBack',back);
+click('bZi',function(){stepZoom(1.25)});click('bZo',function(){stepZoom(.8)});click('bZr',function(){manual=true;zoomReset(true)});
+function toggleSound(){soundOn=!soundOn;v.muted=!soundOn;sndUI()}
+function toggleAuto(){auto=!auto;$('bAuto').setAttribute('aria-pressed',auto?'true':'false');if(auto)armAuto();else stopAuto()}
+function toggleFs(){try{if(document.fullscreenElement)document.exitFullscreen();else{var p=document.documentElement.requestFullscreen();if(p&&p.catch)p.catch(function(){})}}catch(_){}}
+function toggleBare(on){document.body.classList.toggle('bare',on);$('show').hidden=!document.body.classList.contains('bare');layout()}
+function toggleHelp(on){$('help').hidden=!on;if(on)$('bHelpX').focus();else focusNext()}
+click('bSnd',toggleSound);click('bAuto',toggleAuto);click('bFs',toggleFs);
+$('bHelp').addEventListener('click',function(){toggleHelp(true)});$('bHelpX').addEventListener('click',function(){toggleHelp(false)});
+$('help').addEventListener('click',function(e){if(e.target===$('help'))toggleHelp(false)});
+$('show').addEventListener('click',function(){toggleBare(false);focusNext()});
+click('rHome',function(){go(0)});click('rEnd',function(){go(END)});click('bReplay',function(){go(0)});click('bLast',function(){go(END-1)});
+$('rSecs').addEventListener('click',function(e){var tk=e.target.closest('.tick'),sc=e.target.closest('.sec');if(!sc||!ready)return;var i=+sc.getAttribute('data-sec');
+  if(tk)go(S[i].steps[+tk.getAttribute('data-step')].pos);else go(S[i].cardPos);focusNext()});
+function rowJump(e){var r=e.target.closest('.row');if(r&&ready)go(S[+r.getAttribute('data-sec')].cardPos)}
+$('aList').addEventListener('click',rowJump);$('eList').addEventListener('click',rowJump);
+document.addEventListener('keydown',function(e){
+  if(e.ctrlKey||e.metaKey||e.altKey)return;
+  var k=e.key,onBtn=/^(BUTTON|A|INPUT|SELECT|TEXTAREA)$/.test((e.target&&e.target.tagName)||'');
+  if(!$('help').hidden){if(k==='Escape'||k==='?'){e.preventDefault();toggleHelp(false)}return}
+  if(k===' '||k==='Enter'){if(onBtn)return;e.preventDefault();next()}
+  else if(k==='ArrowRight'||k==='PageDown'){e.preventDefault();next()}
+  else if(k==='ArrowLeft'||k==='PageUp'){e.preventDefault();back()}
+  else if(k==='+'||k==='='){e.preventDefault();stepZoom(1.25)}
+  else if(k==='-'||k==='_'){e.preventDefault();stepZoom(.8)}
+  else if(k==='0'){manual=true;zoomReset(true)}
+  else if(k==='m'||k==='M')toggleSound();
+  else if(k==='a'||k==='A')toggleAuto();
+  else if(k==='f'||k==='F')toggleFs();
+  else if(k==='h'||k==='H')toggleBare();
+  else if(k==='?')toggleHelp(true);
+  else if(k==='Home'){e.preventDefault();go(0)}
+  else if(k==='End'){e.preventDefault();go(END)}
+  else if(k==='Escape'){if(document.body.classList.contains('bare'))toggleBare(false);else if(Z.z>1.001){manual=true;zoomReset(true)}}
 });
-addEventListener('resize', () => { const st = states[cur]; if (st.k === 'stop' && !playing) { const s = stopOf(st.i); zoom.style.transition = spot.style.transition = 'none'; setZoom(s.rect, s.phone); requestAnimationFrame(() => { zoom.style.transition = spot.style.transition = ''; }); } });
-addEventListener('hashchange', () => { const i = fromHash(); if (location.hash !== '#print' && i !== cur) go(i); });
+window.addEventListener('hashchange',function(){var h=fromHash();if(h!=null&&h!==pos&&ready&&mode!=='playing')go(h,true)});
 
-setTimeout(() => { $('rotate').hidden = true; }, 7000); $('rotate').onclick = () => { $('rotate').hidden = true; };
-buildRail();
-cur = fromHash();
-render();
-load();
-}
+sndUI();layout();render();loadVideo();requestAnimationFrame(loop);
+window.__demo={state:function(){return{pos:pos,mode:mode,node:N[pos],t:v.currentTime,zoom:Z.z,cx:Z.cx,cy:Z.cy,ready:ready,sound:soundOn,rate:v.playbackRate,hl:hl.classList.contains('on'),slide:slide?slide.id:null,total:N.length,hash:location.hash}},nodes:N};
+})();
 </script>
 </body>
 </html>

@@ -1,62 +1,56 @@
-# CRM Assist click-through demo
+# CRM Assist click-through demo (Sales agent, six sections)
 
-A click-through version of the merged CRM Assist recording (`crm_assist_26_nov_2026_demo_merged.mp4`). It pauses at every result, zooms in on what matters, and shows a topic card with a short description before each of the 11 sections.
+A presenter-driven click-through of six recordings of the Sales agent in Copilot working with Salesforce. The recording plays at its full 1920x1080 frame, pauses at every prompt and every result, and waits for you to continue.
 
 ## Run it
 
-- **Online (after the pull request is merged and GitHub Pages has built):** https://prasrangi.github.io/demo-videos/crm-assist-demo-26-nov-2026/ . Pages can return 404 for a few minutes after a merge.
-- **From a download:** download this whole folder (`index.html`, `crm-assist-demo.mp4`, `thumbs/`), keep them together, and double-click `index.html`. Chrome or Edge recommended.
-- **From a git clone:** `git clone https://github.com/prasrangi/demo-videos`, then open `crm-assist-demo-26-nov-2026/index.html` in Chrome or Edge.
+- **Online:** https://prasrangi.github.io/demo-videos/crm-assist-demo-26-nov-2026/ . GitHub Pages can take a few minutes to update after a merge.
+- **From a download:** download this whole folder (`index.html`, `crm-assist-demo.mp4`, `poster.jpg`, `thumbs/`), keep the files together, and double-click `index.html`. Chrome or Edge recommended.
+- **From a git clone:** `git clone https://github.com/prasrangi/demo-videos`, then open `crm-assist-demo-26-nov-2026/index.html`.
+
+For a pixel-for-pixel 1080p view, press `F` for full screen and `H` to hide the controls.
 
 ## What is in it
 
-- **Title card**, then for each section: a **topic card** (section number, chapter, topic, a two-line description, tags and a preview of where the section ends up), then the steps of that section.
-- **42 steps.** At each one the recording pauses on the exact frame, zooms in, and highlights the area that matters, with a one-sentence caption.
-- **Recap card** at the end, with links back to every section.
-- Desktop recordings are zoomed in the page. The phone recording is shown as the full phone on the left with an enlarged view on the right.
-- Waiting time between steps is fast-forwarded, with a "Fast-forward" badge.
+Title slide, agenda, then six sections, each opened by an animated "Up next" card, and a recap slide at the end. 56 stops in total.
 
-| # | Chapter | Section |
-|---|---|---|
-| 1 | Capture and engage | Capture the lead in Salesforce |
-| 2 | Capture and engage | Link the email and the contact |
-| 3 | Capture and engage | Let Copilot prepare the response |
-| 4 | Meet and collaborate | Book the discovery meeting |
-| 5 | Meet and collaborate | Collaborate in Teams |
-| 6 | Debrief on the go | Debrief a meeting from your phone |
-| 7 | Debrief on the go | Turn the debrief into Salesforce tasks |
-| 8 | Guardrails in action | Check Phase 2 readiness from notes |
-| 9 | Guardrails in action | Draft the Phase 2 opportunity safely |
-| 10 | Guardrails in action | Ask Copilot to change a close date |
-| 11 | Guardrails in action | Confirm, update and verify |
+| # | Section | Recorded on | Stops |
+|---|---|---|---|
+| 1 | Debrief a meeting by voice | Desktop | 6 |
+| 2 | Confirm, save and verify | Desktop | 11 |
+| 3 | Recap a Teams meeting and set up follow-ups | Desktop | 13 |
+| 4 | Update the deal from handwritten notes | Desktop | 8 |
+| 5 | Cover an account: could and couldn't do | Desktop | 4 |
+| 6 | Debrief on your phone and create tasks | Phone | 14 |
 
-## Presenting
+## Zoom rules
 
-| Control | What it does |
+- The view zooms in by itself only while a prompt is being entered, and holds on the finished prompt with an outline.
+- Results are always shown at full frame.
+- You can zoom by hand at any time: scroll over the recording, press `+` or `-`, double-click a spot, drag to move, `0` to reset. Your zoom is cleared when you move on.
+
+## Keys
+
+| Key | What it does |
 |---|---|
-| Continue, Space, Enter, Right arrow, Page Down | Play to the next step (or open the next card) |
-| Back, Left arrow, Page Up | Previous step or card, without playing |
-| Skip ahead | While the recording plays, jump straight to the next pause |
-| Section rail (top) | Jump to any section's topic card; the home and flag icons open the title and recap |
-| N or Notes | Presenter notes: key message, likely customer question, what is on screen, what to say next. Esc closes |
-| P or Auto-play | Moves on by itself, pausing long enough to read each caption |
-| Guide tips | Hover explanations for every control. **Switch them off before a customer session.** Not shown on touch-only devices |
-| Print view | One landscape page per section with its topic, description, notes and a captioned picture of every step. Use the browser's Print to save a PDF (13 pages) |
+| Space, Enter, Right arrow | Continue. While the recording plays, skip ahead to the next stop |
+| Left arrow | Back one stop, without playing |
+| + / - / 0 | Zoom in, zoom out, reset |
+| M | Sound on or off. With sound off, long dictation is fast forwarded |
+| A | Auto-play: moves on by itself after each stop |
+| F / H | Full screen / hide or show the controls |
+| Home / End | Title slide / recap slide |
+| ? | List of keys |
 
-**Deep links:** add `#start`, `#s3` (topic card of section 3), `#s3-2` (second step of section 3), `#end` or `#print` to the address.
+The rail at the top jumps to any section. The small marks next to the current section jump to a single stop (diamonds are prompts, dots are results). Add `#s3` or `#s3-2` to the address to open a section or a stop directly.
 
-## Notes and assumptions
+## Notes
 
-- All titles, topics, descriptions, captions, chapter names and presenter notes are suggested wording, written from what is visible in the recording. Please review them.
-- The demo has no sound. The narrated video is a separate file.
-- Private details removed in the edited videos stay removed here (connection details, org IDs and URLs cut; colleague and tenant email addresses blurred). Salesforce record and task IDs remain visible, as in the videos.
-- This page plays a recording of a demo environment. It does not connect to Salesforce, Outlook or Teams, and it has no tracking. To measure views, host it on a platform with analytics.
-- Not built: a `?customer=` parameter (the captions describe real recorded screens, so changing the customer name would contradict them), live voice, and a separate presenter window (notes open in a panel on the same page).
+- All titles, section names, step labels and captions are suggested wording, written from what is visible on screen.
+- Nothing in the recording is blurred. The connection details shown after each Confirm, and the record and task IDs, are visible.
+- Only sections 1, 2 and 6 have sound (the spoken prompts). The other recordings were silent.
+- Waiting time is fast forwarded with a label. Idle pauses are cut.
+- The phone recording jumps from 21:10 to 21:20 after Confirm; that jump is in the original recording.
+- The page only plays a recording of a demo environment. It does not connect to Salesforce, Outlook or Teams, and it has no tracking.
 
-## Editing and rebuilding
-
-The build scripts are not in this folder. To change only text, edit the JSON inside the `<script id="cues">` block of `index.html` directly. Video timing changes need a rebuild from the source recordings.
-
-Checked 24 November 2026 against the source recordings. Re-check whenever the recordings change.
-
-This repository is public, so this page and video are public once merged.
+This folder replaces the earlier 11-section click-through that was published here. Updated 27 November 2026.
