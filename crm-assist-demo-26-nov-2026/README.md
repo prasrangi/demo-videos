@@ -1,6 +1,6 @@
 # CRM Assist click-through demo (Sales agent, six sections)
 
-A presenter-driven click-through of six recordings of the Sales agent in Copilot working with Salesforce. The recording plays at its full 1920x1080 frame, pauses at every prompt and every result, and waits for you to continue.
+A presenter-driven click-through of recordings of the Sales agent in Copilot working with Salesforce. The recording plays at its full 1920x1080 frame, pauses at every prompt and every result, and waits for you to continue.
 
 ## Run it
 
@@ -12,21 +12,25 @@ For a pixel-for-pixel 1080p view, press `F` for full screen and `H` to hide the 
 
 ## What is in it
 
-Title slide, agenda, then six sections, each opened by an animated "Up next" card, and a recap slide at the end. 56 stops in total.
+Title slide, agenda, then six sections, each opened by an animated "Up next" card, and a recap slide at the end. 58 stops in total.
 
 | # | Section | Recorded on | Stops |
 |---|---|---|---|
-| 1 | Debrief a meeting by voice | Desktop | 6 |
-| 2 | Confirm, save and verify | Desktop | 11 |
-| 3 | Recap a Teams meeting and set up follow-ups | Desktop | 13 |
+| 1 | Debriefing customer Meeting using Sales Agent | Desktop | 6 |
+| 2 | Confirm, Writeback and Validate | Desktop | 11 |
+| 3 | Recap a Teams meeting and set up follow-ups & Business Validation Rules | Desktop | 13 |
 | 4 | Update the deal from handwritten notes | Desktop | 8 |
-| 5 | Cover an account: could and couldn't do | Desktop | 4 |
+| 5 | Table and field level security | Desktop (two recordings) | 6 |
 | 6 | Debrief on your phone and create tasks | Phone | 14 |
+
+Sections 1 and 6 open with the scenario: a seller has come back from a customer meeting and wants to ingest the discussion into Salesforce and provide details on the next step.
+
+Section 5 opens with the seller's access: Account (read-only); Opportunity (read/update with restrictions); EstimatedRevenue (read-only); PrimaryCampaignSource (no access).
 
 ## Zoom rules
 
 - The view zooms in by itself only while a prompt is being entered, and holds on the finished prompt with an outline.
-- Results are always shown at full frame.
+- Results are always shown at full frame. Section 3, step 11 adds a red box around the list of things Salesforce requires.
 - You can zoom by hand at any time: scroll over the recording, press `+` or `-`, double-click a spot, drag to move, `0` to reset. Your zoom is cleared when you move on.
 
 ## Keys
@@ -46,11 +50,11 @@ The rail at the top jumps to any section. The small marks next to the current se
 
 ## Notes
 
-- All titles, section names, step labels and captions are suggested wording, written from what is visible on screen.
+- Step labels and captions are written from what is visible on screen.
 - Nothing in the recording is blurred. The connection details shown after each Confirm, and the record and task IDs, are visible.
 - Only sections 1, 2 and 6 have sound (the spoken prompts). The other recordings were silent.
 - Waiting time is fast forwarded with a label. Idle pauses are cut.
 - The phone recording jumps from 21:10 to 21:20 after Confirm; that jump is in the original recording.
 - The page only plays a recording of a demo environment. It does not connect to Salesforce, Outlook or Teams, and it has no tracking.
 
-This folder replaces the earlier 11-section click-through that was published here. Updated 27 November 2026.
+Updated 27 November 2026.
